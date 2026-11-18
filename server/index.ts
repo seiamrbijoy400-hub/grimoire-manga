@@ -24,6 +24,11 @@ import {
   getMangaDexChapterImages,
   searchMangaDex
 } from './mangadex.ts';
+import {
+  UpstreamError,
+  probeTransports,
+  getPreferredTransport,
+} from './upstream.ts';
 
 const app = new Hono();
 
@@ -34,9 +39,21 @@ app.use('*', cors());
 app.get('/api/health', (c) => c.json({
   status: 'ok',
   service: 'KuroScroll Neo-Archive Manga Platform',
-  version: '2026.2.0',
-  engines: ['WeebCentral', 'MangaDex Safe Vault']
+  version: '2026.2.1',
+  engines: ['WeebCentral', 'MangaDex Safe Vault'],
+  weebTransport: getPreferredTransport() ?? 'unknown'
 }));
+
+// Live connectivity report: which egress routes can reach WeebCentral from this host.
+app.get('/api/diagnostics', async (c) => {
+  const transports = await probeTransports();
+  return c.json({
+    ok: transports.some((t) => t.ok),
+    preferred: getPreferredTransport(),
+    transports,
+    hint: 'Only "direct" working means the host is not blocked. Google/allorigins working means the fallback chain is healthy.'
+  });
+});
 
 // Filter options dictionary
 app.get('/api/filters', (c) => {
@@ -103,7 +120,7 @@ app.get('/api/search', async (c) => {
 
   try {
     const results = quick ? await quickSearch(query) : await searchMangaAdvanced(filter);
-    
+
     // If WeebCentral returns empty and source is 'all', supplement with MangaDex results
     if (results.length === 0 && source === 'all') {
       const mdFallback = !query
@@ -114,11 +131,33 @@ app.get('/api/search', async (c) => {
 
     return c.json({ data: results, count: results.length, offset, source: 'weebcentral' });
   } catch (err) {
-    console.warn('WeebCentral search failed, falling back to MangaDex:', err);
+    const detail = err instanceof UpstreamError ? err.message : String(err);
+    console.warn('WeebCentral search failed:', detail);
+
+    // Explicit WeebCentral request: tell the truth instead of returning a bare empty list.
+    if (source === 'weebcentral') {
+      return c.json({
+        data: [],
+        count: 0,
+        offset,
+        source: 'weebcentral',
+        error: 'WeebCentral is unreachable from this server',
+        detail,
+        attempts: err instanceof UpstreamError ? err.attempts : undefined,
+      }, 502);
+    }
+
     const mdFallback = !query
       ? (sort === 'Latest Updates' ? await getMangaDexLatest(offset, limit, mdFilterOptions) : await getMangaDexTrending(offset, limit, mdFilterOptions))
       : await searchMangaDex(query, offset, limit, mdFilterOptions);
-    return c.json({ data: mdFallback, count: mdFallback.length, offset, source: 'mangadex-fallback' });
+    return c.json({
+      data: mdFallback,
+      count: mdFallback.length,
+      offset,
+      source: 'mangadex-fallback',
+      degraded: true,
+      detail,
+    });
   }
 });
 
@@ -150,9 +189,13 @@ app.get('/api/trending', async (c) => {
 
     return c.json({ data: results, source: 'weebcentral' });
   } catch (err) {
-    console.warn('Trending fallback to MangaDex:', err);
+    const detail = err instanceof UpstreamError ? err.message : String(err);
+    console.warn('Trending failed:', detail);
+    if (source === 'weebcentral') {
+      return c.json({ data: [], source: 'weebcentral', error: 'WeebCentral is unreachable from this server', detail }, 502);
+    }
     const mdResults = await getMangaDexTrending(offset, limit);
-    return c.json({ data: mdResults, source: 'mangadex-fallback' });
+    return c.json({ data: mdResults, source: 'mangadex-fallback', degraded: true, detail });
   }
 });
 
@@ -176,11 +219,19 @@ app.get('/api/latest', async (c) => {
       offset,
       limit,
     });
+    if (results.length === 0 && source === 'all') {
+      const mdResults = await getMangaDexLatest(offset, limit);
+      return c.json({ data: mdResults, source: 'mangadex-fallback' });
+    }
     return c.json({ data: results, source: 'weebcentral' });
   } catch (err) {
-    console.warn('Latest fallback to MangaDex:', err);
+    const detail = err instanceof UpstreamError ? err.message : String(err);
+    console.warn('Latest failed:', detail);
+    if (source === 'weebcentral') {
+      return c.json({ data: [], source: 'weebcentral', error: 'WeebCentral is unreachable from this server', detail }, 502);
+    }
     const mdResults = await getMangaDexLatest(offset, limit);
-    return c.json({ data: mdResults, source: 'mangadex-fallback' });
+    return c.json({ data: mdResults, source: 'mangadex-fallback', degraded: true, detail });
   }
 });
 
@@ -197,11 +248,16 @@ app.get('/api/manga/:id', async (c) => {
     return c.json({ data: mdDetails });
   }
 
-  const details = await getMangaDetails(id);
-  if (!details) {
-    return c.json({ error: 'Manga not found' }, 404);
+  try {
+    const details = await getMangaDetails(id);
+    if (!details) {
+      return c.json({ error: 'Manga not found' }, 404);
+    }
+    return c.json({ data: details });
+  } catch (err) {
+    const detail = err instanceof UpstreamError ? err.message : String(err);
+    return c.json({ error: 'WeebCentral is unreachable from this server', detail, data: null }, 502);
   }
-  return c.json({ data: details });
 });
 
 // Chapter list for manga (Automatically routes md: prefix to MangaDex)
@@ -214,8 +270,13 @@ app.get('/api/manga/:id/chapters', async (c) => {
     return c.json({ data: mdChapters });
   }
 
-  const chapters = await getChapterList(id);
-  return c.json({ data: chapters });
+  try {
+    const chapters = await getChapterList(id);
+    return c.json({ data: chapters });
+  } catch (err) {
+    const detail = err instanceof UpstreamError ? err.message : String(err);
+    return c.json({ data: [], error: 'WeebCentral is unreachable from this server', detail }, 502);
+  }
 });
 
 // Chapter images (Automatically routes md: prefix to MangaDex)
@@ -234,14 +295,23 @@ app.get('/api/chapter/:id', async (c) => {
     });
   }
 
-  const images = await getChapterImages(id);
-  return c.json({
-    data: {
-      chapterId: id,
-      images,
-      count: images.length
-    }
-  });
+  try {
+    const images = await getChapterImages(id);
+    return c.json({
+      data: {
+        chapterId: id,
+        images,
+        count: images.length
+      }
+    });
+  } catch (err) {
+    const detail = err instanceof UpstreamError ? err.message : String(err);
+    return c.json({
+      data: { chapterId: id, images: [], count: 0 },
+      error: 'WeebCentral is unreachable from this server',
+      detail,
+    }, 502);
+  }
 });
 
 // High-speed Streaming image proxy with multi-upstream anti-hotlink bypass
@@ -269,10 +339,32 @@ app.get('/api/proxy/image', async (c) => {
           'Sec-Fetch-Site': 'cross-site',
         };
 
-    const upstreamRes = await fetch(url, { headers });
+    const candidates = [
+      url,
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+      `https://translate.google.com/website?sl=auto&tl=en&hl=en&u=${encodeURIComponent(url)}`,
+    ];
 
-    if (!upstreamRes.ok) {
-      return c.text(`Upstream image failed: ${upstreamRes.status}`, 502);
+    let upstreamRes: Response | null = null;
+    let lastStatus = 0;
+    for (const candidate of candidates) {
+      try {
+        const res = await fetch(candidate, {
+          headers,
+          signal: AbortSignal.timeout(20_000),
+        });
+        if (res.ok) {
+          upstreamRes = res;
+          break;
+        }
+        lastStatus = res.status;
+      } catch (err) {
+        console.warn('Image proxy transport failed:', candidate.slice(0, 60), err);
+      }
+    }
+
+    if (!upstreamRes) {
+      return c.text(`Upstream image failed: ${lastStatus || 'unreachable'}`, 502);
     }
 
     const contentType = upstreamRes.headers.get('content-type') || 'image/jpeg';

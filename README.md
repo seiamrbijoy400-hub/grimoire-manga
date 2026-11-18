@@ -55,3 +55,38 @@ pnpm run dev
 ```
 - Frontend: `http://localhost:5173`
 - Backend API Proxy: `http://localhost:3001`
+
+---
+
+## 🛡️ WeebCentral Connectivity (Cloudflare)
+
+`weebcentral.com` is behind Cloudflare bot protection that blocks most
+datacenter/cloud IPs (Render, AWS, GCP). The server therefore tries several
+egress routes automatically and remembers the first one that works:
+
+| # | Route | Notes |
+|---|-------|-------|
+| 1 | `direct` | Works from Termux / home connections |
+| 2 | `proxy` | YOUR reverse proxy (`UPSTREAM_PROXY_URL`, optional) |
+| 3 | `google` | Google's public translation relay (free, no key) |
+| 4 | `allorigins` | Public CORS relay (free, rate limited) |
+
+If every route fails and `source=weebcentral`, the API now returns **502** with
+the per-route reason instead of a silent empty list. Requests with
+`source=all` still fall back to MangaDex and include `"degraded": true`.
+
+### Check what works from the current host
+```bash
+curl -s https://<your-app>.onrender.com/api/diagnostics
+```
+Output shows each transport's status and latency.
+
+### Optional: use your own Cloudflare Worker
+1. Deploy `cloudflare-worker-proxy.js` at dash.cloudflare.com → Workers & Pages.
+2. Set the Render env var:
+   ```
+   UPSTREAM_PROXY_URL=https://your-worker-name.you.workers.dev
+   ```
+   (comma-separate several in `UPSTREAM_PROXY_URLS`)
+
+To pin a single route for debugging, set `WEEB_TRANSPORT=direct|proxy|google|allorigins`.
