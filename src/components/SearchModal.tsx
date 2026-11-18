@@ -7,7 +7,7 @@ import { MangaItem } from '../types.ts';
 
 export const FALLBACK_COVER = '/logo.png';
 
-const POPULAR_SEARCHES = [
+export const POPULAR_SEARCHES = [
   'Solo Leveling',
   'One Piece',
   'Jujutsu Kaisen',
