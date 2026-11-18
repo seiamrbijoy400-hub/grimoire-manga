@@ -28,11 +28,11 @@ import { isAdultTag } from '../lib/contentSafety.ts';
 
 /** Adult genres never reach the UI (policy mirrored on the server). */
 export const ALL_TAGS = [
-  "Action", "Adult", "Adventure", "Comedy", "Doujinshi", "Drama", "Ecchi",
+  "Action", "Adventure", "Comedy", "Doujinshi", "Drama",
   "Fantasy", "Gender Bender", "Harem", "Historical", "Horror",
-  "Isekai", "Josei", "Martial Arts", "Mature", "Mecha",
+  "Isekai", "Josei", "Martial Arts", "Mecha",
   "Mystery", "Psychological", "Romance", "School Life", "Sci-fi",
-  "Seinen", "Shoujo", "Shounen", "Slice of Life", "Smut", "Sports",
+  "Seinen", "Shoujo", "Shounen", "Slice of Life", "Sports",
   "Supernatural", "Tragedy", "Yaoi", "Yuri"
 ].filter((tag) => !isAdultTag(tag));
 

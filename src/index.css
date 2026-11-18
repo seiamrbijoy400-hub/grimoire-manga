@@ -154,11 +154,11 @@
   .shimmer-skeleton {
     background-image: linear-gradient(
       100deg,
-      #101218 20%,
-      #1b1f29 42%,
-      #22262f 50%,
-      #1b1f29 58%,
-      #101218 80%
+      #101218 18%,
+      #1b1f29 40%,
+      rgba(198, 154, 69, 0.16) 50%,
+      #1b1f29 60%,
+      #101218 82%
     );
     background-size: 240% 100%;
     animation: shimmer 1.45s linear infinite;
