@@ -63,12 +63,21 @@ export default {
         serif: ['Cinzel', 'Playfair Display', 'Georgia', 'serif'],
         sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        display: ['Space Grotesk', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
       animation: {
         'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-in': 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
         'slide-up': 'slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         'shimmer': 'shimmer 2s linear infinite',
+        'float': 'floatY 7s ease-in-out infinite',
+        'float-slow': 'floatY 11s ease-in-out infinite',
+        'rise': 'rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'aurora': 'auroraDrift 22s ease-in-out infinite alternate',
+        'spin-slow': 'spin 14s linear infinite',
+        'pop': 'popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+        'glow-pulse': 'glowPulse 3.2s ease-in-out infinite',
+        'wipe': 'wipe 0.6s cubic-bezier(0.76, 0, 0.24, 1) forwards',
       },
       keyframes: {
         fadeIn: {
@@ -82,7 +91,32 @@ export default {
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
-        }
+        },
+        floatY: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        rise: {
+          '0%': { opacity: '0', transform: 'translateY(26px) scale(0.96)' },
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+        auroraDrift: {
+          '0%': { transform: 'translate3d(-4%, -2%, 0) scale(1)' },
+          '50%': { transform: 'translate3d(6%, 4%, 0) scale(1.15)' },
+          '100%': { transform: 'translate3d(-2%, 6%, 0) scale(0.95)' },
+        },
+        popIn: {
+          '0%': { opacity: '0', transform: 'scale(0.9)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        glowPulse: {
+          '0%, 100%': { opacity: '0.45' },
+          '50%': { opacity: '0.9' },
+        },
+        wipe: {
+          '0%': { transform: 'scaleY(0)' },
+          '100%': { transform: 'scaleY(1)' },
+        },
       }
     },
   },

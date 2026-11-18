@@ -18,6 +18,7 @@ export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
   const bookmarked = isBookmarked(manga.id);
   const history = getMangaHistory(manga.id);
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // Origin identification
   const getOrigin = () => {
@@ -40,12 +41,22 @@ export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
       }}
     >
       {/* 1. Portrait Artwork Container */}
-      <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-[#111318] border border-[#292A2D] group-hover:border-[#C69A45]/40 transition-all duration-300 shadow-md group-hover:shadow-xl">
+      <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-[#111318] border border-[#292A2D] group-hover:border-[#C69A45]/45 transition-all duration-300 shadow-md group-hover:shadow-[0_20px_45px_-20px_rgba(198,154,69,0.55)]">
+        {/* Shimmer placeholder until the cover decodes */}
+        {!imageLoaded && !imageError && (
+          <div className="absolute inset-0 shimmer-skeleton" aria-hidden="true" />
+        )}
         <img
           src={imgSrc}
           alt={`Cover artwork for ${manga.title}`}
-          onError={() => setImageError(true)}
-          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 will-change-transform"
+          onLoad={() => setImageLoaded(true)}
+          onError={() => {
+            setImageError(true);
+            setImageLoaded(true);
+          }}
+          className={`w-full h-full object-cover object-center group-hover:scale-105 transition-all duration-700 will-change-transform ${
+            imageLoaded ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'
+          }`}
           loading="lazy"
         />
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { BookOpen, Search, Bookmark, History, ChevronLeft, Compass, SlidersHorizontal } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore.ts';
+import { BrandMark, WordMark } from './BrandMark.tsx';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -10,7 +11,8 @@ export const Navbar: React.FC = () => {
   const historyCount = Object.keys(history).length;
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[#090A0C]/90 border-b border-[#292A2D] transition-all">
+    <header className="sticky top-0 z-40 w-full glass-panel border-b border-[#292A2D] transition-all">
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#C69A45]/35 to-transparent pointer-events-none" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand / Logo */}
         <div className="flex items-center gap-3">
@@ -35,25 +37,20 @@ export const Navbar: React.FC = () => {
             }}
             className="flex items-center gap-3 cursor-pointer group select-none"
           >
-            {/* KuroScroll Official Brand Emblem */}
+            {/* Kurso Scroll brand emblem */}
             <div className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center shrink-0">
-              <img
-                src="/logo.png"
-                alt="KUROSCROLL"
-                className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(200,30,30,0.3)] group-hover:scale-110 group-hover:drop-shadow-[0_0_16px_rgba(198,154,69,0.5)] transition-all duration-300"
+              <div className="absolute inset-0 rounded-[13px] bg-[#C69A45]/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <BrandMark
+                className="relative w-full h-full origin-center transition-transform duration-500 group-hover:scale-[1.08] group-hover:-rotate-3"
+                glow
               />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-serif text-base sm:text-lg font-bold tracking-wider text-[#F0E9DC]">
-                  KURO<span className="text-[#C69A45]">SCROLL</span>
-                </span>
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#191A1F] text-[#AAA69D] border border-[#292A2D] font-mono uppercase tracking-widest hidden sm:inline">
-                  Archive
-                </span>
+                <WordMark size="text-base sm:text-lg" showEdition />
               </div>
               <p className="text-[10px] text-[#AAA69D] font-sans tracking-tight hidden md:block">
-                Neo-Editorial Manga Discovery
+                Manga for the scroll generation
               </p>
             </div>
           </div>

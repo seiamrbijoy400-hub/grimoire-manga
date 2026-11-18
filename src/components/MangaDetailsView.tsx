@@ -18,9 +18,11 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
 import { fetchMangaDetails, fetchChapterList, getProxyImageUrl } from '../services/api.ts';
+import { BrandLoader } from './BrandLoader.tsx';
 import { MangaDetails, ChapterItem, BookmarkCategory } from '../types.ts';
 
 const CHUNK_SIZE = 50;
+const FALLBACK_COVER = '/logo.png';
 
 const LANGUAGE_META: Record<string, { label: string; flag: string }> = {
   en: { label: 'English', flag: '🇬🇧' },
@@ -91,7 +93,7 @@ export const MangaDetailsView: React.FC = () => {
       ]);
       setDetails(d);
       if (d) {
-        setActiveMangaMeta(d.title, d.coverImage);
+        setActiveMangaMeta(d.title, d.cover);
       }
       setChapters(ch);
       setLoading(false);
@@ -202,9 +204,27 @@ export const MangaDetailsView: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="max-w-6xl mx-auto px-4 py-12 space-y-6 animate-pulse">
-          <div className="h-72 rounded-xl bg-[#111318] border border-[#292A2D]" />
-          <div className="h-44 rounded-xl bg-[#111318] border border-[#292A2D]" />
+        <div className="max-w-6xl mx-auto px-4 py-12 space-y-6">
+          <div className="flex justify-center pb-2">
+            <BrandLoader size="sm" label="Opening the chronicle" sublabel="Fetching series metadata" />
+          </div>
+          <div className="rounded-2xl bg-[#111318] border border-[#292A2D] p-6 sm:p-8">
+            <div className="flex flex-col md:flex-row gap-6">
+              <div className="shimmer-skeleton w-40 sm:w-56 aspect-[3/4] rounded-lg shrink-0 mx-auto md:mx-0" />
+              <div className="flex-1 space-y-3 pt-2">
+                <div className="shimmer-skeleton h-8 w-2/3 rounded" />
+                <div className="shimmer-skeleton h-3 w-1/3 rounded" />
+                <div className="shimmer-skeleton h-3 w-full rounded" />
+                <div className="shimmer-skeleton h-3 w-11/12 rounded" />
+                <div className="shimmer-skeleton h-3 w-4/5 rounded" />
+                <div className="flex gap-2 pt-3">
+                  <div className="shimmer-skeleton h-9 w-32 rounded-lg" />
+                  <div className="shimmer-skeleton h-9 w-24 rounded-lg" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="shimmer-skeleton h-44 rounded-xl" />
         </div>
       ) : details ? (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-8">
@@ -279,7 +299,7 @@ export const MangaDetailsView: React.FC = () => {
                   {/* Start or Resume Reading */}
                   {resumeChapter && (
                     <button
-                      onClick={() => openChapter(activeMangaId, resumeChapter.id, resumeChapter.title, details.title, details.coverImage)}
+                      onClick={() => openChapter(activeMangaId, resumeChapter.id, resumeChapter.title, details.title, details.cover)}
                       className="px-6 py-2.5 rounded-lg bg-[#C69A45] hover:bg-[#D8AA55] text-[#090A0C] font-semibold text-sm shadow-lg shadow-[#C69A45]/15 transition-all flex items-center gap-2"
                     >
                       <BookOpen className="w-4 h-4" />
@@ -528,7 +548,7 @@ export const MangaDetailsView: React.FC = () => {
                 return (
                   <div
                     key={ch.id}
-                    onClick={() => openChapter(activeMangaId, ch.id, ch.title, details?.title, details?.coverImage)}
+                    onClick={() => openChapter(activeMangaId, ch.id, ch.title, details?.title, details?.cover)}
                     className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between group ${
                       isResume
                         ? 'bg-[#191A1F] border-[#C69A45]/60 shadow-md shadow-[#C69A45]/10'

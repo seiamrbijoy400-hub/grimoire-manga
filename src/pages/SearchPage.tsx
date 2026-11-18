@@ -88,10 +88,10 @@ function clearHistory() {
 
 // ─── Skeleton Card ────────────────────────────────────────────────────────────
 const SkeletonCard = () => (
-  <div className="flex flex-col gap-2 p-2.5 bg-[#111318] rounded-xl border border-[#292A2D] animate-pulse">
-    <div className="w-full aspect-[2/3] rounded-lg bg-[#1E2027]" />
-    <div className="h-3.5 w-3/4 rounded bg-[#1E2027] mt-1" />
-    <div className="h-3 w-1/2 rounded bg-[#1E2027]" />
+  <div className="flex flex-col gap-2 p-2.5 bg-[#111318] rounded-xl border border-[#292A2D]">
+    <div className="shimmer-skeleton w-full aspect-[2/3] rounded-lg" />
+    <div className="shimmer-skeleton h-3.5 w-3/4 rounded mt-1" />
+    <div className="shimmer-skeleton h-3 w-1/2 rounded" />
   </div>
 );
 

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.seiamrbijoy.grimoiremanga',
-  appName: 'grimoire-manga',
+  appName: 'Kurso Scroll',
   webDir: 'dist',
   server: {
     url: 'https://grimoire-manga-1.onrender.com',

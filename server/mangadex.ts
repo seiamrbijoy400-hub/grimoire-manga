@@ -92,7 +92,7 @@ export async function getMangaDexTrending(offset: number = 0, limit: number = 32
 
     const res = await fetch(`${MANGADEX_BASE}/manga?${params.toString()}`, {
       headers: {
-        'User-Agent': 'KuroScroll-MangaPlatform/2026.1 (Termux/Linux)',
+        'User-Agent': 'KursoScroll-MangaPlatform/2026.2 (Termux/Linux)',
         'Accept': 'application/json'
       }
     });
@@ -125,7 +125,7 @@ export async function getMangaDexLatest(offset: number = 0, limit: number = 32, 
 
     const res = await fetch(`${MANGADEX_BASE}/manga?${params.toString()}`, {
       headers: {
-        'User-Agent': 'KuroScroll-MangaPlatform/2026.1 (Termux/Linux)',
+        'User-Agent': 'KursoScroll-MangaPlatform/2026.2 (Termux/Linux)',
         'Accept': 'application/json'
       }
     });
@@ -158,7 +158,7 @@ export async function searchMangaDex(query: string, offset: number = 0, limit: n
 
     const res = await fetch(`${MANGADEX_BASE}/manga?${params.toString()}`, {
       headers: {
-        'User-Agent': 'KuroScroll-MangaPlatform/2026.1 (Termux/Linux)',
+        'User-Agent': 'KursoScroll-MangaPlatform/2026.2 (Termux/Linux)',
         'Accept': 'application/json'
       }
     });
@@ -183,7 +183,7 @@ export async function getMangaDexDetails(rawId: string): Promise<MangaDexDetails
 
     const res = await fetch(`${MANGADEX_BASE}/manga/${rawId}?${params.toString()}`, {
       headers: {
-        'User-Agent': 'KuroScroll-MangaPlatform/2026.1 (Termux/Linux)',
+        'User-Agent': 'KursoScroll-MangaPlatform/2026.2 (Termux/Linux)',
         'Accept': 'application/json'
       }
     });
@@ -225,7 +225,7 @@ export async function getMangaDexChapters(rawId: string): Promise<MangaDexChapte
 
     let res = await fetch(`${MANGADEX_BASE}/manga/${rawId}/feed?${params.toString()}`, {
       headers: {
-        'User-Agent': 'KuroScroll-MangaPlatform/2026.1 (Termux/Linux)',
+        'User-Agent': 'KursoScroll-MangaPlatform/2026.2 (Termux/Linux)',
         'Accept': 'application/json'
       }
     });
@@ -241,7 +241,7 @@ export async function getMangaDexChapters(rawId: string): Promise<MangaDexChapte
       });
       res = await fetch(`${MANGADEX_BASE}/manga/${rawId}/feed?${allLangParams.toString()}`, {
         headers: {
-          'User-Agent': 'KuroScroll-MangaPlatform/2026.1 (Termux/Linux)',
+          'User-Agent': 'KursoScroll-MangaPlatform/2026.2 (Termux/Linux)',
           'Accept': 'application/json'
         }
       });
@@ -283,7 +283,7 @@ export async function getMangaDexChapterImages(rawChapterId: string): Promise<st
   try {
     const res = await fetch(`${MANGADEX_BASE}/at-home/server/${rawChapterId}`, {
       headers: {
-        'User-Agent': 'KuroScroll-MangaPlatform/2026.1 (Termux/Linux)',
+        'User-Agent': 'KursoScroll-MangaPlatform/2026.2 (Termux/Linux)',
         'Accept': 'application/json'
       }
     });

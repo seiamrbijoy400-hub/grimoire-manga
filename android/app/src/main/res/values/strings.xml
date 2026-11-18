@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">KUROSCROLL</string>
-    <string name="title_activity_main">KUROSCROLL</string>
+    <string name="app_name">Kurso Scroll</string>
+    <string name="title_activity_main">Kurso Scroll</string>
     <string name="package_name">com.seiamrbijoy.grimoiremanga</string>
     <string name="custom_url_scheme">com.seiamrbijoy.grimoiremanga</string>
 </resources>

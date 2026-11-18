@@ -1,7 +1,7 @@
 {
-  "name": "grimoire-manga",
+  "name": "kurso-scroll",
   "version": "1.0.0",
-  "description": "2026 Gen-Z Victorian Scroll Manga Reading Platform powered by WeebCentral",
+  "description": "2026 manga & manhwa reading platform \u2014 KURSO SCROLL",
   "type": "module",
   "scripts": {
     "dev:server": "tsx watch server/index.ts",

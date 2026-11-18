@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
 import { fetchChapterImages, fetchChapterList, getProxyImageUrl } from '../services/api.ts';
+import { BrandLoader } from './BrandLoader.tsx';
 import { ChapterItem, ReadingMode, VisualTheme, ImageFitMode, AudioAmbience } from '../types.ts';
 
 interface ChapterBlock {
@@ -203,38 +204,57 @@ export const ReaderView: React.FC = () => {
       setLoadingInitial(true);
       window.scrollTo({ top: 0 });
 
-      const [imgList, chList] = await Promise.all([
-        fetchChapterImages(activeChapterId!),
-        fetchChapterList(activeMangaId!),
-      ]);
+      // Record reading history as soon as a chapter opens, even if image fetch fails.
+      const initialTitle = activeChapterTitle || 'Chapter';
+      updateHistory({
+        mangaId: activeMangaId!,
+        mangaTitle: activeMangaTitle || 'Unknown Chronicle',
+        mangaCover: activeMangaCover || '',
+        chapterId: activeChapterId!,
+        chapterTitle: initialTitle,
+        pageIndex: 1,
+        totalImages: 0,
+      });
 
-      if (mounted) {
-        setChapters(chList);
-        const initialTitle =
-          chList.find((c) => c.id === activeChapterId)?.title || activeChapterTitle || 'Chapter';
-        setLoadedChapters([
-          {
-            chapterId: activeChapterId!,
-            chapterTitle: initialTitle,
-            images: imgList,
-          },
+      let imgList: string[] = [];
+      let chList: ChapterItem[] = [];
+      try {
+        [imgList, chList] = await Promise.all([
+          fetchChapterImages(activeChapterId!),
+          fetchChapterList(activeMangaId!),
         ]);
-        setCurrentDisplayTitle(initialTitle);
-        setCurrentPage(1);
-        setLoadingInitial(false);
-
-        // Update history & status
-        updateHistory({
-          mangaId: activeMangaId!,
-          mangaTitle: activeMangaTitle || 'Unknown Chronicle',
-          mangaCover: activeMangaCover || imgList[0] || '',
-          chapterId: activeChapterId!,
-          chapterTitle: initialTitle,
-          pageIndex: 1,
-          totalImages: imgList.length,
-        });
-        markChapterRead(activeChapterId!, true, 1);
+      } catch (err) {
+        console.error('Failed to load chapter:', err);
       }
+
+      if (!mounted) return;
+
+      const resolvedTitle =
+        chList.find((c) => c.id === activeChapterId)?.title || activeChapterTitle || 'Chapter';
+
+      setChapters(chList);
+      setLoadedChapters([
+        {
+          chapterId: activeChapterId!,
+          chapterTitle: resolvedTitle,
+          images: imgList,
+        },
+      ]);
+      setCurrentDisplayTitle(resolvedTitle);
+      setCurrentPage(1);
+      setLoadingInitial(false);
+
+      // Refine history now that we have real image count / title.
+      updateHistory({
+        mangaId: activeMangaId!,
+        mangaTitle: activeMangaTitle || 'Unknown Chronicle',
+        mangaCover: activeMangaCover || imgList[0] || '',
+        chapterId: activeChapterId!,
+        chapterTitle: resolvedTitle,
+        pageIndex: 1,
+        totalImages: imgList.length,
+      });
+      markChapterRead(activeChapterId!, true, 1);
     }
     load();
 
@@ -969,14 +989,15 @@ export const ReaderView: React.FC = () => {
         }}
       >
         {loadingInitial ? (
-          <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
-            <Loader2 className="w-8 h-8 text-solar-500 animate-spin" />
-            <p className="font-serif text-sm font-bold text-amber-200/90 tracking-wider">
-              Deciphering Ancient Panels...
-            </p>
-            <p className="text-xs text-slate-500 font-mono">
-              {isMangaDex ? 'MangaDex Safe Network Active' : 'KuroStream Engine Active'}
-            </p>
+          <div className="min-h-[70vh] flex flex-col items-center justify-center">
+            <div className="relative">
+              <div className="absolute -inset-10 rounded-full bg-[#C69A45]/10 blur-3xl animate-glow-pulse" />
+              <BrandLoader
+                size="lg"
+                label="Deciphering panels"
+                sublabel={isMangaDex ? 'MangaDex Safe Network active' : 'Kurso Scroll engine active'}
+              />
+            </div>
           </div>
         ) : (
           <>

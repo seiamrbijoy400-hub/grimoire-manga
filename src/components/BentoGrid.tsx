@@ -24,6 +24,7 @@ import { MangaItem, FilterState, BookmarkCategory } from '../types.ts';
 import { fetchAdvancedSearch, getProxyImageUrl } from '../services/api.ts';
 import { MangaCard } from './MangaCard.tsx';
 import { FilterDrawer, TYPE_OPTIONS } from './FilterDrawer.tsx';
+import { BrandLoader, SkeletonCard } from './BrandLoader.tsx';
 import { useStore } from '../store/useStore.ts';
 
 const FALLBACK_COVER = '/logo.png';
@@ -197,7 +198,7 @@ export const BentoGrid: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `kuroscroll-library-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `kurso-scroll-library-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -272,7 +273,8 @@ export const BentoGrid: React.FC = () => {
           <section className="space-y-8" aria-label="Discover Section">
             {/* Featured Editorial Hero */}
             {featured && !filters.query && (
-              <div className="relative rounded-2xl overflow-hidden bg-[#111318] border border-[#292A2D] shadow-2xl">
+              <div className="relative rounded-2xl overflow-hidden bg-[#111318] border border-[#C69A45]/20 shadow-[0_30px_90px_-45px_rgba(198,154,69,0.55)] animate-fade-in">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#C69A45]/70 to-transparent pointer-events-none z-20" />
                 {/* Ambient artistic backdrop */}
                 <div
                   className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-20 pointer-events-none"
@@ -286,7 +288,8 @@ export const BentoGrid: React.FC = () => {
                   {/* Left Editorial Copy */}
                   <div className="w-full md:w-3/5 space-y-4 text-left">
                     <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-[10px] font-mono uppercase tracking-widest text-[#C69A45] font-semibold">
+                      <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#C69A45]/30 text-[10px] font-mono uppercase tracking-widest text-[#C69A45] font-semibold flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#C69A45] animate-pulse" />
                         Editorial Feature • Vol. 2026
                       </span>
                       {(() => {
@@ -338,7 +341,7 @@ export const BentoGrid: React.FC = () => {
                   {/* Right Artwork Showcase */}
                   <div
                     onClick={() => openManga(featured.id, featured.title, featured.cover)}
-                    className="w-44 sm:w-56 md:w-64 aspect-[3/4] rounded-lg overflow-hidden shadow-2xl border border-[#292A2D] shrink-0 cursor-pointer hover:scale-102 transition-transform duration-300 bg-[#111318]"
+                    className="w-44 sm:w-56 md:w-64 aspect-[3/4] rounded-lg overflow-hidden shadow-2xl border border-[#C69A45]/25 shrink-0 cursor-pointer hover:scale-[1.03] transition-transform duration-500 bg-[#111318] animate-float-slow glow-gold"
                   >
                     <img
                       src={heroImageError ? FALLBACK_COVER : getProxyImageUrl(featured.cover)}
@@ -688,14 +691,15 @@ export const BentoGrid: React.FC = () => {
 
             {/* Archive Catalogue Grid */}
             {loadingInitial ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-                {Array.from({ length: 15 }).map((_, i) => (
-                  <div key={i} className="space-y-3 animate-pulse">
-                    <div className="aspect-[3/4] bg-[#111318] rounded-lg border border-[#292A2D]" />
-                    <div className="h-4 bg-[#111318] rounded w-3/4" />
-                    <div className="h-3 bg-[#111318] rounded w-1/2" />
-                  </div>
-                ))}
+              <div className="space-y-8">
+                <div className="flex justify-center pt-2">
+                  <BrandLoader size="sm" label="Unrolling the archive" sublabel="Fetching the newest folios" />
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                  {Array.from({ length: 15 }).map((_, i) => (
+                    <SkeletonCard key={i} />
+                  ))}
+                </div>
               </div>
             ) : items.length === 0 ? (
               <div className="text-center py-16 space-y-4 rounded-xl bg-[#111318] border border-[#292A2D]">
@@ -790,12 +794,13 @@ export const BentoGrid: React.FC = () => {
           {/* Shelves Selector & Search */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-              {(['all', 'reading', 'completed', 'on-hold', 'plan-to-read'] as const).map((cat) => {
+              {(['all', 'reading', 'plan', 'completed', 'favorites'] as const).map((cat) => {
                 const count =
                   cat === 'all'
                     ? bookmarks.length
                     : bookmarks.filter((b) => b.category === cat).length;
                 const isSelected = selectedShelf === cat;
+                const label = cat === 'all' ? 'All' : cat === 'plan' ? 'Plan to Read' : cat;
                 return (
                   <button
                     key={cat}
@@ -806,7 +811,7 @@ export const BentoGrid: React.FC = () => {
                         : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
                     }`}
                   >
-                    <span>{cat.replace('-', ' ')}</span>
+                    <span>{label}</span>
                     <span className="text-[10px] font-mono opacity-70">({count})</span>
                   </button>
                 );
@@ -849,7 +854,7 @@ export const BentoGrid: React.FC = () => {
                   manga={{
                     id: b.id,
                     title: b.title,
-                    cover: b.coverImage,
+                    cover: b.cover,
                     source: b.source,
                   }}
                 />

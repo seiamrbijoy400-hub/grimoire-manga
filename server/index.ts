@@ -38,7 +38,7 @@ app.use('*', cors());
 // Health & Metadata check
 app.get('/api/health', (c) => c.json({
   status: 'ok',
-  service: 'KuroScroll Neo-Archive Manga Platform',
+  service: 'KURSO SCROLL Manga Platform',
   version: '2026.2.1',
   engines: ['WeebCentral', 'MangaDex Safe Vault'],
   weebTransport: getPreferredTransport() ?? 'unknown'
@@ -326,7 +326,7 @@ app.get('/api/proxy/image', async (c) => {
 
     const headers: Record<string, string> = isMangaDex
       ? {
-          'User-Agent': 'KuroScroll-Proxy/2026.1 (Linux; Android; Termux)',
+          'User-Agent': 'KursoScroll-Proxy/2026.2 (Linux; Android; Termux)',
           'Referer': 'https://mangadex.org/',
           'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
         }
@@ -397,12 +397,12 @@ app.get('*', (c) => {
   } catch (e) {
     console.error('Failed to read dist/index.html:', e);
   }
-  return c.text('KuroScroll API is live. Build client with pnpm build.', 200);
+  return c.text('KURSO SCROLL API is live. Build client with pnpm build.', 200);
 });
 
 // Dynamic Port for Local Termux, Render, Railway, Docker
 const PORT = Number(process.env.PORT) || 3001;
-console.log(`⚡ KuroScroll Neo-Archive Unified Server running on port ${PORT}`);
+console.log(`⚡ KURSO SCROLL Unified Server running on port ${PORT}`);
 
 serve({
   fetch: app.fetch,

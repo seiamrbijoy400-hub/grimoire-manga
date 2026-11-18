@@ -1,6 +1,6 @@
-# ⚡ KuroScroll // Neo-Archive
-> **2026 Future-Tech Dual-Engine Manga Platform**  
-> Powered by WeebCentral Scraper Engine • Optimized for Mobile & Desktop on Termux
+# ⚡ KURSO SCROLL // Neo-Archive
+> **2026 Manga Platform for the Scroll Generation**  
+> Dual-engine reader • WeebCentral + MangaDex • Optimized for Mobile & Desktop on Termux
 
 ---
 
