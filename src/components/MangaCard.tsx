@@ -5,7 +5,7 @@ import { useStore } from '../store/useStore.ts';
 import { getProxyImageUrl } from '../services/api.ts';
 
 // Editorial Archival SVG Placeholder for failed images
-const FALLBACK_COVER = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400" fill="%23111318"><rect width="300" height="400" fill="%23111318"/><rect x="15" y="15" width="270" height="370" fill="none" stroke="%23292A2D" stroke-width="1.5"/><line x1="25" y1="25" x2="275" y2="25" stroke="%23C69A45" stroke-width="0.5" stroke-opacity="0.4"/><text x="150" y="195" font-family="serif" font-size="28" font-weight="bold" fill="%23C69A45" text-anchor="middle">KURO</text><text x="150" y="225" font-family="sans-serif" font-size="10" font-weight="bold" fill="%23AAA69D" letter-spacing="4" text-anchor="middle">ARCHIVE</text></svg>`;
+const FALLBACK_COVER = '/logo.png';
 
 interface MangaCardProps {
   manga: MangaItem;

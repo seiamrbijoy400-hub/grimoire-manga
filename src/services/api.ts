@@ -1,6 +1,6 @@
 import { MangaItem, MangaDetails, ChapterItem, FilterState, MangaSource } from '../types.ts';
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
 export async function fetchTrending(offset: number = 0, type?: string, source: MangaSource = 'all'): Promise<MangaItem[]> {
   try {

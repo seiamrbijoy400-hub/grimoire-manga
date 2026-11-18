@@ -29,9 +29,13 @@ export const Navbar: React.FC = () => {
             }}
             className="flex items-center gap-3 cursor-pointer group select-none"
           >
-            {/* Literary Archival Monogram */}
-            <div className="w-8 h-8 rounded-md bg-[#111318] border border-[#292A2D] flex items-center justify-center group-hover:border-[#C69A45]/60 transition-colors shadow-sm">
-              <span className="font-serif text-sm font-bold text-[#C69A45]">K</span>
+            {/* KuroScroll Official Brand Emblem */}
+            <div className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center shrink-0">
+              <img
+                src="/logo.png"
+                alt="KUROSCROLL"
+                className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(200,30,30,0.3)] group-hover:scale-110 group-hover:drop-shadow-[0_0_16px_rgba(198,154,69,0.5)] transition-all duration-300"
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">

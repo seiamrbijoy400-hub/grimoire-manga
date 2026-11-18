@@ -28,18 +28,25 @@ export const App: React.FC = () => {
       {currentView === 'home' && (
         <footer className="border-t border-[#292A2D] bg-[#090A0C] py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="space-y-1 text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-2.5">
-                <span className="font-serif text-base font-bold tracking-wider text-[#F0E9DC]">
-                  KURO<span className="text-[#C69A45]">SCROLL</span>
-                </span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#191A1F] text-[#AAA69D] border border-[#292A2D] font-mono">
-                  Archive Ed. 2026
-                </span>
+            <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+              <img
+                src="/logo.png"
+                alt="KUROSCROLL"
+                className="w-14 h-14 object-contain shrink-0 drop-shadow-[0_0_16px_rgba(200,30,30,0.4)]"
+              />
+              <div className="space-y-1">
+                <div className="flex items-center justify-center sm:justify-start gap-2.5">
+                  <span className="font-serif text-base font-bold tracking-wider text-[#F0E9DC]">
+                    KURO<span className="text-[#C69A45]">SCROLL</span>
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#191A1F] text-[#AAA69D] border border-[#292A2D] font-mono">
+                    Archive Ed. 2026
+                  </span>
+                </div>
+                <p className="text-xs text-[#AAA69D] max-w-md leading-relaxed">
+                  A curated digital archive dedicated to the appreciation and preservation of graphic storytelling from Japan, Korea, China, and across the globe.
+                </p>
               </div>
-              <p className="text-xs text-[#AAA69D] max-w-md leading-relaxed">
-                A curated digital archive dedicated to the appreciation and preservation of graphic storytelling from Japan, Korea, China, and across the globe.
-              </p>
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-[#AAA69D]">

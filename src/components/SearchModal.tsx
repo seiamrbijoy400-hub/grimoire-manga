@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore.ts';
 import { searchMangaApi, getProxyImageUrl } from '../services/api.ts';
 import { MangaItem } from '../types.ts';
 
-const FALLBACK_COVER = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400" fill="%23111318"><rect width="300" height="400" fill="%23111318"/><rect x="15" y="15" width="270" height="370" fill="none" stroke="%23292A2D" stroke-width="1.5"/><text x="150" y="195" font-family="serif" font-size="28" font-weight="bold" fill="%23C69A45" text-anchor="middle">KURO</text><text x="150" y="225" font-family="sans-serif" font-size="10" font-weight="bold" fill="%23AAA69D" letter-spacing="4" text-anchor="middle">ARCHIVE</text></svg>`;
+const FALLBACK_COVER = '/logo.png';
 
 const POPULAR_SEARCHES = [
   'Solo Leveling',
@@ -77,7 +77,7 @@ export const SearchModal: React.FC = () => {
 
     const timer = setTimeout(async () => {
       setLoading(true);
-      const items = await searchMangaApi(query.trim(), true);
+      const items = await searchMangaApi(query.trim(), false);
       setResults(items);
       setSelectedIndex(-1);
       setLoading(false);
@@ -99,6 +99,7 @@ export const SearchModal: React.FC = () => {
       >
         {/* Header Input */}
         <div className="flex items-center px-4 py-3.5 border-b border-[#292A2D] gap-3 bg-[#090A0C]/90">
+          <img src="/logo.png" alt="KUROSCROLL" className="w-5 h-5 object-contain shrink-0" />
           <Search className="w-4 h-4 text-[#C69A45] shrink-0" />
           <input
             ref={inputRef}
