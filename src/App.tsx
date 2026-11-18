@@ -9,7 +9,7 @@ import { SearchPage } from './pages/SearchPage.tsx';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { IntroSplash } from './components/IntroSplash.tsx';
 import { ScrollProgress } from './components/ScrollProgress.tsx';
-import { BrandMark, WordMark } from './components/BrandMark.tsx';
+import { BrandLogo, WordMark } from './components/BrandMark.tsx';
 
 const INTRO_KEY = 'kurso:intro-seen';
 
@@ -115,9 +115,7 @@ const AppContent: React.FC = () => {
 
                     <div className="relative max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
                       <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-                        <div className="w-14 h-14 rounded-2xl bg-[#0C0E13] border border-[#C69A45]/25 flex items-center justify-center shrink-0 shadow-[0_0_30px_-10px_rgba(198,154,69,0.5)]">
-                          <BrandMark bare className="w-8 h-8" />
-                        </div>
+                        <BrandLogo className="w-16 h-16 sm:w-[68px] sm:h-[68px] shrink-0" glow />
                         <div className="space-y-1.5">
                           <WordMark size="text-base" showEdition />
                           <p className="text-xs text-[#AAA69D] max-w-md leading-relaxed">

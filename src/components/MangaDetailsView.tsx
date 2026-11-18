@@ -26,6 +26,12 @@ const FALLBACK_COVER = '/logo.png';
 
 const LANGUAGE_META: Record<string, { label: string; flag: string }> = {
   en: { label: 'English', flag: '🇬🇧' },
+  bn: { label: 'বাংলা (Bangla)', flag: '🇧🇩' },
+  banglish: { label: 'Banglish', flag: '🇧🇩' },
+  hi: { label: 'हिन्दी (Hindi)', flag: '🇮🇳' },
+  hinglish: { label: 'Hinglish', flag: '🇮🇳' },
+  ur: { label: 'اردو (Urdu)', flag: '🇵🇰' },
+  urdlish: { label: 'Urdlish', flag: '🇵🇰' },
   es: { label: 'Español', flag: '🇪🇸' },
   'es-la': { label: 'Español (Latam)', flag: '🇲🇽' },
   'pt-br': { label: 'Português', flag: '🇧🇷' },
@@ -39,7 +45,6 @@ const LANGUAGE_META: Record<string, { label: string; flag: string }> = {
   it: { label: 'Italiano', flag: '🇮🇹' },
   ru: { label: 'Русский', flag: '🇷🇺' },
   ar: { label: 'العربية', flag: '🇸🇦' },
-  hi: { label: 'हिन्दी', flag: '🇮🇳' },
   he: { label: 'עברית', flag: '🇮🇱' },
   ka: { label: 'ქართული', flag: '🇬🇪' },
   ms: { label: 'Melayu', flag: '🇲🇾' },

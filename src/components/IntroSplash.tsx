@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BrandMark } from './BrandMark.tsx';
+import { BrandLogo } from './BrandMark.tsx';
 
 interface IntroSplashProps {
   onDone: () => void;
@@ -111,12 +111,13 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onDone }) => {
 
       <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-6">
         {/* Emblem with orbiting ring */}
-        <div className="relative mb-8 animate-pop" style={{ animationDelay: '80ms' }}>
-          <div className="absolute -inset-6 rounded-full brand-ring animate-spin-slow opacity-60" />
-          <div className="absolute -inset-1 rounded-full bg-[#C69A45]/20 blur-2xl animate-glow-pulse" />
-          <div className="relative w-[88px] h-[88px] sm:w-24 sm:h-24 rounded-[26px] bg-[#0C0E13] border border-[#C69A45]/30 flex items-center justify-center shadow-[0_0_60px_-12px_rgba(198,154,69,0.6)]">
-            <BrandMark bare className="w-14 h-14 sm:w-16 sm:h-16" glow />
-          </div>
+        <div className="relative mb-5 animate-pop" style={{ animationDelay: '80ms' }}>
+          <div className="absolute -inset-8 sm:-inset-10 rounded-full brand-ring animate-spin-slow opacity-40" />
+          <div className="absolute inset-1 rounded-full bg-[#C62828]/30 blur-3xl animate-glow-pulse" />
+          <BrandLogo
+            className="relative w-[136px] h-[136px] sm:w-[168px] sm:h-[168px]"
+            glow
+          />
         </div>
 
         {/* Words */}

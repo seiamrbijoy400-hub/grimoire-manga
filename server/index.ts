@@ -88,7 +88,16 @@ app.get('/api/search', async (c) => {
   const includedTagsParam = c.req.queries('tag') || c.req.queries('included_tag') || [];
   const excludedTagsParam = c.req.queries('excluded_tag') || [];
   const countryParam = c.req.query('country') || undefined;
-  const langParam = c.req.query('lang') || undefined;
+  // Romanised edition labels are matched to their script language upstream.
+  const LANG_ALIASES: Record<string, string> = {
+    banglish: 'bn',
+    hinglish: 'hi',
+    urdlish: 'ur',
+  };
+  const rawLang = c.req.query('lang') || undefined;
+  const langParam = rawLang
+    ? LANG_ALIASES[rawLang.toLowerCase()] || rawLang.toLowerCase()
+    : undefined;
 
   const mdFilterOptions = {
     country: countryParam,

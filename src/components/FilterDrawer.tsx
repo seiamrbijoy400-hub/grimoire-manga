@@ -25,7 +25,7 @@ interface FilterDrawerProps {
 }
 
 export const ALL_TAGS = [
-  "Action", "Adult", "Adventure", "Comedy", "Doujinshi", "Drama", "Ecchi",
+  "Action", "Adventure", "Comedy", "Doujinshi", "Drama", "Ecchi",
   "Fantasy", "Gender Bender", "Harem", "Historical", "Horror",
   "Isekai", "Josei", "Martial Arts", "Mature", "Mecha",
   "Mystery", "Psychological", "Romance", "School Life", "Sci-fi",
@@ -48,14 +48,20 @@ export const COUNTRY_OPTIONS = [
 ];
 
 export const LANGUAGE_OPTIONS = [
-  { id: 'en', label: 'English', flag: '🇬🇧' },
-  { id: 'es', label: 'Español', flag: '🇪🇸' },
-  { id: 'pt-br', label: 'Português', flag: '🇧🇷' },
-  { id: 'fr', label: 'Français', flag: '🇫🇷' },
-  { id: 'id', label: 'Indonesia', flag: '🇮🇩' },
-  { id: 'ja', label: '日本語', flag: '🇯🇵' },
-  { id: 'ko', label: '한국어', flag: '🇰🇷' },
-  { id: 'zh', label: '中文', flag: '🇨🇳' },
+  { id: 'en', label: 'English', short: 'EN', flag: '🇬🇧' },
+  { id: 'bn', label: 'বাংলা (Bangla)', short: 'বাংলা', flag: '🇧🇩' },
+  { id: 'banglish', label: 'Banglish (Bangla romanised)', short: 'Banglish', flag: '🇧🇩' },
+  { id: 'hi', label: 'हिन्दी (Hindi)', short: 'हिन्दी', flag: '🇮🇳' },
+  { id: 'hinglish', label: 'Hinglish (Hindi romanised)', short: 'Hinglish', flag: '🇮🇳' },
+  { id: 'ur', label: 'اردو (Urdu)', short: 'اردو', flag: '🇵🇰' },
+  { id: 'urdlish', label: 'Urdlish (Urdu romanised)', short: 'Urdlish', flag: '🇵🇰' },
+  { id: 'es', label: 'Español', short: 'ES', flag: '🇪🇸' },
+  { id: 'pt-br', label: 'Português', short: 'PT-BR', flag: '🇧🇷' },
+  { id: 'fr', label: 'Français', short: 'FR', flag: '🇫🇷' },
+  { id: 'id', label: 'Indonesia', short: 'ID', flag: '🇮🇩' },
+  { id: 'ja', label: '日本語', short: '日本語', flag: '🇯🇵' },
+  { id: 'ko', label: '한국어', short: '한국어', flag: '🇰🇷' },
+  { id: 'zh', label: '中文', short: '中文', flag: '🇨🇳' },
 ];
 
 export const STATUS_OPTIONS = [
@@ -348,7 +354,7 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
                   }`}
                 >
                   <span className="text-xs">{l.flag}</span>
-                  <span className="text-xs font-mono font-medium truncate">{l.id.toUpperCase()}</span>
+                  <span className="text-xs font-mono font-medium truncate">{l.short}</span>
                 </button>
               ))}
             </div>

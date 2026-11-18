@@ -57,12 +57,15 @@ pnpm run dev
 - Backend API Proxy: `http://localhost:3001`
 
 ### Brand assets
-The app icon / favicon / `logo.png` set is generated from code (no external
-tooling required):
+All icons, favicons and `logo.png` are derived from the single artwork in
+`assets/brand-logo-source.png` by a dependency-free builder:
 
 ```bash
 node scripts/generate-icons.mjs
 ```
+
+It outputs `logo.png` (384px transparent), `logo-96.png` (navbar), the PWA
+icons, Apple touch icon and favicons into `public/`.
 
 ---
 

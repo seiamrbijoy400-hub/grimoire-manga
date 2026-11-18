@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore.ts';
 import { searchMangaApi, getProxyImageUrl } from '../services/api.ts';
 import { MangaItem } from '../types.ts';
-import { BrandMark } from './BrandMark.tsx';
+import { BrandLogo } from './BrandMark.tsx';
 
 export const FALLBACK_COVER = '/logo.png';
 
@@ -129,7 +129,7 @@ export const SearchModal: React.FC = () => {
           onSubmit={handleFormSubmit}
           className="flex items-center px-4 py-3.5 border-b border-[#292A2D] gap-3 bg-[#090A0C]/90"
         >
-          <BrandMark bare className="w-5 h-5 shrink-0" />
+          <BrandLogo compact decorative className="w-6 h-6 shrink-0" />
           <Search className="w-4 h-4 text-[#C69A45] shrink-0" />
           <input
             ref={inputRef}

@@ -2,7 +2,10 @@ import React from 'react';
 
 /**
  * KURSO SCROLL brand system.
- * Pure vector so it stays crisp on every screen density and needs no assets.
+ *
+ * - BrandLogo  → the illustrated artwork (public/logo.png + 96px compact copy)
+ * - BrandMark  → tiny vector glyph, stays crisp inside loaders/badges
+ * - WordMark   → typeset name used where the artwork is too detailed
  */
 
 interface BrandMarkProps {
@@ -131,5 +134,40 @@ export const WordMark: React.FC<WordMarkProps> = ({
         </span>
       )}
     </div>
+  );
+};
+
+interface BrandLogoProps {
+  className?: string;
+  /** Soft halo behind the artwork. */
+  glow?: boolean;
+  /** Use the 96px file for small spots (navbar, search field). */
+  compact?: boolean;
+  /** Set false for decorative duplicates. */
+  decorative?: boolean;
+}
+
+/**
+ * Illustrated Kurso Scroll emblem. Renders the shipped artwork so the
+ * character, pagoda and wordmark all stay intact at large sizes.
+ */
+export const BrandLogo: React.FC<BrandLogoProps> = ({
+  className = 'w-10 h-10',
+  glow = false,
+  compact = false,
+  decorative = false,
+}) => {
+  return (
+    <img
+      src={compact ? '/logo-96.png' : '/logo.png'}
+      alt={decorative ? '' : 'Kurso Scroll'}
+      aria-hidden={decorative || undefined}
+      draggable={false}
+      width={compact ? 96 : 384}
+      height={compact ? 96 : 384}
+      className={`object-contain select-none ${
+        glow ? 'drop-shadow-[0_6px_22px_rgba(190,32,56,0.45)]' : ''
+      } ${className}`}
+    />
   );
 };

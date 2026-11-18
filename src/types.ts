@@ -80,7 +80,7 @@ export interface FilterState {
   selectedSource: MangaSource; // 'all' | 'weebcentral' | 'mangadex'
   selectedType: string | null; // null = All, 'Manga' | 'Manhwa' | 'Manhua' | 'OEL'
   selectedCountry?: string | null; // null = All, 'JP' | 'KR' | 'CN' | 'GLOBAL'
-  selectedLanguage?: string | null; // null = All, 'en' | 'es' | 'pt-br' | 'fr' | 'id' | 'ja' | 'ko' | 'zh'
+  selectedLanguage?: string | null; // null = All, 'en' | 'bn' | 'hi' | 'ur' | 'banglish' | 'hinglish' | 'urdlish' | 'es' | …
   selectedStatus: string | null; // null = All, 'Ongoing' | 'Complete' | 'Hiatus'
   includedTags: string[];
   excludedTags: string[];

@@ -55,7 +55,7 @@ export interface AdvancedSearchFilter {
 }
 
 export const ALL_AVAILABLE_TAGS = [
-  "Action", "Adult", "Adventure", "Comedy", "Doujinshi", "Drama", "Ecchi",
+  "Action", "Adventure", "Comedy", "Doujinshi", "Drama", "Ecchi",
   "Fantasy", "Gender Bender", "Harem", "Hentai", "Historical", "Horror",
   "Isekai", "Josei", "Lolicon", "Martial Arts", "Mature", "Mecha",
   "Mystery", "Psychological", "Romance", "School Life", "Sci-fi",

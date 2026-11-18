@@ -2,7 +2,7 @@ import React from 'react';
 import { BookOpen, Search, Bookmark, History, ChevronLeft, Compass, SlidersHorizontal } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore.ts';
-import { BrandMark, WordMark } from './BrandMark.tsx';
+import { BrandLogo, WordMark } from './BrandMark.tsx';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -37,12 +37,12 @@ export const Navbar: React.FC = () => {
             }}
             className="flex items-center gap-3 cursor-pointer group select-none"
           >
-            {/* Kurso Scroll brand emblem */}
-            <div className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center shrink-0">
-              <div className="absolute inset-0 rounded-[13px] bg-[#C69A45]/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <BrandMark
+            {/* Kurso Scroll illustrated emblem */}
+            <div className="relative w-10 h-10 sm:w-[42px] sm:h-[42px] flex items-center justify-center shrink-0">
+              <div className="absolute inset-0 rounded-full bg-[#C62828]/25 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <BrandLogo
+                compact
                 className="relative w-full h-full origin-center transition-transform duration-500 group-hover:scale-[1.08] group-hover:-rotate-3"
-                glow
               />
             </div>
             <div>
