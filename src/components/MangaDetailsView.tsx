@@ -397,57 +397,67 @@ export const MangaDetailsView: React.FC = () => {
               </div>
             </div>
 
-            {/* Language Selector Bar (Human-Created Multilingual Control) */}
-            {languageKeys.length > 1 && (
-              <div className="p-3 rounded-2xl bg-void-900 border border-void-750 space-y-2">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="text-slate-300 font-bold flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-solar-400" />
-                    <span>Translation Editions ({languageKeys.length} Available)</span>
+            {/* Language Selector Bar — always shown when chapters are available */}
+            {languageKeys.length >= 1 && (
+              <div className="p-3 rounded-xl bg-[#111318] border border-[#292A2D] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-sans font-semibold text-[#F0E9DC] flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-[#C69A45]" />
+                    <span>Translation Editions</span>
+                    <span className="ml-1 px-1.5 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-[10px] font-mono text-[#AAA69D]">
+                      {languageKeys.length} language{languageKeys.length !== 1 ? 's' : ''}
+                    </span>
                   </span>
-                  <span className="text-slate-400 text-[11px]">
-                    Active: <strong className="text-solar-400">{selectedLanguage === 'all' ? 'All Editions' : LANGUAGE_META[selectedLanguage]?.label || selectedLanguage.toUpperCase()}</strong>
+                  <span className="text-[11px] font-sans text-[#AAA69D]">
+                    Showing: <strong className="text-[#C69A45]">
+                      {selectedLanguage === 'all'
+                        ? 'All Editions'
+                        : LANGUAGE_META[selectedLanguage]?.label || selectedLanguage.toUpperCase()}
+                    </strong>
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                  <button
-                    onClick={() => setSelectedLanguage('all')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-mono shrink-0 transition-all flex items-center gap-1.5 ${
-                      selectedLanguage === 'all'
-                        ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
-                        : 'bg-void-950 text-slate-400 hover:text-slate-200 border border-void-750'
-                    }`}
-                  >
-                    <span>🌐</span>
-                    <span>All</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${selectedLanguage === 'all' ? 'bg-void-950/30 text-void-950 font-bold' : 'bg-void-900 text-slate-400'}`}>
-                      {chapters.length}
-                    </span>
-                  </button>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar flex-wrap">
+                  {/* "All" pill only shown when there are multiple languages */}
+                  {languageKeys.length > 1 && (
+                    <button
+                      onClick={() => setSelectedLanguage('all')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-sans shrink-0 transition-all flex items-center gap-1.5 ${
+                        selectedLanguage === 'all'
+                          ? 'bg-[#C69A45] text-[#090A0C] font-semibold shadow-md'
+                          : 'bg-[#191A1F] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
+                      }`}
+                    >
+                      <span>🌐</span>
+                      <span>All</span>
+                      <span className={`text-[10px] font-mono px-1.5 rounded-full ${
+                        selectedLanguage === 'all' ? 'bg-[#090A0C]/30 text-[#090A0C] font-bold' : 'bg-[#111318] text-[#AAA69D]'
+                      }`}>
+                        {chapters.length}
+                      </span>
+                    </button>
+                  )}
 
                   {languageKeys.map((lang) => {
                     const meta = LANGUAGE_META[lang] || { label: lang.toUpperCase(), flag: '🌐' };
                     const count = availableLanguages[lang];
-                    const isSelected = selectedLanguage === lang;
+                    const isSelected = selectedLanguage === lang || (languageKeys.length === 1 && selectedLanguage === 'all');
 
                     return (
                       <button
                         key={lang}
                         onClick={() => setSelectedLanguage(lang)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-mono shrink-0 flex items-center gap-1.5 transition-all ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-sans shrink-0 flex items-center gap-1.5 transition-all ${
                           isSelected
-                            ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
-                            : 'bg-void-950 text-slate-300 hover:text-solar-400 border border-void-750'
+                            ? 'bg-[#C69A45] text-[#090A0C] font-semibold shadow-md'
+                            : 'bg-[#191A1F] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
                         }`}
                       >
                         <span>{meta.flag}</span>
                         <span>{meta.label}</span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                            isSelected ? 'bg-void-950/30 text-void-950 font-bold' : 'bg-void-900 text-slate-400'
-                          }`}
-                        >
+                        <span className={`text-[10px] font-mono px-1.5 rounded-full ${
+                          isSelected ? 'bg-[#090A0C]/30 text-[#090A0C] font-bold' : 'bg-[#111318] text-[#AAA69D]'
+                        }`}>
                           {count}
                         </span>
                       </button>
