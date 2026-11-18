@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, X, Loader2, Sparkles, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore.ts';
 import { searchMangaApi, getProxyImageUrl } from '../services/api.ts';
 import { MangaItem } from '../types.ts';
 
-const FALLBACK_COVER = '/logo.png';
+export const FALLBACK_COVER = '/logo.png';
 
 const POPULAR_SEARCHES = [
   'Solo Leveling',
@@ -19,6 +20,7 @@ const POPULAR_SEARCHES = [
 
 export const SearchModal: React.FC = () => {
   const { searchOpen, setSearchOpen, openManga } = useStore();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MangaItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
@@ -47,25 +49,37 @@ export const SearchModal: React.FC = () => {
         setSearchOpen(false);
       }
 
-      if (searchOpen && results.length > 0) {
-        if (e.key === 'ArrowDown') {
+      if (searchOpen) {
+        if (results.length > 0) {
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedIndex >= 0 && results[selectedIndex]) {
+              const target = results[selectedIndex];
+              setSearchOpen(false);
+              openManga(target.id, target.title, target.cover);
+            } else if (query.trim()) {
+              setSearchOpen(false);
+              navigate(`/search?q=${encodeURIComponent(query)}`);
+            }
+          }
+        } else if (e.key === 'Enter' && query.trim()) {
           e.preventDefault();
-          setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
-        } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
-        } else if (e.key === 'Enter' && selectedIndex >= 0 && results[selectedIndex]) {
-          e.preventDefault();
-          const target = results[selectedIndex];
           setSearchOpen(false);
-          openManga(target.id, target.title, target.cover);
+          navigate(`/search?q=${encodeURIComponent(query)}`);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [searchOpen, setSearchOpen, results, selectedIndex, openManga]);
+  }, [searchOpen, setSearchOpen, results, selectedIndex, openManga, query, navigate]);
+
 
   // Live debounced search
   useEffect(() => {

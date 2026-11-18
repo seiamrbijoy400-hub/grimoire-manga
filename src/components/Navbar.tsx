@@ -1,5 +1,6 @@
 import React from 'react';
 import { BookOpen, Search, Bookmark, History, ChevronLeft, Compass, SlidersHorizontal } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore.ts';
 
 export const Navbar: React.FC = () => {
