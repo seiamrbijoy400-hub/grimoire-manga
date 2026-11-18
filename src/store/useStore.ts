@@ -96,14 +96,14 @@ export const useStore = create<AppState>()(
         currentView: 'details',
         activeMangaId: mangaId,
         activeMangaTitle: mangaTitle || state.bookmarks.find((b) => b.id === mangaId)?.title || state.history[mangaId]?.mangaTitle || state.activeMangaTitle,
-        activeMangaCover: mangaCover || state.bookmarks.find((b) => b.id === mangaId)?.coverImage || state.history[mangaId]?.mangaCover || state.activeMangaCover,
+        activeMangaCover: mangaCover || state.bookmarks.find((b) => b.id === mangaId)?.cover || state.history[mangaId]?.mangaCover || state.activeMangaCover,
       })),
 
       openChapter: (mangaId, chapterId, chapterTitle, mangaTitle, mangaCover) => set((state) => ({
         currentView: 'reader',
         activeMangaId: mangaId,
         activeMangaTitle: mangaTitle || state.activeMangaTitle || state.bookmarks.find((b) => b.id === mangaId)?.title || state.history[mangaId]?.mangaTitle,
-        activeMangaCover: mangaCover || state.activeMangaCover || state.bookmarks.find((b) => b.id === mangaId)?.coverImage || state.history[mangaId]?.mangaCover,
+        activeMangaCover: mangaCover || state.activeMangaCover || state.bookmarks.find((b) => b.id === mangaId)?.cover || state.history[mangaId]?.mangaCover,
         activeChapterId: chapterId,
         activeChapterTitle: chapterTitle
       })),
@@ -259,6 +259,23 @@ export const useStore = create<AppState>()(
         readStatus: state.readStatus,
         readerSettings: state.readerSettings,
       }),
+      // Older saves predate newer reader fields (audioAmbience, scroll3D…).
+      // Deep-merge them over the defaults so returning readers never get
+      // undefined settings that blank the reader UI.
+      merge: (persisted, current) => {
+        const saved = (persisted || {}) as Record<string, any>;
+        return {
+          ...current,
+          ...saved,
+          bookmarks: saved.bookmarks ?? current.bookmarks,
+          history: saved.history ?? current.history,
+          readStatus: saved.readStatus ?? current.readStatus,
+          readerSettings: {
+            ...current.readerSettings,
+            ...(saved.readerSettings || {}),
+          },
+        };
+      },
     }
   )
 );

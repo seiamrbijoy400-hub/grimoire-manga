@@ -28,12 +28,38 @@ import {
   Radio,
   ShieldCheck,
   Zap,
-  Box
+  Box,
+  CloudRain,
+  Music,
+  Gauge,
 } from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
 import { fetchChapterImages, fetchChapterList, getProxyImageUrl } from '../services/api.ts';
 import { BrandLoader } from './BrandLoader.tsx';
 import { ChapterItem, ReadingMode, VisualTheme, ImageFitMode, AudioAmbience } from '../types.ts';
+
+const DockButton: React.FC<{
+  active?: boolean;
+  icon: React.ReactNode;
+  label: string;
+  title: string;
+  onClick: () => void;
+}> = ({ active = false, icon, label, title, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    title={title}
+    aria-pressed={active}
+    className={`shrink-0 flex flex-col items-center justify-center gap-0.5 min-w-[46px] px-2 py-1.5 rounded-xl border transition-all ${
+      active
+        ? 'bg-[#C69A45] text-[#090A0C] border-[#C69A45] shadow-[0_0_16px_-4px_rgba(198,154,69,0.7)]'
+        : 'bg-[#111318] border-[#292A2D] text-[#AAA69D] hover:text-[#F0E9DC] hover:border-[#C69A45]/45'
+    }`}
+  >
+    {icon}
+    <span className="text-[9px] font-mono uppercase tracking-[0.08em] leading-none">{label}</span>
+  </button>
+);
 
 interface ChapterBlock {
   chapterId: string;
@@ -602,75 +628,6 @@ export const ReaderView: React.FC = () => {
 
           {/* Right: Controls & Ambience */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Audio Ambience Synthesizer Pill */}
-            <button
-              onClick={() => {
-                const nextMode: AudioAmbience =
-                  readerSettings.audioAmbience === 'off'
-                    ? 'rain'
-                    : readerSettings.audioAmbience === 'rain'
-                    ? 'lofi'
-                    : readerSettings.audioAmbience === 'lofi'
-                    ? 'void'
-                    : 'off';
-                updateReaderSettings({ audioAmbience: nextMode });
-              }}
-              className={`px-2.5 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-1.5 transition-all ${
-                readerSettings.audioAmbience !== 'off'
-                  ? 'bg-solar-500/20 text-solar-400 border-solar-500/60 shadow-sm'
-                  : 'bg-void-900 border-void-750 text-slate-400 hover:text-slate-200'
-              }`}
-              title={`Audio Ambience: ${readerSettings.audioAmbience.toUpperCase()}`}
-            >
-              {readerSettings.audioAmbience !== 'off' ? (
-                <div className="flex items-center gap-1">
-                  <Volume2 className="w-3.5 h-3.5 text-solar-400" />
-                  <span className="hidden sm:inline font-bold uppercase text-[10px]">
-                    {readerSettings.audioAmbience === 'rain' ? '🌧️ Rain' : readerSettings.audioAmbience === 'lofi' ? '☕ Lo-Fi' : '🌌 Void'}
-                  </span>
-                  <div className="flex items-center gap-0.5 ml-1">
-                    <span className="w-0.5 h-2 bg-solar-400 animate-pulse" />
-                    <span className="w-0.5 h-3 bg-solar-400 animate-pulse delay-75" />
-                    <span className="w-0.5 h-1.5 bg-solar-400 animate-pulse delay-150" />
-                  </div>
-                </div>
-              ) : (
-                <VolumeX className="w-3.5 h-3.5" />
-              )}
-            </button>
-
-            {/* Continuous Mode: 3D Holo-Scroll Toggle (Direct HUD Access) */}
-            {readerSettings.readingMode === 'vertical' && (
-              <button
-                onClick={() => updateReaderSettings({ scroll3D: !readerSettings.scroll3D })}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition-all ${
-                  readerSettings.scroll3D
-                    ? 'bg-[#C69A45] text-[#090A0C] border-[#C69A45] shadow-md shadow-[#C69A45]/20 font-bold'
-                    : 'bg-[#111318] border-[#292A2D] text-[#AAA69D] hover:text-[#C69A45]'
-                }`}
-                title="Toggle 3D Cylinder Scroll Depth"
-              >
-                <Box className={`w-3.5 h-3.5 ${readerSettings.scroll3D ? 'stroke-[2.5]' : ''}`} />
-                <span className="hidden sm:inline">3D Scroll</span>
-              </button>
-            )}
-
-            {/* Continuous Mode: Auto Scroll Button */}
-            {readerSettings.readingMode === 'vertical' && (
-              <button
-                onClick={() => setAutoScrollActive(!autoScrollActive)}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition-all ${
-                  autoScrollActive
-                    ? 'bg-[#C69A45] text-[#090A0C] border-[#C69A45] shadow-md shadow-[#C69A45]/30 font-bold'
-                    : 'bg-[#111318] border-[#292A2D] text-[#AAA69D] hover:text-[#C69A45]'
-                }`}
-                title="Toggle Auto-Scroll"
-              >
-                {autoScrollActive ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">Auto</span>
-              </button>
-            )}
-
             {/* Chapter Jumper Drawer Trigger */}
             <button
               onClick={() => {
@@ -772,7 +729,7 @@ export const ReaderView: React.FC = () => {
 
       {/* Reader Settings Modal Console */}
       {showSettings && (
-        <div className="fixed top-14 right-3 sm:right-6 z-50 w-84 max-w-[92vw] p-4 rounded-2xl bg-void-900/95 backdrop-blur-2xl border border-solar-500/40 shadow-2xl shadow-solar-500/10 space-y-4 animate-fade-in text-xs max-h-[85vh] overflow-y-auto">
+        <div className="fixed top-14 right-3 sm:right-6 z-50 w-[22rem] max-w-[92vw] p-4 rounded-2xl bg-void-900/95 backdrop-blur-2xl border border-solar-500/40 shadow-2xl shadow-solar-500/10 space-y-4 animate-fade-in text-xs max-h-[85vh] overflow-y-auto">
           <div className="flex items-center justify-between border-b border-void-750 pb-2.5">
             <span className="font-serif font-bold text-solar-400 flex items-center gap-1.5 text-xs">
               <Sliders className="w-3.5 h-3.5" />
@@ -990,6 +947,125 @@ export const ReaderView: React.FC = () => {
               />
             </div>
           )}
+        </div>
+      )}
+
+      {/* Zen mode escape hatch — the dock and HUD are hidden in zen */}
+      {readerSettings.zenMode && (
+        <button
+          onClick={() => updateReaderSettings({ zenMode: false })}
+          className="fixed top-3 right-3 z-50 px-3 py-1.5 rounded-full bg-void-950/85 backdrop-blur-xl border border-solar-500/40 text-[10px] font-mono uppercase tracking-[0.18em] text-solar-400 hover:text-solar-500 transition-colors"
+          title="Exit Zen mode (Z)"
+        >
+          Exit Zen
+        </button>
+      )}
+
+      {/* ============================================================
+          READER COMMAND DOCK — always-visible reading controls
+          (auto-scroll, 3D depth, rain / lo-fi soundscape, speed)
+          ============================================================ */}
+      {!readerSettings.zenMode && (
+        <div
+          className={`fixed left-1/2 -translate-x-1/2 z-40 px-3 ${
+            readerSettings.readingMode === 'vertical'
+              ? 'bottom-[calc(env(safe-area-inset-bottom,0px)+0.85rem)]'
+              : 'bottom-[calc(env(safe-area-inset-bottom,0px)+5.25rem)]'
+          }`}
+        >
+          <div className="flex items-center gap-1 p-1.5 rounded-2xl bg-[#0B0C10]/95 backdrop-blur-2xl border border-[#C69A45]/25 shadow-[0_22px_60px_-24px_rgba(0,0,0,0.95)] max-w-[calc(100vw-1.5rem)] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {readerSettings.readingMode === 'vertical' && (
+              <>
+                <DockButton
+                  active={autoScrollActive}
+                  icon={autoScrollActive ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4" />}
+                  label={autoScrollActive ? 'Pause' : 'Auto'}
+                  title="Toggle auto-scroll"
+                  onClick={() => setAutoScrollActive(!autoScrollActive)}
+                />
+                <DockButton
+                  active={!!readerSettings.scroll3D}
+                  icon={<Box className="w-4 h-4" />}
+                  label="3D"
+                  title="Toggle 3D holo-scroll depth"
+                  onClick={() => updateReaderSettings({ scroll3D: !readerSettings.scroll3D })}
+                />
+                <DockButton
+                  active
+                  icon={<Gauge className="w-4 h-4" />}
+                  label={`${readerSettings.autoScrollSpeed}x`}
+                  title="Auto-scroll speed (tap to change)"
+                  onClick={() =>
+                    updateReaderSettings({
+                      autoScrollSpeed: (readerSettings.autoScrollSpeed % 8) + 1,
+                    })
+                  }
+                />
+                <span className="w-px h-6 bg-[#292A2D] mx-0.5 shrink-0" />
+              </>
+            )}
+
+            <DockButton
+              active={readerSettings.audioAmbience === 'rain'}
+              icon={<CloudRain className="w-4 h-4" />}
+              label="Rain"
+              title="Procedural rain soundscape"
+              onClick={() =>
+                updateReaderSettings({
+                  audioAmbience: readerSettings.audioAmbience === 'rain' ? 'off' : 'rain',
+                })
+              }
+            />
+            <DockButton
+              active={readerSettings.audioAmbience === 'lofi'}
+              icon={<Music className="w-4 h-4" />}
+              label="Lo-Fi"
+              title="Procedural lo-fi beat"
+              onClick={() =>
+                updateReaderSettings({
+                  audioAmbience: readerSettings.audioAmbience === 'lofi' ? 'off' : 'lofi',
+                })
+              }
+            />
+            {readerSettings.audioAmbience !== 'off' && (
+              <>
+                <span className="flex items-end gap-[2px] h-4 px-1 shrink-0" aria-hidden="true">
+                  <i className="w-[2px] h-2 bg-[#C69A45] animate-pulse rounded-full" />
+                  <i className="w-[2px] h-3.5 bg-[#C69A45] animate-pulse [animation-delay:120ms] rounded-full" />
+                  <i className="w-[2px] h-1.5 bg-[#C69A45] animate-pulse [animation-delay:240ms] rounded-full" />
+                </span>
+                <DockButton
+                  active={false}
+                  icon={<VolumeX className="w-4 h-4" />}
+                  label="Mute"
+                  title="Stop soundscape"
+                  onClick={() => updateReaderSettings({ audioAmbience: 'off' })}
+                />
+              </>
+            )}
+
+            <span className="w-px h-6 bg-[#292A2D] mx-0.5 shrink-0" />
+            <DockButton
+              active={showSettings}
+              icon={<Sliders className="w-4 h-4" />}
+              label="Console"
+              title="Reading console"
+              onClick={() => {
+                setShowSettings(!showSettings);
+                setShowChapterDrawer(false);
+              }}
+            />
+            <DockButton
+              active={showChapterDrawer}
+              icon={<List className="w-4 h-4" />}
+              label="Chapters"
+              title="Chapter quick-jump"
+              onClick={() => {
+                setShowChapterDrawer(!showChapterDrawer);
+                setShowSettings(false);
+              }}
+            />
+          </div>
         </div>
       )}
 
