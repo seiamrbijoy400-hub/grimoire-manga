@@ -163,17 +163,22 @@ export async function searchMangaAdvanced(filter: AdvancedSearchFilter): Promise
       // Description / snippet
       const description = card.find('div.line-clamp-3, p, span.opacity-70').first().text().trim();
 
-      // Badges / tags
-      const tags: string[] = [];
-      card.find('.badge, a[href*="/search?tag="]').each((_, t) => {
-        const tagText = $(t).text().trim();
-        if (tagText && !tags.includes(tagText) && tagText !== 'Official') tags.push(tagText);
-      });
+      // Extract clean metadata from WeebCentral card
+      const statusFromCard = card.find('strong:contains("Status:")').parent().find('span').first().text().trim();
+      const status = statusFromCard || 'Ongoing';
 
-      // Type determination from tags or slug
-      let type = 'Manga';
-      if (tags.includes('Manhwa')) type = 'Manhwa';
-      else if (tags.includes('Manhua')) type = 'Manhua';
+      const typeFromCard = card.find('strong:contains("Type:")').parent().find('span').first().text().trim();
+      let type = typeFromCard || 'Manga';
+
+      const tags: string[] = card.find('strong:contains("Tag(s):")').parent().find('span')
+        .map((_, s) => $(s).text().replace(/,/g, '').trim())
+        .get()
+        .filter(Boolean);
+
+      if (!typeFromCard) {
+        if (tags.includes('Manhwa')) type = 'Manhwa';
+        else if (tags.includes('Manhua')) type = 'Manhua';
+      }
 
       results.push({
         id,
@@ -182,6 +187,7 @@ export async function searchMangaAdvanced(filter: AdvancedSearchFilter): Promise
         cover,
         description,
         type,
+        status,
         tags
       });
     });
@@ -231,7 +237,10 @@ export async function quickSearch(query: string): Promise<MangaItem[]> {
         id,
         title,
         slug,
-        cover
+        cover,
+        type: 'Manga',
+        status: 'Ongoing',
+        tags: []
       });
     });
 

@@ -2,7 +2,7 @@ name: Build Android Draft Release
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/safe-android-draft-release]
   workflow_dispatch:
 
 permissions:
@@ -25,13 +25,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Install PNPM
-        run: npm install -g pnpm@latest
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

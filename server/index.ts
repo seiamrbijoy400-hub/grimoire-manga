@@ -3,6 +3,8 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   searchMangaAdvanced,
   quickSearch,
@@ -294,7 +296,17 @@ app.get('/api/proxy/image', async (c) => {
 
 // Serve frontend static assets from dist
 app.use('/*', serveStatic({ root: './dist' }));
-app.get('*', serveStatic({ path: './dist/index.html' }));
+app.get('*', (c) => {
+  try {
+    const indexPath = path.resolve('./dist/index.html');
+    if (fs.existsSync(indexPath)) {
+      return c.html(fs.readFileSync(indexPath, 'utf-8'));
+    }
+  } catch (e) {
+    console.error('Failed to read dist/index.html:', e);
+  }
+  return c.text('KuroScroll API is live. Build client with pnpm build.', 200);
+});
 
 // Dynamic Port for Local Termux, Render, Railway, Docker
 const PORT = Number(process.env.PORT) || 3001;

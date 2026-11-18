@@ -100,6 +100,18 @@ export const SearchModal: React.FC = () => {
     return () => clearTimeout(timer);
   }, [query]);
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedIndex >= 0 && results[selectedIndex]) {
+      const target = results[selectedIndex];
+      setSearchOpen(false);
+      openManga(target.id, target.title, target.cover);
+    } else if (query.trim()) {
+      setSearchOpen(false);
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
   if (!searchOpen) return null;
 
   return (
@@ -111,8 +123,11 @@ export const SearchModal: React.FC = () => {
         className="w-full max-w-2xl bg-[#111318] border border-[#292A2D] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] transition-all"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Input */}
-        <div className="flex items-center px-4 py-3.5 border-b border-[#292A2D] gap-3 bg-[#090A0C]/90">
+        {/* Header Form Input */}
+        <form
+          onSubmit={handleFormSubmit}
+          className="flex items-center px-4 py-3.5 border-b border-[#292A2D] gap-3 bg-[#090A0C]/90"
+        >
           <img src="/logo.png" alt="KUROSCROLL" className="w-5 h-5 object-contain shrink-0" />
           <Search className="w-4 h-4 text-[#C69A45] shrink-0" />
           <input
@@ -120,18 +135,25 @@ export const SearchModal: React.FC = () => {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search manga, manhwa, authors, genres... (↑/↓ to navigate)"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleFormSubmit(e);
+              }
+            }}
+            placeholder="Search manga, manhwa, authors, genres... (Press Enter to open Search Page)"
             className="flex-1 bg-transparent text-[#F0E9DC] placeholder-[#AAA69D]/60 text-sm focus:outline-none font-sans"
           />
           {loading && <Loader2 className="w-4 h-4 text-[#C69A45] animate-spin shrink-0" />}
           <button
+            type="button"
             onClick={() => setSearchOpen(false)}
             className="p-1 rounded text-[#AAA69D] hover:text-[#F0E9DC] hover:bg-[#191A1F] transition-colors"
             aria-label="Close search"
           >
             <X className="w-4 h-4" />
           </button>
-        </div>
+        </form>
 
         {/* Popular Tags when query is empty */}
         {!query && (
@@ -144,7 +166,11 @@ export const SearchModal: React.FC = () => {
               {POPULAR_SEARCHES.map((title) => (
                 <button
                   key={title}
-                  onClick={() => setQuery(title)}
+                  type="button"
+                  onClick={() => {
+                    setSearchOpen(false);
+                    navigate(`/search?q=${encodeURIComponent(title)}`);
+                  }}
                   className="px-3 py-1 rounded-lg bg-[#191A1F] hover:bg-[#21232A] border border-[#292A2D] text-xs text-[#AAA69D] hover:text-[#C69A45] font-sans transition-colors"
                 >
                   {title}
