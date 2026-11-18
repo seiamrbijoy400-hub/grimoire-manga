@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Android Draft Release
 
 on:
   push:
@@ -7,11 +7,20 @@ on:
 
 permissions:
   contents: write
+  packages: write
+  issues: write
+  pull-requests: write
+  repository-projects: read
+  statuses: write
 
 jobs:
   build:
-    name: Build Android APK
+    name: Build Android Draft Release
     runs-on: ubuntu-latest
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      VERSION_NAME: ${{ github.run_number }}
+      TAG_NAME: v${{ github.run_number }}-${{ github.run_attempt }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,7 +34,7 @@ jobs:
         run: npm install -g pnpm@latest
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build web assets
         run: pnpm run build
@@ -39,40 +48,63 @@ jobs:
       - name: Sync Capacitor Android
         run: pnpm exec cap sync android
 
+      - name: Set Android versionCode and versionName
+        run: |
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+
       - name: Build Android APKs with Gradle
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug assembleRelease
+          ./gradlew assembleDebug assembleRelease -PVERSION_CODE=$VERSION_CODE -PVERSION_NAME=$VERSION_NAME
 
       - name: Prepare APK outputs
         run: |
           cp android/app/build/outputs/apk/debug/app-debug.apk KUROSCROLL-debug.apk
           cp android/app/build/outputs/apk/release/app-release.apk KUROSCROLL-release.apk
-          ls -la KUROSCROLL-*.apk
+          sha256sum KUROSCROLL-*.apk > SHA256SUMS.txt
+          ls -la KUROSCROLL-*.apk SHA256SUMS.txt
 
-      - name: Upload APKs as Artifact
+      - name: Create draft tag if not exists
+        id: tag_check
+        run: |
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create tag
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          git tag $TAG_NAME $GITHUB_SHA
+          git push origin $TAG_NAME
+
+      - name: Create draft release
+        if: steps.tag_check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat <<EOF > release_notes.md
+## 📲 KUROSCROLL Android Draft Release
+
+- Tag: $TAG_NAME
+- Commit: ${{ github.sha }}
+- Build number: ${{ github.run_number }}
+- Attempt: ${{ github.run_attempt }}
+
+EOF
+          gh release create $TAG_NAME KUROSCROLL-release.apk KUROSCROLL-debug.apk SHA256SUMS.txt \
+            --title "KUROSCROLL Draft $TAG_NAME" \
+            --notes-file release_notes.md \
+            --draft
+
+      - name: Upload artifacts for debugging
         uses: actions/upload-artifact@v4
         with:
           name: KUROSCROLL-APKs
           path: |
             KUROSCROLL-debug.apk
             KUROSCROLL-release.apk
-
-      - name: Create Release Notes
-        run: |
-          echo "## 📲 KUROSCROLL Android App" > release_notes.md
-          echo "" >> release_notes.md
-          echo "Direct download links:" >> release_notes.md
-          echo "- **KUROSCROLL-release.apk** (Recommended)" >> release_notes.md
-          echo "- **KUROSCROLL-debug.apk**" >> release_notes.md
-
-      - name: Publish GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="v1.0.0"
-          gh release delete "$TAG" --yes || true
-          git tag -d "$TAG" 2>/dev/null || true
-          git push origin ":refs/tags/$TAG" 2>/dev/null || true
-          gh release create "$TAG" KUROSCROLL-release.apk KUROSCROLL-debug.apk --title "KUROSCROLL Android App" --notes-file release_notes.md
+            SHA256SUMS.txt
