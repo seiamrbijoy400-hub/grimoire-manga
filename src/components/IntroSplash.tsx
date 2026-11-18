@@ -35,7 +35,7 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onDone }) => {
     if (doneRef.current) return;
     doneRef.current = true;
     setLeaving(true);
-    window.setTimeout(onDone, reduceMotion ? 120 : 560);
+    window.setTimeout(onDone, reduceMotion ? 100 : 480);
   };
 
   // Lock page scroll while the curtain is up.
@@ -57,14 +57,14 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onDone }) => {
 
     let value = 0;
     const tick = window.setInterval(() => {
-      const step = value < 45 ? 3.4 : value < 78 ? 2.1 : value < 96 ? 1.1 : 0.6;
+      const step = value < 45 ? 4.2 : value < 78 ? 2.6 : value < 96 ? 1.4 : 0.8;
       value = Math.min(100, value + step);
       setProgress(Math.round(value));
       if (value >= 100) window.clearInterval(tick);
-    }, 40);
+    }, 34);
 
     const skipTimer = window.setTimeout(() => setCanSkip(true), 650);
-    const autoLeave = window.setTimeout(finish, 2600);
+    const autoLeave = window.setTimeout(finish, 2300);
 
     return () => {
       window.clearInterval(tick);
@@ -77,7 +77,7 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onDone }) => {
   // Leave as soon as the bar fills (with a short beat to read "Ready").
   useEffect(() => {
     if (progress < 100 || reduceMotion) return;
-    const t = window.setTimeout(finish, 520);
+    const t = window.setTimeout(finish, 420);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progress, reduceMotion]);

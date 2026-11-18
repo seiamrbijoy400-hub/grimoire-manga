@@ -52,6 +52,11 @@ const HoloPanel3D: React.FC<{
   const [transform, setTransform] = useState('');
   const [loadError, setLoadError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setLoaded(false);
+  }, [imgUrl, retryKey]);
 
   useEffect(() => {
     if (!scroll3D) {
@@ -115,14 +120,22 @@ const HoloPanel3D: React.FC<{
           </button>
         </div>
       ) : (
-        <img
-          key={retryKey}
-          src={getProxyImageUrl(imgUrl)}
-          alt={`Page ${pageIdx + 1}`}
-          onError={() => setLoadError(true)}
-          className={`block select-none pointer-events-none transition-all duration-300 ${imageFitClass}`}
-          loading={pageIdx < 4 ? 'eager' : 'lazy'}
-        />
+        <>
+          {!loaded && (
+            <div className="absolute inset-0 shimmer-skeleton min-h-[240px]" aria-hidden="true" />
+          )}
+          <img
+            key={retryKey}
+            src={getProxyImageUrl(imgUrl)}
+            alt={`Page ${pageIdx + 1}`}
+            onLoad={() => setLoaded(true)}
+            onError={() => setLoadError(true)}
+            className={`block select-none pointer-events-none transition-all duration-700 ${imageFitClass} ${
+              loaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            loading={pageIdx < 4 ? 'eager' : 'lazy'}
+          />
+        </>
       )}
       {/* Subtle Micro Page Counter */}
       <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-[#090A0C]/85 backdrop-blur-sm text-[9px] font-mono text-[#AAA69D] border border-[#292A2D] opacity-0 group-hover:opacity-100 transition-opacity">
