@@ -3,15 +3,9 @@ import {
   X,
   Filter,
   RotateCcw,
-  Sparkles,
   Check,
   Ban,
   ArrowUpDown,
-  Compass,
-  CheckCircle2,
-  ShieldCheck,
-  Zap,
-  Globe
 } from 'lucide-react';
 import { FilterState, TypeOption, MangaSource } from '../types.ts';
 
@@ -37,34 +31,34 @@ export const ALL_TAGS = [
 ].filter((tag) => !isAdultTag(tag));
 
 export const TYPE_OPTIONS: TypeOption[] = [
-  { id: 'Manga', label: 'Manga', flag: '🇯🇵', desc: 'Japanese' },
-  { id: 'Manhwa', label: 'Manhwa', flag: '🇰🇷', desc: 'Korean' },
-  { id: 'Manhua', label: 'Manhua', flag: '🇨🇳', desc: 'Chinese' },
-  { id: 'OEL', label: 'OEL', flag: '🌐', desc: 'English' },
+  { id: 'Manga', label: 'Manga', desc: 'Japanese' },
+  { id: 'Manhwa', label: 'Manhwa', desc: 'Korean' },
+  { id: 'Manhua', label: 'Manhua', desc: 'Chinese' },
+  { id: 'OEL', label: 'OEL', desc: 'English' },
 ];
 
 export const COUNTRY_OPTIONS = [
-  { id: 'JP', label: 'Japan', flag: '🇯🇵', desc: 'Manga Origin' },
-  { id: 'KR', label: 'South Korea', flag: '🇰🇷', desc: 'Manhwa / Webtoon' },
-  { id: 'CN', label: 'China', flag: '🇨🇳', desc: 'Manhua Origin' },
-  { id: 'GLOBAL', label: 'Global / US', flag: '🌐', desc: 'Western & Indie' },
+  { id: 'JP', label: 'Japan', desc: 'Manga Origin' },
+  { id: 'KR', label: 'South Korea', desc: 'Manhwa / Webtoon' },
+  { id: 'CN', label: 'China', desc: 'Manhua Origin' },
+  { id: 'GLOBAL', label: 'Global / US', desc: 'Western & Indie' },
 ];
 
 export const LANGUAGE_OPTIONS = [
-  { id: 'en', label: 'English', short: 'EN', flag: '🇬🇧' },
-  { id: 'bn', label: 'বাংলা (Bangla)', short: 'বাংলা', flag: '🇧🇩' },
-  { id: 'banglish', label: 'Banglish (Bangla romanised)', short: 'Banglish', flag: '🇧🇩' },
-  { id: 'hi', label: 'हिन्दी (Hindi)', short: 'हिन्दी', flag: '🇮🇳' },
-  { id: 'hinglish', label: 'Hinglish (Hindi romanised)', short: 'Hinglish', flag: '🇮🇳' },
-  { id: 'ur', label: 'اردو (Urdu)', short: 'اردو', flag: '🇵🇰' },
-  { id: 'urdlish', label: 'Urdlish (Urdu romanised)', short: 'Urdlish', flag: '🇵🇰' },
-  { id: 'es', label: 'Español', short: 'ES', flag: '🇪🇸' },
-  { id: 'pt-br', label: 'Português', short: 'PT-BR', flag: '🇧🇷' },
-  { id: 'fr', label: 'Français', short: 'FR', flag: '🇫🇷' },
-  { id: 'id', label: 'Indonesia', short: 'ID', flag: '🇮🇩' },
-  { id: 'ja', label: '日本語', short: '日本語', flag: '🇯🇵' },
-  { id: 'ko', label: '한국어', short: '한국어', flag: '🇰🇷' },
-  { id: 'zh', label: '中文', short: '中文', flag: '🇨🇳' },
+  { id: 'en', label: 'English', short: 'EN' },
+  { id: 'bn', label: 'বাংলা (Bangla)', short: 'বাংলা' },
+  { id: 'banglish', label: 'Banglish (Bangla romanised)', short: 'Banglish' },
+  { id: 'hi', label: 'हिन्दी (Hindi)', short: 'हिन्दी' },
+  { id: 'hinglish', label: 'Hinglish (Hindi romanised)', short: 'Hinglish' },
+  { id: 'ur', label: 'اردو (Urdu)', short: 'اردو' },
+  { id: 'urdlish', label: 'Urdlish (Urdu romanised)', short: 'Urdlish' },
+  { id: 'es', label: 'Español', short: 'ES' },
+  { id: 'pt-br', label: 'Português', short: 'PT-BR' },
+  { id: 'fr', label: 'Français', short: 'FR' },
+  { id: 'id', label: 'Indonesia', short: 'ID' },
+  { id: 'ja', label: '日本語', short: '日本語' },
+  { id: 'ko', label: '한국어', short: '한국어' },
+  { id: 'zh', label: '中文', short: '中文' },
 ];
 
 export const STATUS_OPTIONS = [

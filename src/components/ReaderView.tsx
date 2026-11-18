@@ -50,7 +50,7 @@ const DockButton: React.FC<{
     onClick={onClick}
     title={title}
     aria-pressed={active}
-    className={`shrink-0 flex flex-col items-center justify-center gap-0.5 min-w-[46px] px-2 py-1.5 rounded-xl border transition-all ${
+    className={`shrink-0 flex flex-col items-center justify-center gap-0.5 min-w-[46px] px-2 py-1.5 rounded-md border transition-all ${
       active
         ? 'bg-[#E8472F] text-[#0A0A0B] border-[#E8472F] shadow-[2px_2px_0_0_rgba(244,239,228,0.18)]'
         : 'bg-[#101012] border-[#26262A] text-[#ABA599] hover:text-[#F4EFE4] hover:border-[#E8472F]/45'
@@ -123,7 +123,7 @@ const HoloPanel3D: React.FC<{
       ref={panelRef}
       className={`relative w-full overflow-hidden group transition-all ${
         scroll3D
-          ? 'shadow-2xl rounded-xl border border-[#26262A] my-2 duration-100'
+          ? 'shadow-2xl rounded-md border border-[#26262A] my-2 duration-100'
           : 'duration-300'
       }`}
       style={{
@@ -596,7 +596,7 @@ export const ReaderView: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => setView('details')}
-              className="p-2 rounded-xl bg-void-900 hover:bg-void-850 text-slate-300 hover:text-solar-400 border border-void-700/60 transition-all shadow-sm"
+              className="p-2 rounded-md bg-void-900 hover:bg-void-850 text-[#D9D2C4] hover:text-solar-400 border border-void-700/60 transition-all shadow-sm"
               title="Return to Details"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -604,7 +604,7 @@ export const ReaderView: React.FC = () => {
 
             <div className="truncate">
               <div className="flex items-center gap-2">
-                <h2 className="text-xs sm:text-sm font-serif font-bold text-slate-100 truncate">
+                <h2 className="text-xs sm:text-sm font-serif font-bold text-[#F4EFE4] truncate">
                   {currentDisplayTitle}
                 </h2>
                 {isMangaDex ? (
@@ -618,7 +618,7 @@ export const ReaderView: React.FC = () => {
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 font-mono tracking-tight truncate">
+              <p className="text-[10px] text-[#ABA599] font-mono tracking-tight truncate">
                 {readerSettings.readingMode === 'vertical'
                   ? `${totalLoadedImages} Panels in Stream • Endless Scroll`
                   : `Page ${currentPage}${isDouble && currentPage + 1 <= totalPagesInCurrentChapter ? `-${currentPage + 1}` : ''} of ${totalPagesInCurrentChapter}`}
@@ -634,10 +634,10 @@ export const ReaderView: React.FC = () => {
                 setShowChapterDrawer(!showChapterDrawer);
                 setShowSettings(false);
               }}
-              className={`p-2 rounded-xl border transition-all text-xs flex items-center gap-1.5 ${
+              className={`p-2 rounded-md border transition-all text-xs flex items-center gap-1.5 ${
                 showChapterDrawer
                   ? 'bg-solar-500/20 text-solar-400 border-solar-500/50'
-                  : 'bg-void-900 border-void-750 text-slate-300 hover:text-solar-400'
+                  : 'bg-void-900 border-void-750 text-[#D9D2C4] hover:text-solar-400'
               }`}
               title="Chapter Quick-Jump"
             >
@@ -648,7 +648,7 @@ export const ReaderView: React.FC = () => {
             {/* Fullscreen Toggle */}
             <button
               onClick={toggleFullscreen}
-              className="p-2 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-300 hover:text-solar-400 transition-colors"
+              className="p-2 rounded-md bg-void-900 hover:bg-void-850 border border-void-750 text-[#D9D2C4] hover:text-solar-400 transition-colors"
               title={isFullscreen ? 'Exit Fullscreen' : 'Immersive Fullscreen (F)'}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -660,12 +660,12 @@ export const ReaderView: React.FC = () => {
                 setShowSettings(!showSettings);
                 setShowChapterDrawer(false);
               }}
-              className={`p-2 rounded-xl border transition-colors ${
+              className={`p-2 rounded-md border transition-colors ${
                 showSettings
                   ? 'bg-solar-500/20 text-solar-400 border-solar-500'
-                  : 'bg-void-900 border-void-750 text-slate-400 hover:text-slate-200'
+                  : 'bg-void-900 border-void-750 text-[#ABA599] hover:text-[#F4EFE4]'
               }`}
-              title="Reading Console"
+              title="Reader settings"
             >
               <Sliders className="w-4 h-4" />
             </button>
@@ -681,11 +681,11 @@ export const ReaderView: React.FC = () => {
             <div className="p-4 border-b border-void-700/60 flex items-center justify-between bg-void-950/80">
               <span className="font-serif text-sm font-bold text-solar-400 flex items-center gap-1.5">
                 <Scroll className="w-4 h-4" />
-                Select Chapter
+                Chapters
               </span>
               <button
                 onClick={() => setShowChapterDrawer(false)}
-                className="text-slate-400 hover:text-slate-200 text-sm font-mono p-1"
+                className="text-[#ABA599] hover:text-[#F4EFE4] text-sm font-mono p-1"
               >
                 ✕
               </button>
@@ -697,7 +697,7 @@ export const ReaderView: React.FC = () => {
                 value={chapterSearch}
                 onChange={(e) => setChapterSearch(e.target.value)}
                 placeholder="Find chapter (e.g. 120)..."
-                className="w-full px-3 py-1.5 rounded-xl bg-void-950 border border-void-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-solar-500/60 font-mono"
+                className="w-full px-3 py-1.5 rounded-md bg-void-950 border border-void-700 text-xs text-[#F4EFE4] placeholder-slate-500 focus:outline-none focus:border-solar-500/60 font-mono"
               />
             </div>
 
@@ -711,10 +711,10 @@ export const ReaderView: React.FC = () => {
                       setShowChapterDrawer(false);
                       openChapter(activeMangaId!, ch.id, ch.title);
                     }}
-                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-mono flex items-center justify-between transition-all ${
+                    className={`w-full text-left px-3 py-2 rounded-md text-xs font-mono flex items-center justify-between transition-all ${
                       isCurrent
                         ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
-                        : 'text-slate-300 hover:bg-void-850 hover:text-solar-400'
+                        : 'text-[#D9D2C4] hover:bg-void-850 hover:text-solar-400'
                     }`}
                   >
                     <span className="truncate">{ch.title}</span>
@@ -729,15 +729,15 @@ export const ReaderView: React.FC = () => {
 
       {/* Reader Settings Modal Console */}
       {showSettings && (
-        <div className="fixed top-14 right-3 sm:right-6 z-50 w-[22rem] max-w-[92vw] p-4 rounded-2xl bg-void-900/95 backdrop-blur-2xl border border-solar-500/40 shadow-2xl shadow-solar-500/10 space-y-4 animate-fade-in text-xs max-h-[85vh] overflow-y-auto">
+        <div className="fixed top-14 right-3 sm:right-6 z-50 w-[22rem] max-w-[92vw] p-4 rounded-lg bg-void-900/95 backdrop-blur-2xl border border-solar-500/40 shadow-2xl shadow-solar-500/10 space-y-4 animate-fade-in text-xs max-h-[85vh] overflow-y-auto">
           <div className="flex items-center justify-between border-b border-void-750 pb-2.5">
             <span className="font-serif font-bold text-solar-400 flex items-center gap-1.5 text-xs">
               <Sliders className="w-3.5 h-3.5" />
-              Tactical Reading Console
+              Reading settings
             </span>
             <button
               onClick={() => setShowSettings(false)}
-              className="text-slate-400 hover:text-slate-200 font-mono"
+              className="text-[#ABA599] hover:text-[#F4EFE4] font-mono"
             >
               ✕
             </button>
@@ -745,17 +745,17 @@ export const ReaderView: React.FC = () => {
 
           {/* Reading Engine / Mode */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-mono text-slate-400 flex items-center justify-between">
-              <span>Reading Engine</span>
+            <label className="text-[11px] font-mono text-[#ABA599] flex items-center justify-between">
+              <span>Reading mode</span>
               <span className="text-solar-400 font-bold uppercase">{readerSettings.readingMode}</span>
             </label>
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 onClick={() => updateReaderSettings({ readingMode: 'vertical' })}
-                className={`py-2 px-2.5 rounded-xl border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
+                className={`py-2 px-2.5 rounded-md border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
                   readerSettings.readingMode === 'vertical'
                     ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
-                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-slate-200'
+                    : 'bg-void-950 border-void-750 text-[#ABA599] hover:text-[#F4EFE4]'
                 }`}
               >
                 <Scroll className="w-3 h-3" />
@@ -763,10 +763,10 @@ export const ReaderView: React.FC = () => {
               </button>
               <button
                 onClick={() => updateReaderSettings({ readingMode: 'paged-rtl' })}
-                className={`py-2 px-2.5 rounded-xl border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
+                className={`py-2 px-2.5 rounded-md border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
                   readerSettings.readingMode === 'paged-rtl'
                     ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
-                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-slate-200'
+                    : 'bg-void-950 border-void-750 text-[#ABA599] hover:text-[#F4EFE4]'
                 }`}
               >
                 <BookOpen className="w-3 h-3" />
@@ -774,10 +774,10 @@ export const ReaderView: React.FC = () => {
               </button>
               <button
                 onClick={() => updateReaderSettings({ readingMode: 'paged-ltr' })}
-                className={`py-2 px-2.5 rounded-xl border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
+                className={`py-2 px-2.5 rounded-md border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
                   readerSettings.readingMode === 'paged-ltr'
                     ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
-                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-slate-200'
+                    : 'bg-void-950 border-void-750 text-[#ABA599] hover:text-[#F4EFE4]'
                 }`}
               >
                 <ChevronRight className="w-3 h-3" />
@@ -785,10 +785,10 @@ export const ReaderView: React.FC = () => {
               </button>
               <button
                 onClick={() => updateReaderSettings({ readingMode: 'double-rtl' })}
-                className={`py-2 px-2.5 rounded-xl border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
+                className={`py-2 px-2.5 rounded-md border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
                   readerSettings.readingMode === 'double-rtl'
                     ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
-                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-slate-200'
+                    : 'bg-void-950 border-void-750 text-[#ABA599] hover:text-[#F4EFE4]'
                 }`}
               >
                 <Columns className="w-3 h-3" />
@@ -799,12 +799,12 @@ export const ReaderView: React.FC = () => {
 
           {/* 3D Cylinder Scroll Toggle (2026 Gen-Z Dimension) */}
           {readerSettings.readingMode === 'vertical' && (
-            <div className="p-2.5 rounded-xl bg-void-950 border border-void-750 flex items-center justify-between">
+            <div className="p-2.5 rounded-md bg-void-950 border border-void-750 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Box className="w-4 h-4 text-solar-400" />
                 <div>
-                  <div className="text-[11px] font-mono text-slate-200 font-bold">3D Holo-Scroll Depth</div>
-                  <div className="text-[9px] text-slate-400 font-mono">Curved cylindrical perspective</div>
+                  <div className="text-[11px] font-mono text-[#F4EFE4] font-bold">3D page depth</div>
+                  <div className="text-[9px] text-[#ABA599] font-mono">Curved cylindrical perspective</div>
                 </div>
               </div>
               <input
@@ -817,13 +817,13 @@ export const ReaderView: React.FC = () => {
           )}
 
           {/* Procedural Audio Ambience Synthesizer */}
-          <div className="space-y-2 p-2.5 rounded-xl bg-void-950 border border-void-750">
+          <div className="space-y-2 p-2.5 rounded-md bg-void-950 border border-void-750">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Volume2 className="w-4 h-4 text-solar-400" />
                 <div>
-                  <div className="text-[11px] font-mono text-slate-200 font-bold">Reading Soundscape</div>
-                  <div className="text-[9px] text-slate-400 font-mono">Web Audio procedural synth</div>
+                  <div className="text-[11px] font-mono text-[#F4EFE4] font-bold">Reading Soundscape</div>
+                  <div className="text-[9px] text-[#ABA599] font-mono">Web Audio procedural synth</div>
                 </div>
               </div>
               <span className="text-[10px] font-mono text-solar-400 uppercase font-bold">
@@ -839,7 +839,7 @@ export const ReaderView: React.FC = () => {
                   className={`py-1.5 rounded-lg text-[10px] font-mono border transition-all ${
                     readerSettings.audioAmbience === mode
                       ? 'bg-solar-500 text-void-950 border-solar-500 font-bold shadow-sm'
-                      : 'bg-void-900 border-void-750 text-slate-400 hover:text-slate-200'
+                      : 'bg-void-900 border-void-750 text-[#ABA599] hover:text-[#F4EFE4]'
                   }`}
                 >
                   {mode === 'off' ? 'Off' : mode === 'rain' ? 'Rain' : mode === 'lofi' ? 'Lo-Fi' : 'Void'}
@@ -849,7 +849,7 @@ export const ReaderView: React.FC = () => {
 
             {readerSettings.audioAmbience !== 'off' && (
               <div className="space-y-1 pt-1">
-                <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                <div className="flex items-center justify-between text-[10px] font-mono text-[#ABA599]">
                   <span>Volume</span>
                   <span>{Math.round(readerSettings.audioVolume * 100)}%</span>
                 </div>
@@ -868,7 +868,7 @@ export const ReaderView: React.FC = () => {
 
           {/* Visual Aesthetic / Theme */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-mono text-slate-400">Visual Surface</label>
+            <label className="text-[11px] font-mono text-[#ABA599]">Visual Surface</label>
             <div className="grid grid-cols-4 gap-1">
               {(['void', 'graphite', 'parchment', 'amethyst'] as VisualTheme[]).map((thm) => (
                 <button
@@ -877,7 +877,7 @@ export const ReaderView: React.FC = () => {
                   className={`py-1.5 rounded-lg text-[10px] font-mono border uppercase ${
                     readerSettings.visualTheme === thm
                       ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
-                      : 'bg-void-950 border-void-750 text-slate-400'
+                      : 'bg-void-950 border-void-750 text-[#ABA599]'
                   }`}
                 >
                   {thm}
@@ -888,7 +888,7 @@ export const ReaderView: React.FC = () => {
 
           {/* Image Fit */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-mono text-slate-400">Image Fit Scale</label>
+            <label className="text-[11px] font-mono text-[#ABA599]">Image Fit Scale</label>
             <div className="grid grid-cols-3 gap-1">
               {(['fit-width', 'fit-height', 'original'] as ImageFitMode[]).map((fit) => (
                 <button
@@ -897,7 +897,7 @@ export const ReaderView: React.FC = () => {
                   className={`py-1.5 rounded-lg text-[10px] font-mono border ${
                     readerSettings.imageFit === fit
                       ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
-                      : 'bg-void-950 border-void-750 text-slate-400'
+                      : 'bg-void-950 border-void-750 text-[#ABA599]'
                   }`}
                 >
                   {fit === 'fit-width' ? 'Fit Width' : fit === 'fit-height' ? 'Fit Height' : 'Original'}
@@ -909,7 +909,7 @@ export const ReaderView: React.FC = () => {
           {/* High-Contrast Inversion & Zen Mode toggles */}
           <div className="pt-2 border-t border-void-750 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono text-slate-300">Night High-Contrast Invert</span>
+              <span className="text-[11px] font-mono text-[#D9D2C4]">Night High-Contrast Invert</span>
               <input
                 type="checkbox"
                 checked={readerSettings.invertColors}
@@ -919,7 +919,7 @@ export const ReaderView: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-mono text-slate-300">Zen Focus Cinema Mode (Z)</span>
+              <span className="text-[11px] font-mono text-[#D9D2C4]">Focus mode (Z)</span>
               <input
                 type="checkbox"
                 checked={readerSettings.zenMode}
@@ -933,7 +933,7 @@ export const ReaderView: React.FC = () => {
           {readerSettings.readingMode === 'vertical' && (
             <div className="space-y-1.5 pt-2 border-t border-void-750">
               <div className="flex items-center justify-between text-[11px] font-mono">
-                <span className="text-slate-400">Auto-Scroll Velocity</span>
+                <span className="text-[#ABA599]">Auto-Scroll Velocity</span>
                 <span className="text-solar-400 font-bold">{readerSettings.autoScrollSpeed}x</span>
               </div>
               <input
@@ -955,9 +955,9 @@ export const ReaderView: React.FC = () => {
         <button
           onClick={() => updateReaderSettings({ zenMode: false })}
           className="fixed top-3 right-3 z-50 px-3 py-1.5 rounded-full bg-void-950/85 backdrop-blur-xl border border-solar-500/40 text-[10px] font-mono uppercase tracking-[0.18em] text-solar-400 hover:text-solar-500 transition-colors"
-          title="Exit Zen mode (Z)"
+          title="Exit focus mode (Z)"
         >
-          Exit Zen
+          Exit focus
         </button>
       )}
 
@@ -987,7 +987,7 @@ export const ReaderView: React.FC = () => {
                   active={!!readerSettings.scroll3D}
                   icon={<Box className="w-4 h-4" />}
                   label="3D"
-                  title="Toggle 3D holo-scroll depth"
+                  title="Toggle 3D page depth"
                   onClick={() => updateReaderSettings({ scroll3D: !readerSettings.scroll3D })}
                 />
                 <DockButton
@@ -1048,8 +1048,8 @@ export const ReaderView: React.FC = () => {
             <DockButton
               active={showSettings}
               icon={<Sliders className="w-4 h-4" />}
-              label="Console"
-              title="Reading console"
+              label="Settings"
+              title="Reader settings"
               onClick={() => {
                 setShowSettings(!showSettings);
                 setShowChapterDrawer(false);
@@ -1155,7 +1155,7 @@ export const ReaderView: React.FC = () => {
                   chapters.findIndex(
                     (c) => c.id === loadedChapters[loadedChapters.length - 1].chapterId
                   ) === 0 && (
-                    <div className="w-full my-12 p-8 rounded-2xl bg-[#101012] border border-[#26262A] text-center space-y-4 max-w-xl mx-auto shadow-2xl">
+                    <div className="w-full my-12 p-8 rounded-lg bg-[#101012] border border-[#26262A] text-center space-y-4 max-w-xl mx-auto shadow-2xl">
                       <div className="w-10 h-10 rounded-full bg-[#17171A] border border-[#E8472F]/40 text-[#E8472F] flex items-center justify-center mx-auto">
                         <CheckCircle2 className="w-5 h-5" />
                       </div>
@@ -1209,7 +1209,7 @@ export const ReaderView: React.FC = () => {
                     className="absolute inset-y-0 left-0 w-[35%] z-20 cursor-w-resize group flex items-center justify-start pl-4"
                     title={isRtl ? 'Next Page' : 'Previous Page'}
                   >
-                    <div className="w-9 h-9 rounded-full bg-void-950/80 backdrop-blur-md border border-void-700 text-slate-400 group-hover:text-solar-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-9 h-9 rounded-full bg-void-950/80 backdrop-blur-md border border-void-700 text-[#ABA599] group-hover:text-solar-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <ChevronLeft className="w-5 h-5" />
                     </div>
                   </div>
@@ -1226,7 +1226,7 @@ export const ReaderView: React.FC = () => {
                     className="absolute inset-y-0 right-0 w-[35%] z-20 cursor-e-resize group flex items-center justify-end pr-4"
                     title={isRtl ? 'Previous Page' : 'Next Page'}
                   >
-                    <div className="w-9 h-9 rounded-full bg-void-950/80 backdrop-blur-md border border-void-700 text-slate-400 group-hover:text-solar-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-9 h-9 rounded-full bg-void-950/80 backdrop-blur-md border border-void-700 text-[#ABA599] group-hover:text-solar-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                       <ChevronRight className="w-5 h-5" />
                     </div>
                   </div>
@@ -1266,7 +1266,7 @@ export const ReaderView: React.FC = () => {
                   <div className="max-w-2xl mx-auto flex flex-col gap-2">
                     {/* Interactive Page Scrubber Slider */}
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                      <span className="text-[10px] font-mono text-[#ABA599] shrink-0">
                         p.{currentPage}
                       </span>
                       <input
@@ -1280,7 +1280,7 @@ export const ReaderView: React.FC = () => {
                         }}
                         className="flex-1 accent-solar-500 cursor-pointer h-1.5 bg-void-850 rounded-lg"
                       />
-                      <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                      <span className="text-[10px] font-mono text-[#ABA599] shrink-0">
                         /{totalPagesInCurrentChapter}
                       </span>
                     </div>
@@ -1289,7 +1289,7 @@ export const ReaderView: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <button
                         onClick={prevPage}
-                        className="px-3.5 py-1.5 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-300 hover:text-solar-400 font-mono text-xs flex items-center gap-1.5 transition-all"
+                        className="px-3.5 py-1.5 rounded-md bg-void-900 hover:bg-void-850 border border-void-750 text-[#D9D2C4] hover:text-solar-400 font-mono text-xs flex items-center gap-1.5 transition-all"
                       >
                         <ChevronLeft className="w-3.5 h-3.5" />
                         <span>Prev</span>
@@ -1298,7 +1298,7 @@ export const ReaderView: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={goToPrevChapter}
-                          className="px-2.5 py-1 rounded-lg bg-void-900 border border-void-800 text-[10px] font-mono text-slate-400 hover:text-slate-200"
+                          className="px-2.5 py-1 rounded-lg bg-void-900 border border-void-800 text-[10px] font-mono text-[#ABA599] hover:text-[#F4EFE4]"
                         >
                           Prev Ch
                         </button>
@@ -1307,7 +1307,7 @@ export const ReaderView: React.FC = () => {
                         </span>
                         <button
                           onClick={goToNextChapter}
-                          className="px-2.5 py-1 rounded-lg bg-void-900 border border-void-800 text-[10px] font-mono text-slate-400 hover:text-slate-200"
+                          className="px-2.5 py-1 rounded-lg bg-void-900 border border-void-800 text-[10px] font-mono text-[#ABA599] hover:text-[#F4EFE4]"
                         >
                           Next Ch
                         </button>
@@ -1315,7 +1315,7 @@ export const ReaderView: React.FC = () => {
 
                       <button
                         onClick={nextPage}
-                        className="px-3.5 py-1.5 rounded-xl bg-solar-500 hover:bg-solar-400 text-void-950 font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-solar-500/20"
+                        className="px-3.5 py-1.5 rounded-md bg-solar-500 hover:bg-solar-400 text-void-950 font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-solar-500/20"
                       >
                         <span>Next</span>
                         <ChevronRight className="w-3.5 h-3.5" />

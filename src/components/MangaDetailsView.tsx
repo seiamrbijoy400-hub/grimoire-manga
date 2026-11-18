@@ -26,41 +26,41 @@ import { MangaDetails, ChapterItem, BookmarkCategory } from '../types.ts';
 const CHUNK_SIZE = 50;
 const FALLBACK_COVER = '/logo.png';
 
-const LANGUAGE_META: Record<string, { label: string; flag: string }> = {
-  en: { label: 'English', flag: '🇬🇧' },
-  bn: { label: 'বাংলা (Bangla)', flag: '🇧🇩' },
-  banglish: { label: 'Banglish', flag: '🇧🇩' },
-  hi: { label: 'हिन्दी (Hindi)', flag: '🇮🇳' },
-  hinglish: { label: 'Hinglish', flag: '🇮🇳' },
-  ur: { label: 'اردو (Urdu)', flag: '🇵🇰' },
-  urdlish: { label: 'Urdlish', flag: '🇵🇰' },
-  es: { label: 'Español', flag: '🇪🇸' },
-  'es-la': { label: 'Español (Latam)', flag: '🇲🇽' },
-  'pt-br': { label: 'Português', flag: '🇧🇷' },
-  fr: { label: 'Français', flag: '🇫🇷' },
-  id: { label: 'Indonesia', flag: '🇮🇩' },
-  ja: { label: '日本語', flag: '🇯🇵' },
-  ko: { label: '한국어', flag: '🇰🇷' },
-  zh: { label: '中文', flag: '🇨🇳' },
-  'zh-hk': { label: '粵語', flag: '🇭🇰' },
-  de: { label: 'Deutsch', flag: '🇩🇪' },
-  it: { label: 'Italiano', flag: '🇮🇹' },
-  ru: { label: 'Русский', flag: '🇷🇺' },
-  ar: { label: 'العربية', flag: '🇸🇦' },
-  he: { label: 'עברית', flag: '🇮🇱' },
-  ka: { label: 'ქართული', flag: '🇬🇪' },
-  ms: { label: 'Melayu', flag: '🇲🇾' },
-  th: { label: 'ไทย', flag: '🇹🇭' },
-  vi: { label: 'Tiếng Việt', flag: '🇻🇳' },
-  tr: { label: 'Türkçe', flag: '🇹🇷' },
-  pl: { label: 'Polski', flag: '🇵🇱' },
+const LANGUAGE_META: Record<string, { label: string }> = {
+  en: { label: 'English' },
+  bn: { label: 'বাংলা (Bangla)' },
+  banglish: { label: 'Banglish' },
+  hi: { label: 'हिन्दी (Hindi)' },
+  hinglish: { label: 'Hinglish' },
+  ur: { label: 'اردو (Urdu)' },
+  urdlish: { label: 'Urdlish' },
+  es: { label: 'Español' },
+  'es-la': { label: 'Español (Latam)' },
+  'pt-br': { label: 'Português' },
+  fr: { label: 'Français' },
+  id: { label: 'Indonesia' },
+  ja: { label: '日本語' },
+  ko: { label: '한국어' },
+  zh: { label: '中文' },
+  'zh-hk': { label: '粵語' },
+  de: { label: 'Deutsch' },
+  it: { label: 'Italiano' },
+  ru: { label: 'Русский' },
+  ar: { label: 'العربية' },
+  he: { label: 'עברית' },
+  ka: { label: 'ქართული' },
+  ms: { label: 'Melayu' },
+  th: { label: 'ไทย' },
+  vi: { label: 'Tiếng Việt' },
+  tr: { label: 'Türkçe' },
+  pl: { label: 'Polski' },
 };
 
-const SHELF_LABELS: Record<BookmarkCategory, { label: string; icon: string; color: string }> = {
-  reading: { label: 'Reading', icon: '📖', color: 'text-solar-400' },
-  plan: { label: 'Plan to Read', icon: '⏳', color: 'text-telemetry-cyan' },
-  completed: { label: 'Completed', icon: '🏆', color: 'text-telemetry-emerald' },
-  favorites: { label: 'Favorites', icon: '⭐', color: 'text-amber-300' },
+const SHELF_LABELS: Record<BookmarkCategory, { label: string; color: string }> = {
+  reading: { label: 'Reading', color: 'text-solar-400' },
+  plan: { label: 'Plan to Read', color: 'text-telemetry-cyan' },
+  completed: { label: 'Completed', color: 'text-telemetry-emerald' },
+  favorites: { label: 'Favorites', color: 'text-amber-300' },
 };
 
 export const MangaDetailsView: React.FC = () => {
@@ -344,7 +344,9 @@ export const MangaDetailsView: React.FC = () => {
                                 : 'text-paper-dim hover:bg-ink-800 hover:text-paper'
                             }`}
                           >
-                            <span>{SHELF_LABELS[cat].icon}</span>
+                            <span
+                              className={`h-1.5 w-1.5 shrink-0 rounded-full bg-current ${SHELF_LABELS[cat].color}`}
+                            />
                             <span>{SHELF_LABELS[cat].label}</span>
                             {currentBookmark?.category === cat && (
                               <Check className="ml-auto h-3 w-3" />
@@ -446,7 +448,7 @@ export const MangaDetailsView: React.FC = () => {
                   )}
 
                   {languageKeys.map((lang) => {
-                    const meta = LANGUAGE_META[lang] || { label: lang.toUpperCase(), flag: '' };
+                    const meta = LANGUAGE_META[lang] || { label: lang.toUpperCase() };
                     const count = availableLanguages[lang];
                     const isSelected =
                       selectedLanguage === lang ||

@@ -91,6 +91,5 @@ export interface FilterState {
 export interface TypeOption {
   id: string;
   label: string;
-  flag: string;
   desc: string;
 }
