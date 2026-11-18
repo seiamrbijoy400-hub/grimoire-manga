@@ -26,9 +26,11 @@ export const ScrollProgress: React.FC = () => {
   return (
     <div className="fixed top-0 inset-x-0 z-[60] h-[2px] pointer-events-none" aria-hidden="true">
       <div
-        className="h-full origin-left bg-gradient-to-r from-[#8A6428] via-[#C69A45] to-[#F9EDD2] shadow-[0_0_10px_rgba(198,154,69,0.75)] transition-[width] duration-100 ease-out"
+        className="relative h-full origin-left bg-gradient-to-r from-[#8A6428] via-[#C69A45] to-[#F9EDD2] shadow-[0_0_10px_rgba(198,154,69,0.75)] transition-[width] duration-100 ease-out"
         style={{ width: `${progress}%`, opacity: progress > 0.5 ? 1 : 0 }}
-      />
+      >
+        <span className="absolute right-0 top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-[#F9EDD2] shadow-[0_0_12px_rgba(249,237,210,0.95)]" />
+      </div>
     </div>
   );
 };

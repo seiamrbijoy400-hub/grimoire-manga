@@ -29,6 +29,7 @@ import {
   probeTransports,
   getPreferredTransport,
 } from './upstream.ts';
+import { filterSafe, isAdultContent } from './safety.ts';
 
 const app = new Hono();
 
@@ -111,7 +112,8 @@ app.get('/api/search', async (c) => {
     const mdResults = !query
       ? (sort === 'Latest Updates' ? await getMangaDexLatest(offset, limit, mdFilterOptions) : await getMangaDexTrending(offset, limit, mdFilterOptions))
       : await searchMangaDex(query, offset, limit, mdFilterOptions);
-    return c.json({ data: mdResults, count: mdResults.length, offset, source: 'mangadex' });
+    const safeMd = filterSafe(mdResults);
+    return c.json({ data: safeMd, count: safeMd.length, offset, source: 'mangadex' });
   }
 
   // 2. WeebCentral Search
@@ -135,7 +137,8 @@ app.get('/api/search', async (c) => {
       const mdFallback = !query
         ? (sort === 'Latest Updates' ? await getMangaDexLatest(offset, limit, mdFilterOptions) : await getMangaDexTrending(offset, limit, mdFilterOptions))
         : await searchMangaDex(query, offset, limit, mdFilterOptions);
-      return c.json({ data: mdFallback, count: mdFallback.length, offset, source: 'mangadex-fallback' });
+      const safeFallback = filterSafe(mdFallback);
+      return c.json({ data: safeFallback, count: safeFallback.length, offset, source: 'mangadex-fallback' });
     }
 
     return c.json({ data: results, count: results.length, offset, source: 'weebcentral' });
@@ -159,9 +162,10 @@ app.get('/api/search', async (c) => {
     const mdFallback = !query
       ? (sort === 'Latest Updates' ? await getMangaDexLatest(offset, limit, mdFilterOptions) : await getMangaDexTrending(offset, limit, mdFilterOptions))
       : await searchMangaDex(query, offset, limit, mdFilterOptions);
+    const safeFallback = filterSafe(mdFallback);
     return c.json({
-      data: mdFallback,
-      count: mdFallback.length,
+      data: safeFallback,
+      count: safeFallback.length,
       offset,
       source: 'mangadex-fallback',
       degraded: true,
@@ -178,7 +182,7 @@ app.get('/api/trending', async (c) => {
   const source = c.req.query('source') || 'all';
 
   if (source === 'mangadex') {
-    const mdResults = await getMangaDexTrending(offset, limit);
+    const mdResults = filterSafe(await getMangaDexTrending(offset, limit));
     return c.json({ data: mdResults, source: 'mangadex' });
   }
 
@@ -192,7 +196,7 @@ app.get('/api/trending', async (c) => {
     });
 
     if (results.length === 0 && source === 'all') {
-      const mdResults = await getMangaDexTrending(offset, limit);
+      const mdResults = filterSafe(await getMangaDexTrending(offset, limit));
       return c.json({ data: mdResults, source: 'mangadex-fallback' });
     }
 
@@ -203,7 +207,7 @@ app.get('/api/trending', async (c) => {
     if (source === 'weebcentral') {
       return c.json({ data: [], source: 'weebcentral', error: 'WeebCentral is unreachable from this server', detail }, 502);
     }
-    const mdResults = await getMangaDexTrending(offset, limit);
+    const mdResults = filterSafe(await getMangaDexTrending(offset, limit));
     return c.json({ data: mdResults, source: 'mangadex-fallback', degraded: true, detail });
   }
 });
@@ -216,7 +220,7 @@ app.get('/api/latest', async (c) => {
   const source = c.req.query('source') || 'all';
 
   if (source === 'mangadex') {
-    const mdResults = await getMangaDexLatest(offset, limit);
+    const mdResults = filterSafe(await getMangaDexLatest(offset, limit));
     return c.json({ data: mdResults, source: 'mangadex' });
   }
 
@@ -229,7 +233,7 @@ app.get('/api/latest', async (c) => {
       limit,
     });
     if (results.length === 0 && source === 'all') {
-      const mdResults = await getMangaDexLatest(offset, limit);
+      const mdResults = filterSafe(await getMangaDexLatest(offset, limit));
       return c.json({ data: mdResults, source: 'mangadex-fallback' });
     }
     return c.json({ data: results, source: 'weebcentral' });
@@ -239,7 +243,7 @@ app.get('/api/latest', async (c) => {
     if (source === 'weebcentral') {
       return c.json({ data: [], source: 'weebcentral', error: 'WeebCentral is unreachable from this server', detail }, 502);
     }
-    const mdResults = await getMangaDexLatest(offset, limit);
+    const mdResults = filterSafe(await getMangaDexLatest(offset, limit));
     return c.json({ data: mdResults, source: 'mangadex-fallback', degraded: true, detail });
   }
 });
@@ -251,16 +255,16 @@ app.get('/api/manga/:id', async (c) => {
   if (id.startsWith('md:')) {
     const rawId = id.slice(3);
     const mdDetails = await getMangaDexDetails(rawId);
-    if (!mdDetails) {
-      return c.json({ error: 'MangaDex manga not found' }, 404);
+    if (!mdDetails || isAdultContent(mdDetails)) {
+      return c.json({ error: 'Manga not available' }, 404);
     }
     return c.json({ data: mdDetails });
   }
 
   try {
     const details = await getMangaDetails(id);
-    if (!details) {
-      return c.json({ error: 'Manga not found' }, 404);
+    if (!details || isAdultContent(details)) {
+      return c.json({ error: 'Manga not available' }, 404);
     }
     return c.json({ data: details });
   } catch (err) {

@@ -9,13 +9,32 @@ interface BrandLoaderProps {
 }
 
 const SIZES = {
-  sm: { box: 'w-9 h-9', mark: 'w-4 h-4', label: 'text-[9px]' },
-  md: { box: 'w-14 h-14', mark: 'w-6 h-6', label: 'text-[10px]' },
-  lg: { box: 'w-20 h-20', mark: 'w-9 h-9', label: 'text-[11px]' },
+  sm: {
+    box: 'w-10 h-10',
+    inner: 'inset-[5px]',
+    core: 'inset-[8px]',
+    mark: 'w-4 h-4',
+    label: 'text-[9px]',
+  },
+  md: {
+    box: 'w-16 h-16',
+    inner: 'inset-[7px]',
+    core: 'inset-[11px]',
+    mark: 'w-7 h-7',
+    label: 'text-[10px]',
+  },
+  lg: {
+    box: 'w-24 h-24',
+    inner: 'inset-[9px]',
+    core: 'inset-[14px]',
+    mark: 'w-10 h-10',
+    label: 'text-[11px]',
+  },
 } as const;
 
 /**
- * Branded loading indicator: rotating gold conic ring around the K emblem.
+ * Branded loading indicator: counter-rotating gold rings, an orbiting spark
+ * and a shimmering label. Built from transforms only so it stays cheap.
  */
 export const BrandLoader: React.FC<BrandLoaderProps> = ({
   label = 'Loading',
@@ -28,19 +47,29 @@ export const BrandLoader: React.FC<BrandLoaderProps> = ({
   return (
     <div className={`flex flex-col items-center justify-center gap-4 ${className}`}>
       <div className={`relative ${s.box}`}>
+        {/* halo */}
+        <div className="absolute -inset-2 rounded-full bg-[#C69A45]/10 blur-xl animate-glow-pulse" />
+        {/* track + outer ring */}
         <div className="absolute inset-0 rounded-full border border-[#292A2D]" />
         <div className="absolute inset-0 rounded-full brand-ring" />
-        <div className="absolute inset-[3px] rounded-full bg-[#0C0E13] flex items-center justify-center">
+        {/* inner counter-rotation */}
+        <div
+          className={`absolute ${s.inner} rounded-full brand-ring opacity-40 [animation-duration:2.4s] [animation-direction:reverse]`}
+        />
+        {/* orbiting spark */}
+        <div className="orbit-dot" aria-hidden="true" />
+        {/* core */}
+        <div
+          className={`absolute ${s.core} rounded-full bg-[#0C0E13] ring-1 ring-[#C69A45]/25 flex items-center justify-center shadow-[inset_0_0_18px_rgba(198,154,69,0.18)]`}
+        >
           <BrandMark bare className={s.mark} />
         </div>
       </div>
 
       <div className="flex flex-col items-center gap-1.5 text-center">
-        <p
-          className={`font-mono uppercase tracking-[0.26em] text-[#C69A45] ${s.label} inline-flex items-center`}
-        >
-          {label}
-          <span className="inline-flex w-[1.1em] justify-start">
+        <p className={`font-mono uppercase tracking-[0.26em] ${s.label} inline-flex items-center`}>
+          <span className="text-shine">{label}</span>
+          <span className="inline-flex w-[1.1em] justify-start text-[#C69A45]">
             <span className="animate-pulse">.</span>
             <span className="animate-pulse [animation-delay:180ms]">.</span>
             <span className="animate-pulse [animation-delay:360ms]">.</span>

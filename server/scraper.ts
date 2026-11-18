@@ -6,6 +6,7 @@ import {
   pickImageUrl,
   WEEB_ORIGIN,
 } from './upstream.ts';
+import { filterSafe } from './safety.ts';
 
 const WEEB_BASE = WEEB_ORIGIN;
 
@@ -55,12 +56,12 @@ export interface AdvancedSearchFilter {
 }
 
 export const ALL_AVAILABLE_TAGS = [
-  "Action", "Adventure", "Comedy", "Doujinshi", "Drama", "Ecchi",
-  "Fantasy", "Gender Bender", "Harem", "Hentai", "Historical", "Horror",
-  "Isekai", "Josei", "Lolicon", "Martial Arts", "Mature", "Mecha",
+  "Action", "Adventure", "Comedy", "Doujinshi", "Drama",
+  "Fantasy", "Gender Bender", "Harem", "Historical", "Horror",
+  "Isekai", "Josei", "Martial Arts", "Mecha",
   "Mystery", "Psychological", "Romance", "School Life", "Sci-fi",
-  "Seinen", "Shotacon", "Shoujo", "Shoujo Ai", "Shounen", "Shounen Ai",
-  "Slice of Life", "Smut", "Sports", "Supernatural", "Tragedy", "Yaoi",
+  "Seinen", "Shoujo", "Shoujo Ai", "Shounen", "Shounen Ai",
+  "Slice of Life", "Sports", "Supernatural", "Tragedy", "Yaoi",
   "Yuri", "Other"
 ] as const;
 
@@ -108,7 +109,7 @@ export async function searchMangaAdvanced(filter: AdvancedSearchFilter): Promise
   params.append('offset', String(filter.offset || 0));
   params.append('official', filter.official || 'Any');
   params.append('anime', filter.anime || 'Any');
-  params.append('adult', filter.adult || 'Any');
+  params.append('adult', filter.adult || 'False');
 
   // Types
   if (filter.types && filter.types.length > 0) {
@@ -188,12 +189,14 @@ export async function searchMangaAdvanced(filter: AdvancedSearchFilter): Promise
     });
   });
 
+  const safeResults = filterSafe(results);
+
   // Fallback to quick search if advanced search returned 0 items and query exists and no complex filters
-  if (results.length === 0 && filter.query?.trim() && !filter.offset && (!filter.types || filter.types.length === 0)) {
+  if (safeResults.length === 0 && filter.query?.trim() && !filter.offset && (!filter.types || filter.types.length === 0)) {
     return await quickSearch(filter.query);
   }
 
-  return results;
+  return safeResults;
 }
 
 export async function quickSearch(query: string): Promise<MangaItem[]> {
@@ -237,7 +240,7 @@ export async function quickSearch(query: string): Promise<MangaItem[]> {
       });
     });
 
-    return results;
+    return filterSafe(results);
   } catch (err) {
     console.error('Quick search error:', err);
     return [];

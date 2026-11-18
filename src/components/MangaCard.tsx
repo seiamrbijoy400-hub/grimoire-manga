@@ -3,6 +3,7 @@ import { Bookmark, Sparkles } from 'lucide-react';
 import { MangaItem } from '../types.ts';
 import { useStore } from '../store/useStore.ts';
 import { getProxyImageUrl } from '../services/api.ts';
+import { filterSafeTags } from '../lib/contentSafety.ts';
 
 // Editorial Archival SVG Placeholder for failed images
 const FALLBACK_COVER = '/logo.png';
@@ -122,7 +123,7 @@ export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
 
         <div className="flex items-center justify-between text-[11px] text-[#AAA69D] font-sans">
           <span className="truncate max-w-[130px]">
-            {manga.tags && manga.tags.length > 0 ? manga.tags[0] : (manga.latestChapter || 'Volume 1')}
+            {filterSafeTags(manga.tags)[0] || manga.latestChapter || 'Volume 1'}
           </span>
           <span className="text-[#AAA69D] group-hover:text-[#C69A45] group-hover:translate-x-0.5 transition-all text-[11px] font-mono shrink-0">
             Open →

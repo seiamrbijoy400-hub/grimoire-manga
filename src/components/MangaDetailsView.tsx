@@ -19,6 +19,7 @@ import {
 import { useStore } from '../store/useStore.ts';
 import { fetchMangaDetails, fetchChapterList, getProxyImageUrl } from '../services/api.ts';
 import { BrandLoader } from './BrandLoader.tsx';
+import { filterSafeTags } from '../lib/contentSafety.ts';
 import { MangaDetails, ChapterItem, BookmarkCategory } from '../types.ts';
 
 const CHUNK_SIZE = 50;
@@ -279,9 +280,9 @@ export const MangaDetailsView: React.FC = () => {
                 </h1>
 
                 {/* Genre Badges */}
-                {details.tags && details.tags.length > 0 && (
+                {filterSafeTags(details.tags).length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
-                    {details.tags.map((tag) => (
+                    {filterSafeTags(details.tags).map((tag) => (
                       <span
                         key={tag}
                         className="px-2.5 py-1 rounded-md bg-[#191A1F] border border-[#292A2D] text-[11px] text-[#AAA69D] font-medium"

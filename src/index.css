@@ -263,6 +263,193 @@
   100% { background-position: -200% 0; }
 }
 
+/* ============================================================
+   INTRO / LOADING FX — 2026 layer
+   ============================================================ */
+
+  /* Floating embers behind the splash emblem */
+  .intro-particle {
+    position: absolute;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(249, 237, 210, 0.95), rgba(198, 154, 69, 0) 72%);
+    animation: particleRise linear infinite;
+    will-change: transform, opacity;
+  }
+
+  /* Expanding rings around the emblem */
+  .shockwave {
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    border: 1px solid rgba(198, 154, 69, 0.5);
+    animation: shockwave 2.6s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
+    pointer-events: none;
+  }
+  .shockwave--2 {
+    animation-delay: 0.85s;
+    border-color: rgba(198, 154, 69, 0.3);
+  }
+  .shockwave--3 {
+    animation-delay: 1.7s;
+    border-color: rgba(214, 78, 96, 0.28);
+  }
+
+  /* Diagonal light sweep across the artwork */
+  .logo-sweep {
+    position: absolute;
+    inset: -45%;
+    background: linear-gradient(
+      105deg,
+      transparent 38%,
+      rgba(255, 255, 255, 0.5) 50%,
+      transparent 62%
+    );
+    transform: translateX(-130%);
+    animation: shineSweep 4.2s ease-in-out 1s infinite;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  /* 3D letter entrance */
+  .letter-flip {
+    display: inline-block;
+    opacity: 0;
+    transform-origin: 50% 100%;
+    animation: letterFlip 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    will-change: transform, opacity;
+  }
+
+  /* Slow scan beam */
+  .scan-line {
+    position: absolute;
+    inset-inline: 0;
+    height: 22%;
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      rgba(198, 154, 69, 0.055),
+      transparent
+    );
+    animation: scanDown 7s linear infinite;
+    pointer-events: none;
+  }
+
+  /* CRT-style overlay for the app shell */
+  .bg-scanlines {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.03) 0px,
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  /* Loading label with a moving gold shine */
+  .text-shine {
+    background-image: linear-gradient(
+      100deg,
+      #8a6428 0%,
+      #f9edd2 42%,
+      #c69a45 58%,
+      #f9edd2 78%,
+      #8a6428 100%
+    );
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: gradientPan 5s linear infinite;
+  }
+
+  /* Orbiting spark used in loaders */
+  .orbit-dot {
+    position: absolute;
+    inset: 0;
+    animation: spin 2.6s linear infinite;
+  }
+  .orbit-dot::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background: #f9edd2;
+    box-shadow: 0 0 10px rgba(249, 237, 210, 0.9);
+    transform: translateX(-50%);
+  }
+
+  /* Segmented progress rail */
+  .segment-rail {
+    display: flex;
+    gap: 3px;
+  }
+  .segment-rail > i {
+    flex: 1 1 0%;
+    height: 100%;
+    border-radius: 2px;
+    background: #1b1d24;
+    transition: background 0.16s linear, box-shadow 0.16s linear;
+  }
+  .segment-rail > i[data-on='true'] {
+    background: linear-gradient(180deg, #f9edd2, #c69a45);
+    box-shadow: 0 0 6px rgba(198, 154, 69, 0.65);
+  }
+
+  /* Page entrance */
+  .view-enter {
+    animation: viewIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+@keyframes particleRise {
+  0% { transform: translate3d(0, 24px, 0) scale(0.55); opacity: 0; }
+  14% { opacity: 0.85; }
+  78% { opacity: 0.45; }
+  100% { transform: translate3d(12px, -150px, 0) scale(1.05); opacity: 0; }
+}
+
+@keyframes shineSweep {
+  0% { transform: translateX(-130%) rotate(4deg); }
+  46% { transform: translateX(130%) rotate(4deg); }
+  100% { transform: translateX(130%) rotate(4deg); }
+}
+
+@keyframes shockwave {
+  0% { transform: scale(0.62); opacity: 0; }
+  14% { opacity: 0.85; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+
+@keyframes scanDown {
+  0% { transform: translateY(-140%); }
+  100% { transform: translateY(640%); }
+}
+
+@keyframes letterFlip {
+  0% {
+    opacity: 0;
+    transform: perspective(700px) rotateX(-95deg) translateY(28px);
+    filter: blur(10px);
+  }
+  62% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(700px) rotateX(0deg) translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes viewIn {
+  0% { opacity: 0; transform: translateY(14px) scale(0.995); filter: blur(6px); }
+  100% { opacity: 1; transform: none; filter: blur(0); }
+}
+
 /* Respect user motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *,

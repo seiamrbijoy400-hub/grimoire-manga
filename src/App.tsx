@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useStore } from './store/useStore.ts';
 import { Navbar } from './components/Navbar.tsx';
 import { BentoGrid } from './components/BentoGrid.tsx';
@@ -11,7 +11,7 @@ import { IntroSplash } from './components/IntroSplash.tsx';
 import { ScrollProgress } from './components/ScrollProgress.tsx';
 import { BrandLogo, WordMark } from './components/BrandMark.tsx';
 
-const INTRO_KEY = 'kurso:intro-seen';
+const INTRO_KEY = 'kurso:intro-seen:v2';
 
 const GENRES = [
   'Action', 'Fantasy', 'Romance', 'Manhwa', 'Seinen', 'Isekai',
@@ -39,10 +39,59 @@ const MarqueeBand: React.FC = () => {
   );
 };
 
+/**
+ * App-wide film layer: CRT scanlines, a soft vignette and a gold spotlight
+ * that trails the pointer on desktop. Pure transforms, no layout work.
+ */
+const AmbientFX: React.FC = () => {
+  const spotRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!window.matchMedia('(pointer: fine)').matches) return;
+
+    let raf = 0;
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 3;
+
+    const paint = () => {
+      raf = 0;
+      if (spotRef.current) {
+        spotRef.current.style.transform = `translate3d(${x - 260}px, ${y - 260}px, 0)`;
+      }
+    };
+    const onMove = (e: PointerEvent) => {
+      x = e.clientX;
+      y = e.clientY;
+      if (!raf) raf = requestAnimationFrame(paint);
+    };
+
+    paint();
+    window.addEventListener('pointermove', onMove, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[45] overflow-hidden" aria-hidden="true">
+      <div className="absolute inset-0 bg-scanlines opacity-40 mix-blend-soft-light" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_42%,rgba(0,0,0,0.55)_100%)]" />
+      <div
+        ref={spotRef}
+        className="absolute left-0 top-0 w-[520px] h-[520px] rounded-full bg-[radial-gradient(circle,rgba(198,154,69,0.10),rgba(198,154,69,0)_62%)] will-change-transform"
+      />
+    </div>
+  );
+};
+
 const AppContent: React.FC = () => {
   const { currentView } = useStore();
   const [showIntro, setShowIntro] = useState(() => {
     try {
+      // ?intro=1 replays the boot sequence on demand.
+      if (new URLSearchParams(window.location.search).has('intro')) return true;
       return !sessionStorage.getItem(INTRO_KEY);
     } catch {
       return true;
@@ -92,7 +141,8 @@ const AppContent: React.FC = () => {
         {/* Global Search Modal (Ctrl+K or trigger) */}
         <SearchModal />
 
-        <div className="relative z-10 flex flex-col flex-1">
+        <AmbientFX />
+        <div className="relative z-10 flex flex-col flex-1 view-enter">
           <Routes>
             {/* Dedicated standalone Search Page */}
             <Route path="/search" element={<SearchPage />} />

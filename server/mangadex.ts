@@ -193,6 +193,10 @@ export async function getMangaDexDetails(rawId: string): Promise<MangaDexDetails
     const data = json.data;
     if (!data) return null;
 
+    // Never expose erotica/pornographic titles, even by direct id.
+    const rating = (data.attributes?.contentRating || '').toLowerCase();
+    if (rating === 'erotica' || rating === 'pornographic') return null;
+
     const baseItem = formatMangaDexItem(data);
 
     // Extract author and artist
