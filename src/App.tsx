@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStore } from './store/useStore.ts';
 import { Navbar, MobileTabBar } from './components/Navbar.tsx';
 import { BentoGrid } from './components/BentoGrid.tsx';
@@ -6,9 +6,10 @@ import { MangaDetailsView } from './components/MangaDetailsView.tsx';
 import { ReaderView } from './components/ReaderView.tsx';
 import { SearchModal } from './components/SearchModal.tsx';
 import { SearchPage } from './pages/SearchPage.tsx';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useParams, useLocation, useNavigate } from 'react-router-dom';
 import { IntroSplash } from './components/IntroSplash.tsx';
 import { ScrollProgress } from './components/ScrollProgress.tsx';
+import { BrandLoader } from './components/BrandLoader.tsx';
 import { BrandLogo, WordMark } from './components/BrandMark.tsx';
 
 const INTRO_KEY = 'kurso:intro-seen:v3';
@@ -94,8 +95,37 @@ const Footer: React.FC = () => {
   );
 };
 
+
+const DeepLinkManga: React.FC = () => {
+  const { id } = useParams();
+  const openManga = useStore((s) => s.openManga);
+  useEffect(() => {
+    if (id) openManga(decodeURIComponent(id));
+  }, [id, openManga]);
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <BrandLoader size="sm" label="Opening the file" />
+    </div>
+  );
+};
+
+const DeepLinkReader: React.FC = () => {
+  const { mangaId, chapterId } = useParams();
+  const openChapter = useStore((s) => s.openChapter);
+  useEffect(() => {
+    if (mangaId && chapterId) openChapter(decodeURIComponent(mangaId), decodeURIComponent(chapterId), 'Chapter');
+  }, [mangaId, chapterId, openChapter]);
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <BrandLoader size="sm" label="Opening the chapter" />
+    </div>
+  );
+};
+
 const AppContent: React.FC = () => {
-  const { currentView } = useStore();
+  const { currentView, activeMangaId, activeChapterId, setView, openManga, openChapter } = useStore();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showIntro, setShowIntro] = useState(() => {
     try {
       if (new URLSearchParams(window.location.search).has('intro')) return true;
@@ -119,6 +149,47 @@ const AppContent: React.FC = () => {
     document.documentElement.classList.add('intro-active');
     return () => document.documentElement.classList.remove('intro-active');
   }, [showIntro]);
+
+  const syncFromPath = useCallback(() => {
+    const path = window.location.pathname;
+    if (path === '/' || path === '') {
+      setView('home');
+    } else if (path.startsWith('/manga/')) {
+      const id = decodeURIComponent(path.split('/')[2] || '');
+      if (id) openManga(id);
+    } else if (path.startsWith('/read/')) {
+      const parts = path.split('/');
+      const mangaId = decodeURIComponent(parts[2] || '');
+      const chapterId = decodeURIComponent(parts[3] || '');
+      if (mangaId && chapterId) openChapter(mangaId, chapterId, 'Chapter');
+    }
+  }, [setView, openManga, openChapter]);
+
+  useEffect(() => {
+    syncFromPath();
+    const onPop = () => syncFromPath();
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [syncFromPath]);
+
+  // Keep the URL in sync with the active view.
+  useEffect(() => {
+    const id = activeMangaId;
+    const ch = activeChapterId;
+    if (currentView === 'details' && id) {
+      const target = `/manga/${encodeURIComponent(id)}`;
+      if (location.pathname !== target) {
+        navigate(target, { state: { from: location.pathname + location.search } });
+      }
+    } else if (currentView === 'reader' && id && ch) {
+      const target = `/read/${encodeURIComponent(id)}/${encodeURIComponent(ch)}`;
+      if (location.pathname !== target) {
+        navigate(target, { state: { from: location.pathname + location.search } });
+      }
+    } else if (currentView === 'home' && (location.pathname.startsWith('/manga/') || location.pathname.startsWith('/read/'))) {
+      navigate('/', { replace: true });
+    }
+  }, [currentView, activeMangaId, activeChapterId, location.pathname]);
 
   let content: React.ReactNode;
 
@@ -146,6 +217,8 @@ const AppContent: React.FC = () => {
         <div className="view-enter relative z-10 flex flex-1 flex-col">
           <Routes>
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/manga/:id" element={<DeepLinkManga />} />
+            <Route path="/read/:mangaId/:chapterId" element={<DeepLinkReader />} />
 
             <Route
               path="*"

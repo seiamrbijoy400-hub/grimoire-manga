@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   Filter,
@@ -19,6 +19,7 @@ interface FilterDrawerProps {
 }
 
 import { isAdultTag } from '../lib/contentSafety.ts';
+import { lockBodyScroll } from '../lib/ui.ts';
 
 /** Adult genres never reach the UI (policy mirrored on the server). */
 export const ALL_TAGS = [
@@ -84,6 +85,19 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
   totalResultsCount
 }) => {
   const [tagSearch, setTagSearch] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const cleanup = lockBodyScroll(true);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      if (cleanup) cleanup();
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 

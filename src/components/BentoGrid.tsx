@@ -3,10 +3,12 @@ import {
   ArrowRight,
   ArrowUp,
   BookOpen,
+  Bookmark,
   ChevronRight,
   Download,
   Filter,
   Loader2,
+  RefreshCw,
   Trash2,
   Upload,
   X,
@@ -17,8 +19,8 @@ import { MangaCard } from './MangaCard.tsx';
 import { FilterDrawer, TYPE_OPTIONS } from './FilterDrawer.tsx';
 import { BrandLoader, SkeletonCard } from './BrandLoader.tsx';
 import { useStore } from '../store/useStore.ts';
+import { FALLBACK_COVER } from '../lib/placeholder.ts';
 
-const FALLBACK_COVER = '/logo.png';
 
 const DEFAULT_FILTERS: FilterState = {
   query: '',
@@ -99,6 +101,8 @@ export const BentoGrid: React.FC = () => {
     clearHistory,
     openManga,
     openChapter,
+    toggleBookmark,
+    isBookmarked,
     exportUserData,
     importUserData,
   } = useStore();
@@ -109,10 +113,13 @@ export const BentoGrid: React.FC = () => {
   const [items, setItems] = useState<MangaItem[]>([]);
   const [offset, setOffset] = useState<number>(0);
   const [loadingInitial, setLoadingInitial] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [heroImageError, setHeroImageError] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const [confirmClearHistory, setConfirmClearHistory] = useState(false);
 
   const [selectedShelf, setSelectedShelf] = useState<BookmarkCategory | 'all'>('all');
   const [shelfSearch, setShelfSearch] = useState('');
@@ -127,11 +134,15 @@ export const BentoGrid: React.FC = () => {
     setHasMore(true);
 
     try {
+      setError(null);
       const data = await fetchAdvancedSearch(filters, 0);
       setItems(data);
-      if (data.length < 24) setHasMore(false);
+      setHasMore(data.length >= 32);
+      setOffset(0);
     } catch (err) {
-      console.error('Failed to load initial data:', err);
+      setError(err instanceof Error ? err.message : 'Could not load the archive.');
+      setItems([]);
+      setHasMore(false);
     } finally {
       setLoadingInitial(false);
     }
@@ -164,9 +175,10 @@ export const BentoGrid: React.FC = () => {
           return [...prev, ...uniqueNew];
         });
         setOffset(nextOffset);
+        setHasMore(nextBatch.length >= 32);
       }
     } catch (err) {
-      console.error('Failed to load more manga:', err);
+      setError(err instanceof Error ? err.message : 'Could not load more titles.');
     } finally {
       loadingMoreRef.current = false;
       setLoadingMore(false);
@@ -189,6 +201,12 @@ export const BentoGrid: React.FC = () => {
     observer.observe(target);
     return () => observer.disconnect();
   }, [loadMore, hasMore]);
+
+  useEffect(() => {
+    if (!note) return;
+    const t = window.setTimeout(() => setNote(null), 3000);
+    return () => window.clearTimeout(t);
+  }, [note]);
 
   useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 400);
@@ -344,14 +362,14 @@ export const BentoGrid: React.FC = () => {
                         className="btn btn-stamp"
                       >
                         <BookOpen className="h-4 w-4" />
-                        Read now
+                        Open series
                       </button>
                       <button
-                        onClick={() => openManga(featured.id, featured.title, featured.cover)}
-                        className="btn btn-ghost"
+                        onClick={() => toggleBookmark(featured)}
+                        className={`btn ${isBookmarked(featured.id) ? 'border-stamp/60 bg-stamp/10 text-stamp' : 'btn-ghost'}`}
                       >
-                        Details
-                        <ArrowRight className="h-4 w-4" />
+                        <Bookmark className={`h-4 w-4 ${isBookmarked(featured.id) ? 'fill-current' : ''}`} />
+                        {isBookmarked(featured.id) ? 'Saved' : 'Save to library'}
                       </button>
                     </div>
                   </div>
@@ -601,6 +619,24 @@ export const BentoGrid: React.FC = () => {
                   ))}
                 </div>
               </div>
+            ) : error ? (
+              <EmptyState
+                index="00"
+                title="Could not reach the archive"
+                body={error}
+                action={
+                  <button
+                    onClick={() => {
+                      setError(null);
+                      if (activeTab === 'catalog') loadInitialData();
+                    }}
+                    className="btn btn-stamp"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Retry
+                  </button>
+                }
+              />
             ) : items.length === 0 ? (
               <EmptyState
                 index="00"
@@ -613,11 +649,18 @@ export const BentoGrid: React.FC = () => {
                 }
               />
             ) : (
-              <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {items.map((manga) => (
-                  <MangaCard key={manga.id} manga={manga} />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {(filters.query ? items : items.slice(5)).map((manga) => (
+                    <MangaCard key={manga.id} manga={manga} />
+                  ))}
+                </div>
+                {!filters.query && items.length > 0 && items.length <= 5 && (
+                  <p className="text-center font-mono text-[10px] uppercase tracking-[0.16em] text-paper-dim/70">
+                    End of the index · {items.length} titles
+                  </p>
+                )}
+              </>
             )}
 
             {items.length > 0 && (
@@ -741,12 +784,19 @@ export const BentoGrid: React.FC = () => {
               historyList.length > 0 ? (
                 <button
                   onClick={() => {
-                    if (confirm('Clear all reading history?')) clearHistory();
+                    if (confirmClearHistory) {
+                      clearHistory();
+                      setConfirmClearHistory(false);
+                      setNote('Reading history cleared.');
+                    } else {
+                      setConfirmClearHistory(true);
+                      window.setTimeout(() => setConfirmClearHistory(false), 3000);
+                    }
                   }}
                   className="flex h-9 items-center gap-1.5 rounded-md border border-ink-700 px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-paper-dim transition-colors hover:border-stamp/60 hover:text-stamp"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Clear
+                  {confirmClearHistory ? 'Tap again to confirm' : 'Clear'}
                 </button>
               ) : undefined
             }
@@ -810,6 +860,12 @@ export const BentoGrid: React.FC = () => {
             </ol>
           )}
         </section>
+      )}
+
+      {note && (
+        <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 rounded-md border border-ink-700 bg-ink-900/95 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.12em] text-paper shadow-lg backdrop-blur">
+          {note}
+        </div>
       )}
 
       {/* Back to top */}

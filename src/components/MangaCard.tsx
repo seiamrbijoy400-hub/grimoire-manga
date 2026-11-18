@@ -4,8 +4,8 @@ import { MangaItem } from '../types.ts';
 import { useStore } from '../store/useStore.ts';
 import { getProxyImageUrl } from '../services/api.ts';
 import { filterSafeTags } from '../lib/contentSafety.ts';
+import { FALLBACK_COVER } from '../lib/placeholder.ts';
 
-const FALLBACK_COVER = '/logo.png';
 
 interface MangaCardProps {
   manga: MangaItem;
@@ -26,6 +26,7 @@ export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
   const history = getMangaHistory(manga.id);
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [stamp, setStamp] = useState(false);
   const origin = originCode(manga.type, manga.country);
   const imgSrc = imageError ? FALLBACK_COVER : getProxyImageUrl(manga.cover);
   const genre = filterSafeTags(manga.tags)[0];
@@ -91,8 +92,12 @@ export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
         {/* Save stays a sibling so the two actions never nest. */}
         <button
           type="button"
-          onClick={() => toggleBookmark(manga)}
-          className={`absolute right-1.5 top-1.5 z-10 flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${
+          onClick={() => {
+            toggleBookmark(manga);
+            setStamp(true);
+            window.setTimeout(() => setStamp(false), 220);
+          }}
+          className={`absolute right-1.5 top-1.5 z-10 flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${stamp ? 'stamp-in' : ''} ${
             bookmarked
               ? 'border-stamp bg-stamp text-ink-950'
               : 'border-transparent bg-ink-950/45 text-paper-dim backdrop-blur-sm hover:border-ink-600 hover:text-paper'

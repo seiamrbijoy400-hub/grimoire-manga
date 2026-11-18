@@ -5,26 +5,22 @@ import {
   BookOpen,
   ArrowUpDown,
   Search,
-  Sparkles,
-  Calendar,
   CheckCircle2,
-  Clock,
-  Layers,
   ChevronDown,
   Share2,
   Check,
-  RotateCcw,
   Globe,
-  ArrowRight,
-} from 'lucide-react';
+  ArrowRight
+} from 'lucide-react';;
 import { useStore } from '../store/useStore.ts';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { fetchMangaDetails, fetchChapterList, getProxyImageUrl } from '../services/api.ts';
 import { BrandLoader } from './BrandLoader.tsx';
 import { filterSafeTags } from '../lib/contentSafety.ts';
 import { MangaDetails, ChapterItem, BookmarkCategory } from '../types.ts';
+import { FALLBACK_COVER } from '../lib/placeholder.ts';
 
 const CHUNK_SIZE = 50;
-const FALLBACK_COVER = '/logo.png';
 
 const LANGUAGE_META: Record<string, { label: string }> = {
   en: { label: 'English' },
@@ -64,6 +60,8 @@ const SHELF_LABELS: Record<BookmarkCategory, { label: string; color: string }> =
 };
 
 export const MangaDetailsView: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const {
     activeMangaId,
     setView,
@@ -91,6 +89,7 @@ export const MangaDetailsView: React.FC = () => {
 
   useEffect(() => {
     if (!activeMangaId) return;
+    document.title = 'KURSO SCROLL — Loading…';
 
     async function load() {
       setLoading(true);
@@ -101,6 +100,7 @@ export const MangaDetailsView: React.FC = () => {
       setDetails(d);
       if (d) {
         setActiveMangaMeta(d.title, d.cover);
+        document.title = `${d.title} — KURSO SCROLL`;
       }
       setChapters(ch);
       setLoading(false);
@@ -178,9 +178,14 @@ export const MangaDetailsView: React.FC = () => {
   const totalReadCount = chapters.filter((c) => isChapterRead(c.id)).length;
   const readPercentage = chapters.length > 0 ? Math.round((totalReadCount / chapters.length) * 100) : 0;
 
+  useEffect(() => {
+    setSelectedChunk(0);
+  }, [selectedLanguage, chapterFilter, sortDescending]);
+
   const handleCopyLink = () => {
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
+      const url = `${window.location.origin}/manga/${encodeURIComponent(activeMangaId || '')}`;
+      navigator.clipboard.writeText(url);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     }
@@ -189,10 +194,10 @@ export const MangaDetailsView: React.FC = () => {
   return (
     <div className="min-h-screen animate-fade-in pb-24 text-paper">
       {/* Sticky bar */}
-      <div className="sticky top-0 z-30 border-b border-ink-700 bg-ink-950/95 backdrop-blur-md">
+      <div className="sticky top-0 z-30 border-b border-ink-700 bg-ink-950/95 backdrop-blur-md safe-top">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <button
-            onClick={() => setView('home')}
+            onClick={() => { setView('home'); navigate((location.state as any)?.from || '/'); }}
             className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-paper-dim transition-colors hover:text-paper"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -309,7 +314,7 @@ export const MangaDetailsView: React.FC = () => {
                       className="btn btn-stamp"
                     >
                       <BookOpen className="h-4 w-4" />
-                      {history ? `Resume ${resumeChapter.title}` : 'Read chapter 1'}
+                      {history ? `Resume ${resumeChapter.title}` : `Open ${oldestChapter?.title ?? 'first chapter'}`}
                     </button>
                   )}
 
@@ -579,7 +584,7 @@ export const MangaDetailsView: React.FC = () => {
       ) : (
         <div className="mx-auto max-w-sm space-y-4 px-4 py-20 text-center">
           <p className="text-[13px] text-paper-dim">This series could not be loaded.</p>
-          <button onClick={() => setView('home')} className="btn btn-ghost">
+          <button onClick={() => { setView('home'); navigate((location.state as any)?.from || '/'); }} className="btn btn-ghost">
             Back to the index
           </button>
         </div>

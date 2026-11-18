@@ -6,32 +6,22 @@ import {
   Play,
   Pause,
   Sliders,
-  Sparkles,
-  ArrowUp,
   BookOpen,
   CheckCircle2,
   Scroll,
   Loader2,
-  Flame,
   Maximize2,
   Minimize2,
   List,
-  Layers,
-  Sun,
-  Moon,
-  ChevronDown,
-  Eye,
   Columns,
-  Square,
   Volume2,
   VolumeX,
-  Radio,
   ShieldCheck,
-  Zap,
   Box,
   CloudRain,
   Music,
   Gauge,
+  X
 } from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
 import { fetchChapterImages, fetchChapterList, getProxyImageUrl } from '../services/api.ts';
@@ -687,7 +677,7 @@ export const ReaderView: React.FC = () => {
                 onClick={() => setShowChapterDrawer(false)}
                 className="text-[#ABA599] hover:text-[#F4EFE4] text-sm font-mono p-1"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -739,7 +729,7 @@ export const ReaderView: React.FC = () => {
               onClick={() => setShowSettings(false)}
               className="text-[#ABA599] hover:text-[#F4EFE4] font-mono"
             >
-              ✕
+              <X className="h-4 w-4" />
             </button>
           </div>
 
@@ -1113,7 +1103,7 @@ export const ReaderView: React.FC = () => {
                       </div>
                       <div className="space-y-1">
                         <span className="text-[10px] font-mono uppercase tracking-widest text-[#E8472F]">
-                          Edition Folio
+                          Chapter {chIdx + 1}
                         </span>
                         <h2 className="font-serif text-lg sm:text-2xl font-bold text-[#F4EFE4]">
                           {block.chapterTitle}
@@ -1140,10 +1130,10 @@ export const ReaderView: React.FC = () => {
                         <CheckCircle2 className="w-3.5 h-3.5" />
                       </div>
                       <h4 className="font-serif text-sm font-bold text-[#F4EFE4]">
-                        Concluded: {block.chapterTitle}
+                        End of chapter
                       </h4>
                       <p className="text-[11px] text-[#ABA599] font-sans">
-                        Continue scrolling to progress to subsequent folio...
+                        Continue scrolling for the next chapter.
                       </p>
                     </div>
                   </div>
@@ -1161,10 +1151,10 @@ export const ReaderView: React.FC = () => {
                       </div>
                       <div className="space-y-1">
                         <h3 className="font-serif text-lg font-bold text-[#F4EFE4]">
-                          You are Caught Up
+                          You're all caught up
                         </h3>
                         <p className="text-xs text-[#ABA599] max-w-md mx-auto leading-relaxed font-sans">
-                          You have concluded the latest published chapter for this edition. Return to the chronicle folio index or explore more works in the archive.
+                          You've reached the latest published chapter. Back to the series or explore more in the archive.
                         </p>
                       </div>
                       <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
@@ -1172,7 +1162,7 @@ export const ReaderView: React.FC = () => {
                           onClick={() => setView('details')}
                           className="px-4 py-2 rounded-lg bg-[#17171A] hover:bg-[#1E1E22] border border-[#26262A] text-xs font-sans text-[#F4EFE4] transition-all"
                         >
-                          Return to Folio Index
+                          Back to series
                         </button>
                         <button
                           onClick={() => setView('home')}
@@ -1232,10 +1222,27 @@ export const ReaderView: React.FC = () => {
                   </div>
 
                   {/* Pages Artwork Display */}
-                  <div className={`w-full flex items-center justify-center ${isDouble ? 'flex-row gap-2' : ''}`}>
+                  <div
+                    className={`w-full flex items-center justify-center ${isDouble ? (isRtl ? 'flex-row-reverse gap-2' : 'flex-row gap-2') : ''}`}
+                    onTouchStart={(e) => {
+                      const t = e.touches[0];
+                      (containerRef as any).__sx = t.clientX;
+                      (containerRef as any).__sy = t.clientY;
+                    }}
+                    onTouchEnd={(e) => {
+                      const t = e.changedTouches[0];
+                      const sx = (containerRef as any).__sx ?? t.clientX;
+                      const sy = (containerRef as any).__sy ?? t.clientY;
+                      const dx = t.clientX - sx;
+                      const dy = t.clientY - sy;
+                      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+                      if (dx < 0) (isRtl ? prevPage : nextPage)();
+                      else (isRtl ? nextPage : prevPage)();
+                    }}
+                  >
                     {/* Primary Page */}
                     {currentImages[currentPage - 1] && (
-                      <div className="relative max-w-full flex justify-center shadow-2xl">
+                      <div key={currentPage} className="relative max-w-full flex justify-center shadow-2xl page-set">
                         <img
                           src={getProxyImageUrl(currentImages[currentPage - 1])}
                           alt={`Page ${currentPage}`}

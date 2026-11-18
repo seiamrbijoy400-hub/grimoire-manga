@@ -25,7 +25,7 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-ink-700 bg-ink-950/95 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-ink-700 bg-ink-950/95 backdrop-blur-md safe-top">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Masthead */}
         <div className="flex min-w-0 items-center gap-3">
@@ -160,11 +160,20 @@ export const MobileTabBar: React.FC = () => {
     },
   ];
 
+  const activeIndex = tabs.findIndex((t) => t.active);
+
   return (
     <nav
       className="tab-bar fixed inset-x-0 bottom-0 z-50 grid grid-cols-4 sm:hidden"
       aria-label="Primary"
     >
+      <span
+        aria-hidden="true"
+        className="absolute bottom-0 left-0 h-[2px] w-1/4 transition-transform duration-150 ease-out"
+        style={{ transform: `translateX(${activeIndex * 100}%)` }}
+      >
+        <span className="mx-auto block h-full w-8 bg-stamp" />
+      </span>
       {tabs.map((tab) => {
         const Icon = tab.icon;
         return (
@@ -176,11 +185,6 @@ export const MobileTabBar: React.FC = () => {
               tab.active ? 'text-paper' : 'text-paper-dim'
             }`}
           >
-            <span
-              className={`absolute top-0 h-[2px] w-8 transition-colors ${
-                tab.active ? 'bg-stamp' : 'bg-transparent'
-              }`}
-            />
             <Icon className="h-[18px] w-[18px]" strokeWidth={tab.active ? 2.2 : 1.8} />
             <span className="font-mono text-[9px] uppercase tracking-[0.14em]">{tab.label}</span>
           </button>

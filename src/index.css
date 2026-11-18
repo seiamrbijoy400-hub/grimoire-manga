@@ -23,6 +23,8 @@
     --stamp-deep: #c2361f;
     --gold: #c9a45c;
     --teal: #4fb3a2;
+    --line-ui: #57575e;
+    --paper-mute: #8c877d;
     --rail: 4.75rem;
   }
 
@@ -208,7 +210,7 @@
     border-color: var(--line-strong);
   }
   .chip[data-active='true'] {
-    background: var(--paper);
+    background-size: 100% 100%;
     border-color: var(--paper);
     color: var(--ink);
     font-weight: 600;
@@ -216,7 +218,12 @@
 
   @media (pointer: coarse) {
     .chip {
-      min-height: 40px;
+      min-height: 44px;
+    }
+    select,
+    input[type='search'],
+    input[type='text'] {
+      min-height: 44px;
     }
   }
 
@@ -289,6 +296,10 @@
   }
 
   /* Bottom navigation (mobile) */
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   .tab-bar {
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: rgba(10, 10, 11, 0.94);
@@ -544,6 +555,28 @@
   }
   100% {
     transform: scaleX(0);
+  }
+}
+
+@keyframes pageSet {
+  0% { opacity: 0; transform: translateX(12px); }
+  100% { opacity: 1; transform: none; }
+}
+.page-set { animation: pageSet 110ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+
+@keyframes stampIn {
+  0% { transform: scale(1.5) rotate(-8deg); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.stamp-in { animation: stampIn 180ms cubic-bezier(0.16, 1.4, 0.3, 1) both; }
+
+/* Keep mobile form controls at 16px to avoid iOS focus zoom. */
+@media (max-width: 640px) {
+  input[type='text'],
+  input[type='search'],
+  textarea {
+    font-size: 16px;
   }
 }
 

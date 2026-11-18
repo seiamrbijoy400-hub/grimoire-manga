@@ -64,7 +64,7 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onDone }) => {
     }, 26);
 
     const skipTimer = window.setTimeout(() => setCanSkip(true), 320);
-    const autoLeave = window.setTimeout(finish, 1980);
+    const autoLeave = window.setTimeout(finish, 1600);
 
     return () => {
       window.clearInterval(tick);

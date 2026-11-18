@@ -38,7 +38,43 @@ export interface MangaDexFilterOptions {
   lang?: string; // en, es, pt-br, fr, id, ja, ko, zh
   types?: string[]; // Manga, Manhwa, Manhua, OEL
   status?: string[]; // Ongoing, Complete, Hiatus
+  includedTags?: string[]; // human names, mapped below
+  excludedTags?: string[];
 }
+
+/**
+ * MangaDex filters tags by UUID, not by name. Only tags with a real MangaDex
+ * equivalent are listed here; demographics like Seinen/Shounen simply do not
+ * exist upstream and must not silently degrade into an unfiltered feed.
+ */
+export const MD_TAG_IDS: Record<string, string> = {
+  action: '391b0423-d847-456f-aff0-8b0cfc03066b',
+  adventure: '87cc87cd-a395-47af-b27a-93258283bbc6',
+  comedy: '4d32cc48-9f00-4cca-9b5a-a839f0764984',
+  drama: 'b9af3a63-f058-46de-a9a0-e0c13906197a',
+  fantasy: 'cdc58593-87dd-415e-bbc0-2ec27bf404cc',
+  harem: 'aafb99c1-7f60-43fa-b75f-fc9502ce29c7',
+  historical: '33771934-028e-4cb3-8744-691e866a923e',
+  horror: 'cdad7e68-1419-41dd-bdce-27753074a640',
+  isekai: 'ace04997-f6bd-436e-b261-779182193d3d',
+  'martial arts': '799c202e-7daa-44eb-9cf7-8a3c0441531e',
+  mecha: '50880a9d-5440-4732-9afb-8f457127e836',
+  mystery: 'ee968100-4191-4968-93d3-f82d72be7e46',
+  psychological: '3b60b75c-a2d7-4860-ab56-05f391bb889c',
+  romance: '423e2eae-a7a2-4a8b-ac03-a8351462d71d',
+  'school life': 'caaa44eb-cd40-4177-b930-79d3ef2afe87',
+  'sci-fi': '256c8bd9-4904-4360-bf4f-508a76d67183',
+  'slice of life': 'e5301a23-ebd9-49dd-a0cb-2add944c7fe9',
+  sports: '69964a64-2f90-4d33-beeb-f3ed2875eb4c',
+  supernatural: 'eabc5b4c-6aff-42f3-b657-3e90cbd00b75',
+  thriller: '07251805-a27e-4d59-b488-f0bfbec15168',
+  tragedy: 'f8f62932-27da-4fe4-8ee1-6779a8c5edba',
+};
+
+const mdTagId = (name: string) => MD_TAG_IDS[name.trim().toLowerCase()];
+
+export const unsupportedMangaDexTags = (tags: string[] = []): string[] =>
+  tags.filter((tag) => !mdTagId(tag));
 
 function applyMangaDexFilters(params: URLSearchParams, options?: MangaDexFilterOptions) {
   if (!options) return;
@@ -74,6 +110,16 @@ function applyMangaDexFilters(params: URLSearchParams, options?: MangaDexFilterO
     if (options.status.includes('Complete')) params.append('status[]', 'completed');
     if (options.status.includes('Hiatus')) params.append('status[]', 'hiatus');
   }
+
+  // 4. Genres / themes (UUIDs, unsupported names are filtered by the caller)
+  options.includedTags?.forEach((tag) => {
+    const id = mdTagId(tag);
+    if (id) params.append('includedTags[]', id);
+  });
+  options.excludedTags?.forEach((tag) => {
+    const id = mdTagId(tag);
+    if (id) params.append('excludedTags[]', id);
+  });
 }
 
 // Fetch MangaDex Popular / Safe Manga

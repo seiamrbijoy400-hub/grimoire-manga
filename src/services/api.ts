@@ -43,8 +43,16 @@ export async function searchMangaApi(query: string, quick: boolean = false, offs
       source,
     });
     const res = await fetch(`${API_BASE}/search?${params.toString()}`);
+    if (!res.ok) {
+      console.error('Search failed with status', res.status);
+      return [];
+    }
     const json = await res.json();
-    return json.data || [];
+    if (!json || !Array.isArray(json.data)) {
+      console.error('Unexpected search response:', json);
+      return [];
+    }
+    return json.data;
   } catch (err) {
     console.error('Failed to search manga:', err);
     return [];
@@ -82,8 +90,16 @@ export async function fetchAdvancedSearch(filter: Partial<FilterState>, offset: 
     }
 
     const res = await fetch(`${API_BASE}/search?${params.toString()}`);
+    if (!res.ok) {
+      let detail = '';
+      try { detail = (await res.json())?.error || ''; } catch { detail = ''; }
+      throw new Error(detail || `Search failed (${res.status})`);
+    }
     const json = await res.json();
-    return json.data || [];
+    if (!json || !Array.isArray(json.data)) {
+      throw new Error('Unexpected search response');
+    }
+    return json.data;
   } catch (err) {
     console.error('Failed advanced search:', err);
     return [];

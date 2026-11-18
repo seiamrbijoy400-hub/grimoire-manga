@@ -1,12 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Loader2, Sparkles, ArrowRight } from 'lucide-react';
+import {
+  Search,
+  X,
+  Loader2,
+  ArrowRight
+} from 'lucide-react';;
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore.ts';
 import { searchMangaApi, getProxyImageUrl } from '../services/api.ts';
 import { MangaItem } from '../types.ts';
 import { BrandLogo } from './BrandMark.tsx';
-
-export const FALLBACK_COVER = '/logo.png';
+import { lockBodyScroll } from '../lib/ui.ts';
+import { FALLBACK_COVER } from '../lib/placeholder.ts';
+export { FALLBACK_COVER };
 
 export const POPULAR_SEARCHES = [
   'Solo Leveling',
@@ -27,16 +33,23 @@ export const SearchModal: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const reqIdRef = useRef(0);
 
   useEffect(() => {
     if (searchOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+      if (window.matchMedia('(min-width: 640px)').matches) setTimeout(() => inputRef.current?.focus(), 100);
       setSelectedIndex(-1);
     } else {
       setQuery('');
       setResults([]);
       setSelectedIndex(-1);
     }
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const cleanup = lockBodyScroll(true);
+    return () => { if (cleanup) cleanup(); };
   }, [searchOpen]);
 
   // Global key shortcut Ctrl+K & Arrow key navigation
@@ -90,12 +103,20 @@ export const SearchModal: React.FC = () => {
       return;
     }
 
+    const myReq = ++reqIdRef.current;
     const timer = setTimeout(async () => {
       setLoading(true);
-      const items = await searchMangaApi(query.trim(), false);
-      setResults(items);
-      setSelectedIndex(-1);
-      setLoading(false);
+      try {
+        const items = await searchMangaApi(query.trim(), false);
+        if (myReq !== reqIdRef.current) return;
+        setResults(items);
+        setSelectedIndex(-1);
+      } catch {
+        if (myReq !== reqIdRef.current) return;
+        setResults([]);
+      } finally {
+        if (myReq === reqIdRef.current) setLoading(false);
+      }
     }, 280);
 
     return () => clearTimeout(timer);
@@ -146,7 +167,7 @@ export const SearchModal: React.FC = () => {
             }}
             placeholder="Search the index…"
             aria-label="Search the index"
-            className="min-w-0 flex-1 bg-transparent text-[13.5px] text-paper placeholder:text-paper-dim/60 focus:outline-none"
+            className="min-w-0 flex-1 bg-transparent text-[16px] sm:text-[13.5px] text-paper placeholder:text-paper-dim/60 focus:outline-none"
           />
           {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-stamp" />}
           <kbd className="hidden shrink-0 border border-ink-700 px-1.5 py-0.5 font-mono text-[9px] text-paper-dim sm:block">

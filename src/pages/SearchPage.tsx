@@ -20,9 +20,8 @@ import {
   BookOpen,
   Trash2,
   RefreshCw,
-  ChevronLeft,
-  Sparkles,
-} from 'lucide-react';
+  ChevronLeft
+} from 'lucide-react';;
 import { useStore } from '../store/useStore.ts';
 import { MobileTabBar } from '../components/Navbar.tsx';
 import { fetchAdvancedSearch, getProxyImageUrl } from '../services/api.ts';
@@ -36,7 +35,7 @@ import {
 const HISTORY_KEY = 'grimoire:search-history';
 const MAX_HISTORY = 10;
 const DEBOUNCE_MS = 350;
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 32;
 
 const GENRE_CHIPS = [
   'All',
@@ -56,13 +55,19 @@ const GENRE_CHIPS = [
   'Slice of Life',
   'Supernatural',
   'Thriller',
+  'Sports',
+  'Historical',
+  'Martial Arts',
+  'School Life',
+  'Harem',
+  'Tragedy',
 ];
 
 const SORT_OPTIONS = [
   { value: 'relevance', label: 'Popularity' },
   { value: 'latest',    label: 'Latest updates' },
   { value: 'alpha',     label: 'A → Z' },
-  { value: 'rating',    label: 'Top rated' },
+  { value: 'rating',    label: 'Most subscribed' },
 ];
 
 type SortKey = 'relevance' | 'latest' | 'alpha' | 'rating';
@@ -103,9 +108,15 @@ export const SearchPage: React.FC = () => {
   const { openManga, setSearchOpen, setView } = useStore();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef  = useRef<HTMLDivElement>(null);
+  const reqIdRef = useRef(0);
 
   // ── URL-driven Query ────────────────────────────────────────────────────────
-  const queryParam = searchParams.get('q') ?? '';
+  const queryParam  = searchParams.get('q') ?? '';
+  const tagParam    = searchParams.get('tag') ?? '';
+  const typeParam   = searchParams.get('type') ?? '';
+  const statusParam = searchParams.get('status') ?? '';
+  const sourceParam = (searchParams.get('source') as MangaSource | null) ?? 'all';
+  const sortParam   = (searchParams.get('sort') as SortKey | null) ?? 'relevance';
   const [query,       setQuery]       = useState<string>(queryParam);
   const [committed,   setCommitted]   = useState<string>(queryParam);
 
@@ -118,21 +129,21 @@ export const SearchPage: React.FC = () => {
   const [error,       setError]       = useState<string | null>(null);
 
   // ── Filters ─────────────────────────────────────────────────────────────────
-  const [sourceFilter, setSourceFilter] = useState<MangaSource>('all');
-  const [typeFilter,   setTypeFilter]   = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [genreFilter,  setGenreFilter]  = useState<string>('');
-  const [sortKey,      setSortKey]      = useState<SortKey>('relevance');
-  const [showFilters,  setShowFilters]  = useState(false);
+  const [sourceFilter, setSourceFilter] = useState<MangaSource>(sourceParam);
+  const [typeFilter,   setTypeFilter]   = useState<string>(typeParam);
+  const [statusFilter, setStatusFilter] = useState<string>(statusParam);
+  const [genreFilter,  setGenreFilter]  = useState<string>(tagParam);
+  const [sortKey,      setSortKey]      = useState<SortKey>(sortParam);
+  const [showFilters,  setShowFilters]  = useState<boolean>(Boolean(tagParam || typeParam || statusParam || sourceParam !== 'all'));
 
   // ── History & Suggestions ───────────────────────────────────────────────────
   const [history,         setHistory]         = useState<string[]>(readHistory);
   const [suggestions,     setSuggestions]     = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Focus input on mount; close global modal
+  // Focus input on mount (desktop only); close global modal
   useEffect(() => {
-    inputRef.current?.focus();
+    if (window.matchMedia('(min-width: 640px)').matches) inputRef.current?.focus();
     setSearchOpen(false);
   }, [setSearchOpen]);
 
@@ -148,17 +159,20 @@ export const SearchPage: React.FC = () => {
     setSuggestions(hits);
   }, [query, history, committed]);
 
-  // URL query sync
+  // URL sync (query + filters)
   useEffect(() => {
     const id = setTimeout(() => {
-      if (query.trim()) {
-        setSearchParams({ q: query.trim() }, { replace: true });
-      } else {
-        setSearchParams({}, { replace: true });
-      }
+      const next: Record<string, string> = {};
+      if (query.trim()) next.q = query.trim();
+      if (genreFilter) next.tag = genreFilter;
+      if (typeFilter) next.type = typeFilter;
+      if (statusFilter) next.status = statusFilter;
+      if (sourceFilter !== 'all') next.source = sourceFilter;
+      if (sortKey !== 'relevance') next.sort = sortKey;
+      setSearchParams(next, { replace: true });
     }, 300);
     return () => clearTimeout(id);
-  }, [query, setSearchParams]);
+  }, [query, genreFilter, typeFilter, statusFilter, sourceFilter, sortKey, setSearchParams]);
 
   // ── Core Search Function (Direct Server Integration) ────────────────────────
   const runSearch = useCallback(
@@ -194,6 +208,8 @@ export const SearchPage: React.FC = () => {
         setLoadingMore(true);
       }
 
+      const myReq = ++reqIdRef.current;
+
       try {
         const filterState: Partial<FilterState> = {
           query: term.trim(),
@@ -206,11 +222,14 @@ export const SearchPage: React.FC = () => {
               ? 'Latest Updates'
               : activeSort === 'alpha'
               ? 'Alphabet'
+              : activeSort === 'rating'
+              ? 'Subscribers'
               : 'Popularity',
           order: 'Descending',
         };
 
         const items = await fetchAdvancedSearch(filterState, currentOffset);
+        if (myReq !== reqIdRef.current) return;
 
         // Normalize items so badges and types are guaranteed
         const normalized = items.map((m) => ({
@@ -233,16 +252,15 @@ export const SearchPage: React.FC = () => {
         setHasMore(items.length >= PAGE_SIZE);
         setOffset(currentOffset);
         setCommitted(term.trim());
-
-        if (term.trim()) {
-          pushHistory(term.trim());
-          setHistory(readHistory());
-        }
       } catch (e: unknown) {
+        if (myReq !== reqIdRef.current) return;
         setError(e instanceof Error ? e.message : 'Search failed. Please try again.');
+        if (currentOffset === 0) setResults([]);
       } finally {
-        setLoading(false);
-        setLoadingMore(false);
+        if (myReq === reqIdRef.current) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
       }
     },
     [genreFilter, typeFilter, statusFilter, sortKey, sourceFilter]
@@ -275,7 +293,8 @@ export const SearchPage: React.FC = () => {
     setQuery(t);
     setShowSuggestions(false);
     setSuggestions([]);
-    setSearchParams(t ? { q: t } : {});
+    if (t) pushHistory(t);
+    setHistory(readHistory());
     runSearch(t, 0);
     inputRef.current?.blur();
   };
@@ -308,9 +327,7 @@ export const SearchPage: React.FC = () => {
       const statusMatch = statusFilter
         ? (item.status?.toLowerCase() ?? '').includes(statusFilter.toLowerCase())
         : true;
-      const genreMatch = genreFilter
-        ? item.tags?.some((t) => t.toLowerCase() === genreFilter.toLowerCase())
-        : true;
+      const genreMatch = true; // filtering is done upstream; re-filtering drops valid results
       const sourceMatch =
         sourceFilter === 'all'
           ? true
@@ -329,7 +346,7 @@ export const SearchPage: React.FC = () => {
   return (
     <div className="flex min-h-screen flex-col bg-ink-950 text-paper">
       {/* ── Search bar ─────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 border-b border-ink-700 bg-ink-950/95 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-ink-700 bg-ink-950/95 backdrop-blur-md safe-top">
         <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-3">
           <button
             onClick={() => {
@@ -366,7 +383,7 @@ export const SearchPage: React.FC = () => {
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 placeholder="Titles, authors, genres…"
                 aria-label="Search the archive"
-                className="min-w-0 flex-1 bg-transparent text-[13.5px] text-paper placeholder:text-paper-dim/60 focus:outline-none"
+                className="min-w-0 flex-1 bg-transparent text-[16px] sm:text-[13.5px] text-paper placeholder:text-paper-dim/60 focus:outline-none"
               />
               {query && (
                 <button
@@ -633,7 +650,7 @@ export const SearchPage: React.FC = () => {
           )}
 
           {/* Empty */}
-          {!loading && !error && displayedResults.length === 0 && (query.trim() || genreFilter) && (
+          {!loading && !error && displayedResults.length === 0 && (query.trim() || genreFilter || typeFilter || statusFilter) && (
             <div className="mx-auto flex max-w-sm flex-col items-center gap-3 py-20 text-center">
               <BookOpen className="h-8 w-8 text-paper-dim/60" />
               <h3 className="font-display text-base font-semibold text-paper">
