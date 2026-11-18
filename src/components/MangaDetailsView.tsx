@@ -13,13 +13,39 @@ import {
   ChevronDown,
   Share2,
   Check,
-  RotateCcw
+  RotateCcw,
+  Globe
 } from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
 import { fetchMangaDetails, fetchChapterList, getProxyImageUrl } from '../services/api.ts';
 import { MangaDetails, ChapterItem, BookmarkCategory } from '../types.ts';
 
 const CHUNK_SIZE = 50;
+
+const LANGUAGE_META: Record<string, { label: string; flag: string }> = {
+  en: { label: 'English', flag: '🇬🇧' },
+  es: { label: 'Español', flag: '🇪🇸' },
+  'es-la': { label: 'Español (Latam)', flag: '🇲🇽' },
+  'pt-br': { label: 'Português', flag: '🇧🇷' },
+  fr: { label: 'Français', flag: '🇫🇷' },
+  id: { label: 'Indonesia', flag: '🇮🇩' },
+  ja: { label: '日本語', flag: '🇯🇵' },
+  ko: { label: '한국어', flag: '🇰🇷' },
+  zh: { label: '中文', flag: '🇨🇳' },
+  'zh-hk': { label: '粵語', flag: '🇭🇰' },
+  de: { label: 'Deutsch', flag: '🇩🇪' },
+  it: { label: 'Italiano', flag: '🇮🇹' },
+  ru: { label: 'Русский', flag: '🇷🇺' },
+  ar: { label: 'العربية', flag: '🇸🇦' },
+  hi: { label: 'हिन्दी', flag: '🇮🇳' },
+  he: { label: 'עברית', flag: '🇮🇱' },
+  ka: { label: 'ქართული', flag: '🇬🇪' },
+  ms: { label: 'Melayu', flag: '🇲🇾' },
+  th: { label: 'ไทย', flag: '🇹🇭' },
+  vi: { label: 'Tiếng Việt', flag: '🇻🇳' },
+  tr: { label: 'Türkçe', flag: '🇹🇷' },
+  pl: { label: 'Polski', flag: '🇵🇱' },
+};
 
 const SHELF_LABELS: Record<BookmarkCategory, { label: string; icon: string; color: string }> = {
   reading: { label: 'Reading', icon: '📖', color: 'text-solar-400' },
@@ -47,6 +73,7 @@ export const MangaDetailsView: React.FC = () => {
   const [details, setDetails] = useState<MangaDetails | null>(null);
   const [chapters, setChapters] = useState<ChapterItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('all');
   const [chapterFilter, setChapterFilter] = useState('');
   const [sortDescending, setSortDescending] = useState(true);
   const [selectedChunk, setSelectedChunk] = useState<number>(0); // 0 = first chunk, -1 = all
@@ -78,12 +105,43 @@ export const MangaDetailsView: React.FC = () => {
   const currentBookmark = details ? getBookmark(details.id) : undefined;
   const history = getMangaHistory(activeMangaId);
 
-  // Filter chapters by query
+  // Available Languages and chapter counts
+  const availableLanguages = useMemo(() => {
+    const map: Record<string, number> = {};
+    chapters.forEach((ch) => {
+      const lang = ch.language || 'en';
+      map[lang] = (map[lang] || 0) + 1;
+    });
+    return map;
+  }, [chapters]);
+
+  const languageKeys = useMemo(() => Object.keys(availableLanguages), [availableLanguages]);
+
+  // Set default language intelligently: English first, or most populous language
+  useEffect(() => {
+    if (languageKeys.length === 0) return;
+    if (languageKeys.includes('en')) {
+      setSelectedLanguage('en');
+    } else if (languageKeys.length === 1) {
+      setSelectedLanguage(languageKeys[0]);
+    } else {
+      const sorted = [...languageKeys].sort((a, b) => availableLanguages[b] - availableLanguages[a]);
+      setSelectedLanguage(sorted[0] || 'all');
+    }
+  }, [languageKeys, availableLanguages]);
+
+  // 1. Filter chapters by selected language
+  const languageFilteredChapters = useMemo(() => {
+    if (selectedLanguage === 'all') return chapters;
+    return chapters.filter((ch) => (ch.language || 'en') === selectedLanguage);
+  }, [chapters, selectedLanguage]);
+
+  // 2. Filter chapters by search query
   const filteredChapters = useMemo(() => {
-    return chapters.filter((ch) =>
+    return languageFilteredChapters.filter((ch) =>
       ch.title.toLowerCase().includes(chapterFilter.toLowerCase())
     );
-  }, [chapters, chapterFilter]);
+  }, [languageFilteredChapters, chapterFilter]);
 
   // Order chapters
   const orderedChapters = useMemo(() => {
@@ -122,21 +180,21 @@ export const MangaDetailsView: React.FC = () => {
   return (
     <div className="min-h-screen pb-24 animate-fade-in">
       {/* Sticky Top Bar */}
-      <div className="sticky top-16 z-30 backdrop-blur-xl bg-void-950/85 border-b border-void-700/60 px-4 py-2.5 flex items-center justify-between">
+      <div className="sticky top-16 z-30 backdrop-blur-md bg-[#090A0C]/90 border-b border-[#292A2D] px-4 sm:px-6 py-2.5 flex items-center justify-between">
         <button
           onClick={() => setView('home')}
-          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-solar-400 font-mono transition-colors"
+          className="flex items-center gap-1.5 text-xs text-[#AAA69D] hover:text-[#C69A45] font-sans transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
-          <span>Return to Library</span>
+          <span>Return to Archive</span>
         </button>
 
         {details && (
           <div className="flex items-center gap-2 truncate max-w-xs sm:max-w-md">
-            <span className="text-xs text-slate-200 font-serif font-bold truncate">
+            <span className="text-xs text-[#F0E9DC] font-serif font-bold truncate">
               {details.title}
             </span>
-            <span className="text-[10px] px-1.5 py-0.2 rounded bg-solar-500/15 text-solar-400 border border-solar-500/30 font-mono shrink-0">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#191A1F] text-[#C69A45] border border-[#292A2D] font-mono shrink-0">
               {readPercentage}% Read
             </span>
           </div>
@@ -145,23 +203,23 @@ export const MangaDetailsView: React.FC = () => {
 
       {loading ? (
         <div className="max-w-6xl mx-auto px-4 py-12 space-y-6 animate-pulse">
-          <div className="h-72 rounded-3xl bg-void-900 border border-void-800" />
-          <div className="h-44 rounded-2xl bg-void-900 border border-void-800" />
+          <div className="h-72 rounded-xl bg-[#111318] border border-[#292A2D]" />
+          <div className="h-44 rounded-xl bg-[#111318] border border-[#292A2D]" />
         </div>
       ) : details ? (
-        <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-8">
           {/* Header Hero Card */}
-          <div className="relative rounded-3xl overflow-hidden bg-void-900 border border-void-700/70 p-6 sm:p-8 shadow-2xl group">
+          <div className="relative rounded-2xl overflow-hidden bg-[#111318] border border-[#292A2D] p-6 sm:p-8 shadow-2xl">
             {/* Ambient Blurred Backdrop */}
             <div
-              className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-20 transition-opacity"
+              className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-15 pointer-events-none"
               style={{ backgroundImage: `url(${getProxyImageUrl(details.cover)})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-void-950 via-void-950/90 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#090A0C] via-[#090A0C]/90 to-transparent pointer-events-none" />
 
             <div className="relative z-10 flex flex-col md:flex-row gap-6 sm:gap-8 items-start">
               {/* Cover Artwork */}
-              <div className="w-40 sm:w-56 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-solar-500/40 shrink-0 mx-auto md:mx-0 group-hover:border-solar-500 transition-colors">
+              <div className="w-40 sm:w-56 aspect-[3/4] rounded-lg overflow-hidden shadow-2xl border border-[#292A2D] shrink-0 mx-auto md:mx-0 bg-[#090A0C]">
                 <img
                   src={getProxyImageUrl(details.cover)}
                   alt={details.title}
@@ -172,23 +230,23 @@ export const MangaDetailsView: React.FC = () => {
               {/* Information Column */}
               <div className="flex-1 space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-solar-500/20 text-solar-400 border border-solar-500/40 text-xs font-serif font-bold">
+                  <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-xs font-mono text-[#C69A45] font-semibold">
                     {details.type || 'Manga'}
                   </span>
-                  <span className="px-3 py-1 rounded-full bg-void-800 text-slate-300 text-xs font-mono border border-void-700/60">
+                  <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-xs font-mono text-[#AAA69D]">
                     {details.status || 'Ongoing'}
                   </span>
                   {details.author && (
-                    <span className="text-xs text-slate-400 font-mono">
-                      By <span className="text-slate-200 font-semibold">{details.author}</span>
+                    <span className="text-xs text-[#AAA69D] font-sans">
+                      By <span className="text-[#F0E9DC] font-semibold">{details.author}</span>
                     </span>
                   )}
-                  <span className="text-xs text-slate-500 font-mono">
+                  <span className="text-xs text-[#AAA69D]/70 font-mono">
                     • {chapters.length} Chapters
                   </span>
                 </div>
 
-                <h1 className="font-serif text-2xl sm:text-4xl font-extrabold text-slate-100 tracking-tight leading-tight">
+                <h1 className="font-serif text-2xl sm:text-4xl font-bold text-[#F0E9DC] tracking-tight leading-tight">
                   {details.title}
                 </h1>
 
@@ -219,10 +277,10 @@ export const MangaDetailsView: React.FC = () => {
                   {resumeChapter && (
                     <button
                       onClick={() => openChapter(activeMangaId, resumeChapter.id, resumeChapter.title, details.title, details.coverImage)}
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-solar-500 to-amber-500 hover:from-amber-400 hover:to-solar-500 text-void-950 font-serif font-bold text-sm shadow-xl shadow-solar-500/25 hover:scale-105 transition-all flex items-center gap-2"
+                      className="px-6 py-2.5 rounded-lg bg-[#C69A45] hover:bg-[#D8AA55] text-[#090A0C] font-semibold text-sm shadow-lg shadow-[#C69A45]/15 transition-all flex items-center gap-2"
                     >
                       <BookOpen className="w-4 h-4" />
-                      <span>{history ? `Resume ${resumeChapter.title}` : `Read First Chapter`}</span>
+                      <span>{history ? `Resume ${resumeChapter.title}` : `Read Chapter 1`}</span>
                     </button>
                   )}
 
@@ -339,6 +397,66 @@ export const MangaDetailsView: React.FC = () => {
               </div>
             </div>
 
+            {/* Language Selector Bar (Human-Created Multilingual Control) */}
+            {languageKeys.length > 1 && (
+              <div className="p-3 rounded-2xl bg-void-900 border border-void-750 space-y-2">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-slate-300 font-bold flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-solar-400" />
+                    <span>Translation Editions ({languageKeys.length} Available)</span>
+                  </span>
+                  <span className="text-slate-400 text-[11px]">
+                    Active: <strong className="text-solar-400">{selectedLanguage === 'all' ? 'All Editions' : LANGUAGE_META[selectedLanguage]?.label || selectedLanguage.toUpperCase()}</strong>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                  <button
+                    onClick={() => setSelectedLanguage('all')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-mono shrink-0 transition-all flex items-center gap-1.5 ${
+                      selectedLanguage === 'all'
+                        ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
+                        : 'bg-void-950 text-slate-400 hover:text-slate-200 border border-void-750'
+                    }`}
+                  >
+                    <span>🌐</span>
+                    <span>All</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${selectedLanguage === 'all' ? 'bg-void-950/30 text-void-950 font-bold' : 'bg-void-900 text-slate-400'}`}>
+                      {chapters.length}
+                    </span>
+                  </button>
+
+                  {languageKeys.map((lang) => {
+                    const meta = LANGUAGE_META[lang] || { label: lang.toUpperCase(), flag: '🌐' };
+                    const count = availableLanguages[lang];
+                    const isSelected = selectedLanguage === lang;
+
+                    return (
+                      <button
+                        key={lang}
+                        onClick={() => setSelectedLanguage(lang)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-mono shrink-0 flex items-center gap-1.5 transition-all ${
+                          isSelected
+                            ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
+                            : 'bg-void-950 text-slate-300 hover:text-solar-400 border border-void-750'
+                        }`}
+                      >
+                        <span>{meta.flag}</span>
+                        <span>{meta.label}</span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                            isSelected ? 'bg-void-950/30 text-void-950 font-bold' : 'bg-void-900 text-slate-400'
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Chapter Search & Chunk Tabs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               {/* Search input */}
@@ -424,6 +542,11 @@ export const MangaDetailsView: React.FC = () => {
                         >
                           {ch.title}
                         </h4>
+                        {ch.language && selectedLanguage === 'all' && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-void-950 text-slate-400 border border-void-750 font-mono shrink-0 ml-1">
+                            {LANGUAGE_META[ch.language]?.flag || '🌐'} {ch.language.toUpperCase()}
+                          </span>
+                        )}
                       </div>
                       {ch.date && (
                         <p className="text-[10px] text-slate-500 font-mono mt-0.5 ml-3.5">

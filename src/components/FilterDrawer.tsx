@@ -40,6 +40,24 @@ export const TYPE_OPTIONS: TypeOption[] = [
   { id: 'OEL', label: 'OEL', flag: '🌐', desc: 'Global English' },
 ];
 
+export const COUNTRY_OPTIONS = [
+  { id: 'JP', label: 'Japan', flag: '🇯🇵', desc: 'Manga Origin' },
+  { id: 'KR', label: 'South Korea', flag: '🇰🇷', desc: 'Manhwa / Webtoon' },
+  { id: 'CN', label: 'China', flag: '🇨🇳', desc: 'Manhua Origin' },
+  { id: 'GLOBAL', label: 'Global / US', flag: '🌐', desc: 'Western & Indie' },
+];
+
+export const LANGUAGE_OPTIONS = [
+  { id: 'en', label: 'English', flag: '🇬🇧' },
+  { id: 'es', label: 'Español', flag: '🇪🇸' },
+  { id: 'pt-br', label: 'Português', flag: '🇧🇷' },
+  { id: 'fr', label: 'Français', flag: '🇫🇷' },
+  { id: 'id', label: 'Indonesia', flag: '🇮🇩' },
+  { id: 'ja', label: '日本語', flag: '🇯🇵' },
+  { id: 'ko', label: '한국어', flag: '🇰🇷' },
+  { id: 'zh', label: '中文', flag: '🇨🇳' },
+];
+
 export const STATUS_OPTIONS = [
   { id: 'Ongoing', label: 'Ongoing', desc: 'Active releases' },
   { id: 'Complete', label: 'Completed', desc: 'Concluded tales' },
@@ -102,29 +120,29 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
     filters.excludedTags.length;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-void-950/80 backdrop-blur-md animate-fade-in flex justify-end">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-[#090A0C]/80 backdrop-blur-sm animate-fade-in flex justify-end">
       {/* Backdrop click to dismiss */}
       <div className="absolute inset-0" onClick={onClose} />
 
       {/* Drawer Panel */}
-      <div className="relative w-full max-w-md h-full bg-void-900 border-l border-void-700/80 shadow-2xl flex flex-col z-10 overflow-hidden">
+      <div className="relative w-full max-w-md h-full bg-[#111318] border-l border-[#292A2D] shadow-2xl flex flex-col z-10 overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-void-750 flex items-center justify-between bg-void-950/80">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-solar-500/15 border border-solar-500/40 flex items-center justify-center text-solar-400">
+        <div className="px-5 py-4 border-b border-[#292A2D] flex items-center justify-between bg-[#090A0C]/90">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#191A1F] border border-[#292A2D] flex items-center justify-center text-[#C69A45]">
               <Filter className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-serif text-base font-bold text-slate-100 flex items-center gap-2">
-                <span>Codex Filter Matrix</span>
+              <h2 className="font-serif text-base font-bold text-[#F0E9DC] flex items-center gap-2">
+                <span>Archive Filters</span>
                 {activeFiltersCount > 0 && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-solar-500/20 text-solar-400 font-mono font-bold">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#C69A45]/20 text-[#C69A45] font-mono font-bold">
                     {activeFiltersCount} active
                   </span>
                 )}
               </h2>
-              <p className="text-[11px] text-slate-400 font-mono">
-                Multi-Tag Exclusion, Stream & Origin
+              <p className="text-[11px] text-[#AAA69D] font-sans">
+                Refine by Origin, Language, Genre & Status
               </p>
             </div>
           </div>
@@ -132,7 +150,7 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
           <div className="flex items-center gap-1.5">
             <button
               onClick={onReset}
-              className="p-2 rounded-xl text-slate-400 hover:text-solar-400 hover:bg-void-850 transition-colors text-xs flex items-center gap-1 font-mono"
+              className="p-2 rounded-lg text-[#AAA69D] hover:text-[#C69A45] hover:bg-[#191A1F] transition-colors text-xs flex items-center gap-1 font-mono"
               title="Reset all filters"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -140,7 +158,8 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-void-850 transition-colors"
+              className="p-2 rounded-lg text-[#AAA69D] hover:text-[#F0E9DC] hover:bg-[#191A1F] transition-colors"
+              aria-label="Close filters"
             >
               <X className="w-5 h-5" />
             </button>
@@ -251,7 +270,91 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
             </div>
           </div>
 
-          {/* 3. Publication Status */}
+          {/* 3. Country of Origin Filter */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-serif font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-solar-400" />
+                <span>Country of Origin</span>
+              </label>
+              <span className="text-[10px] text-solar-400 font-mono">
+                {COUNTRY_OPTIONS.find(c => c.id === filters.selectedCountry)?.label || 'All Regions'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => onChange({ ...filters, selectedCountry: null })}
+                className={`p-2 rounded-xl border text-left transition-all ${
+                  !filters.selectedCountry
+                    ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold shadow-sm'
+                    : 'bg-void-950/70 border-void-750 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <div className="text-xs font-mono font-bold">🌍 All Countries</div>
+              </button>
+
+              {COUNTRY_OPTIONS.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => onChange({ ...filters, selectedCountry: filters.selectedCountry === c.id ? null : c.id })}
+                  className={`p-2 rounded-xl border text-left transition-all ${
+                    filters.selectedCountry === c.id
+                      ? 'bg-solar-500 text-void-950 border-solar-500 font-bold shadow-sm'
+                      : 'bg-void-950/70 border-void-750 text-slate-300 hover:text-solar-400'
+                  }`}
+                >
+                  <div className="text-xs font-mono font-bold flex items-center gap-1.5">
+                    <span>{c.flag}</span>
+                    <span>{c.label}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. Preferred Language Edition Filter */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-serif font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-solar-400" />
+                <span>Language Edition</span>
+              </label>
+              <span className="text-[10px] text-solar-400 font-mono">
+                {LANGUAGE_OPTIONS.find(l => l.id === filters.selectedLanguage)?.label || 'All Languages'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+              <button
+                onClick={() => onChange({ ...filters, selectedLanguage: null })}
+                className={`py-1.5 px-2 rounded-xl border text-center transition-all ${
+                  !filters.selectedLanguage
+                    ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold shadow-sm'
+                    : 'bg-void-950/70 border-void-750 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span className="text-xs font-mono font-medium">All</span>
+              </button>
+
+              {LANGUAGE_OPTIONS.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => onChange({ ...filters, selectedLanguage: filters.selectedLanguage === l.id ? null : l.id })}
+                  className={`py-1.5 px-2 rounded-xl border text-center transition-all flex items-center justify-center gap-1 ${
+                    filters.selectedLanguage === l.id
+                      ? 'bg-solar-500 text-void-950 border-solar-500 font-bold shadow-sm'
+                      : 'bg-void-950/70 border-void-750 text-slate-300 hover:text-solar-400'
+                  }`}
+                >
+                  <span className="text-xs">{l.flag}</span>
+                  <span className="text-xs font-mono font-medium truncate">{l.id.toUpperCase()}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 5. Publication Status */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-serif font-bold text-slate-200 uppercase tracking-wider">

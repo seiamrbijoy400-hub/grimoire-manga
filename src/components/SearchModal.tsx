@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Loader2, Sparkles, BookOpen, Clock, ArrowRight } from 'lucide-react';
+import { Search, X, Loader2, Sparkles, ArrowRight } from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
 import { searchMangaApi, getProxyImageUrl } from '../services/api.ts';
 import { MangaItem } from '../types.ts';
+
+const FALLBACK_COVER = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400" fill="%23111318"><rect width="300" height="400" fill="%23111318"/><rect x="15" y="15" width="270" height="370" fill="none" stroke="%23292A2D" stroke-width="1.5"/><text x="150" y="195" font-family="serif" font-size="28" font-weight="bold" fill="%23C69A45" text-anchor="middle">KURO</text><text x="150" y="225" font-family="sans-serif" font-size="10" font-weight="bold" fill="%23AAA69D" letter-spacing="4" text-anchor="middle">ARCHIVE</text></svg>`;
 
 const POPULAR_SEARCHES = [
   'Solo Leveling',
@@ -56,7 +58,7 @@ export const SearchModal: React.FC = () => {
           e.preventDefault();
           const target = results[selectedIndex];
           setSearchOpen(false);
-          openManga(target.id);
+          openManga(target.id, target.title, target.cover);
         }
       }
     };
@@ -87,26 +89,30 @@ export const SearchModal: React.FC = () => {
   if (!searchOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-void-950/80 backdrop-blur-md animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-[#090A0C]/80 backdrop-blur-sm animate-fade-in"
+      onClick={() => setSearchOpen(false)}
+    >
       <div
-        className="w-full max-w-2xl bg-void-900 border border-void-700/80 rounded-2xl shadow-2xl shadow-solar-500/10 overflow-hidden flex flex-col max-h-[80vh] transition-all"
+        className="w-full max-w-2xl bg-[#111318] border border-[#292A2D] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] transition-all"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Input */}
-        <div className="flex items-center px-4 py-3.5 border-b border-void-750 gap-3 bg-void-950/60">
-          <Search className="w-5 h-5 text-solar-400 shrink-0" />
+        <div className="flex items-center px-4 py-3.5 border-b border-[#292A2D] gap-3 bg-[#090A0C]/90">
+          <Search className="w-4 h-4 text-[#C69A45] shrink-0" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search titles, authors, genres (↑/↓ to navigate)..."
-            className="flex-1 bg-transparent text-slate-100 placeholder-slate-500 text-sm focus:outline-none font-mono"
+            placeholder="Search manga, manhwa, authors, genres... (↑/↓ to navigate)"
+            className="flex-1 bg-transparent text-[#F0E9DC] placeholder-[#AAA69D]/60 text-sm focus:outline-none font-sans"
           />
-          {loading && <Loader2 className="w-4 h-4 text-solar-400 animate-spin shrink-0" />}
+          {loading && <Loader2 className="w-4 h-4 text-[#C69A45] animate-spin shrink-0" />}
           <button
             onClick={() => setSearchOpen(false)}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-void-800 transition-colors"
+            className="p-1 rounded text-[#AAA69D] hover:text-[#F0E9DC] hover:bg-[#191A1F] transition-colors"
+            aria-label="Close search"
           >
             <X className="w-4 h-4" />
           </button>
@@ -114,17 +120,17 @@ export const SearchModal: React.FC = () => {
 
         {/* Popular Tags when query is empty */}
         {!query && (
-          <div className="p-4 border-b border-void-750 bg-void-950/40">
-            <div className="flex items-center gap-2 mb-2 text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-solar-400" />
-              <span>Trending Discoveries</span>
+          <div className="p-4 border-b border-[#292A2D] bg-[#090A0C]/40">
+            <div className="flex items-center gap-2 mb-2 text-xs font-mono text-[#AAA69D] uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-[#C69A45]" />
+              <span>Recommended Discoveries</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {POPULAR_SEARCHES.map((title) => (
                 <button
                   key={title}
                   onClick={() => setQuery(title)}
-                  className="px-3 py-1 rounded-xl bg-void-850 hover:bg-void-800 border border-void-750 text-xs text-slate-300 hover:text-solar-400 font-mono transition-colors"
+                  className="px-3 py-1 rounded-lg bg-[#191A1F] hover:bg-[#21232A] border border-[#292A2D] text-xs text-[#AAA69D] hover:text-[#C69A45] font-sans transition-colors"
                 >
                   {title}
                 </button>
@@ -143,19 +149,22 @@ export const SearchModal: React.FC = () => {
                   key={item.id}
                   onClick={() => {
                     setSearchOpen(false);
-                    openManga(item.id);
+                    openManga(item.id, item.title, item.cover);
                   }}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`flex items-center gap-3.5 p-2.5 rounded-xl cursor-pointer transition-all ${
+                  className={`flex items-center gap-3.5 p-2.5 rounded-lg cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-void-800 border border-solar-500/50 shadow-md'
-                      : 'hover:bg-void-850 border border-transparent'
+                      ? 'bg-[#191A1F] border border-[#C69A45]/40 shadow-sm'
+                      : 'hover:bg-[#191A1F]/60 border border-transparent'
                   }`}
                 >
-                  <div className="w-12 h-16 rounded-lg overflow-hidden bg-void-950 shrink-0 border border-void-700">
+                  <div className="w-11 h-15 rounded overflow-hidden bg-[#090A0C] shrink-0 border border-[#292A2D]">
                     <img
                       src={getProxyImageUrl(item.cover)}
                       alt={item.title}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = FALLBACK_COVER;
+                      }}
                       className="w-full h-full object-cover"
                       loading="lazy"
                     />
@@ -163,18 +172,20 @@ export const SearchModal: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <h4
                       className={`font-serif text-sm font-bold truncate transition-colors ${
-                        isSelected ? 'text-solar-400' : 'text-slate-200'
+                        isSelected ? 'text-[#C69A45]' : 'text-[#F0E9DC]'
                       }`}
                     >
                       {item.title}
                     </h4>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-void-850 text-slate-400 border border-void-700 font-mono">
-                        WeebCentral
-                      </span>
                       {item.type && (
-                        <span className="text-[10px] text-solar-400 font-mono font-bold">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#090A0C] text-[#C69A45] border border-[#292A2D] font-mono">
                           {item.type}
+                        </span>
+                      )}
+                      {item.status && (
+                        <span className="text-[10px] text-[#AAA69D] font-mono">
+                          {item.status}
                         </span>
                       )}
                     </div>
@@ -182,17 +193,17 @@ export const SearchModal: React.FC = () => {
                   <ArrowRight
                     className={`w-4 h-4 transition-all shrink-0 ${
                       isSelected
-                        ? 'text-solar-400 translate-x-1 opacity-100'
-                        : 'text-slate-600 opacity-0'
+                        ? 'text-[#C69A45] translate-x-1 opacity-100'
+                        : 'text-[#AAA69D] opacity-0'
                     }`}
                   />
                 </div>
               );
             })
           ) : query && !loading ? (
-            <div className="py-12 text-center text-slate-500 space-y-1 font-mono">
+            <div className="py-12 text-center text-[#AAA69D] space-y-1 font-sans">
               <p className="text-xs">No manuscripts found matching "{query}".</p>
-              <p className="text-[10px] text-slate-600">Try searching for alternative spellings or authors.</p>
+              <p className="text-[11px] text-[#AAA69D]/60 font-mono">Try searching with alternative romanized spellings or keywords.</p>
             </div>
           ) : null}
         </div>

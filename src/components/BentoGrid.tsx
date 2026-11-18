@@ -9,29 +9,31 @@ import {
   Loader2,
   ArrowUp,
   Filter,
-  Sparkles,
   Search,
-  Check,
-  X,
-  Layers,
+  RotateCcw,
   Download,
   Upload,
   Trash2,
-  RotateCcw,
-  ShieldCheck,
-  Zap,
-  Globe
+  Check,
+  X,
+  Globe,
+  SlidersHorizontal,
+  Sparkles
 } from 'lucide-react';
-import { MangaItem, FilterState, BookmarkCategory, MangaSource } from '../types.ts';
-import { fetchAdvancedSearch } from '../services/api.ts';
+import { MangaItem, FilterState, BookmarkCategory } from '../types.ts';
+import { fetchAdvancedSearch, getProxyImageUrl } from '../services/api.ts';
 import { MangaCard } from './MangaCard.tsx';
 import { FilterDrawer, TYPE_OPTIONS } from './FilterDrawer.tsx';
 import { useStore } from '../store/useStore.ts';
+
+const FALLBACK_COVER = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400" viewBox="0 0 300 400" fill="%23111318"><rect width="300" height="400" fill="%23111318"/><rect x="15" y="15" width="270" height="370" fill="none" stroke="%23292A2D" stroke-width="1.5"/><text x="150" y="195" font-family="serif" font-size="28" font-weight="bold" fill="%23C69A45" text-anchor="middle">KURO</text><text x="150" y="225" font-family="sans-serif" font-size="10" font-weight="bold" fill="%23AAA69D" letter-spacing="4" text-anchor="middle">ARCHIVE</text></svg>`;
 
 const DEFAULT_FILTERS: FilterState = {
   query: '',
   selectedSource: 'all',
   selectedType: null,
+  selectedCountry: null,
+  selectedLanguage: null,
   selectedStatus: null,
   includedTags: [],
   excludedTags: [],
@@ -40,10 +42,10 @@ const DEFAULT_FILTERS: FilterState = {
 };
 
 const SORT_OPTIONS = [
-  { id: 'Popularity', label: '🔥 Popularity' },
-  { id: 'Latest Updates', label: '⚡ Latest Updates' },
-  { id: 'Alphabet', label: '🔤 Alphabet' },
-  { id: 'Subscribers', label: '⭐ Subscribed' },
+  { id: 'Popularity', label: 'Popularity' },
+  { id: 'Latest Updates', label: 'Latest Updates' },
+  { id: 'Alphabet', label: 'Alphabetical' },
+  { id: 'Subscribers', label: 'Subscribers' },
 ];
 
 export const BentoGrid: React.FC = () => {
@@ -71,6 +73,7 @@ export const BentoGrid: React.FC = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [heroImageError, setHeroImageError] = useState(false);
 
   // Shelves state
   const [selectedShelf, setSelectedShelf] = useState<BookmarkCategory | 'all'>('all');
@@ -145,7 +148,7 @@ export const BentoGrid: React.FC = () => {
           loadMore();
         }
       },
-      { rootMargin: '500px' }
+      { rootMargin: '400px' }
     );
 
     observer.observe(target);
@@ -166,11 +169,14 @@ export const BentoGrid: React.FC = () => {
   }, [history]);
 
   const featured = items[0];
+  const trendingList = useMemo(() => items.slice(1, 5), [items]);
   const lastRead = historyList[0];
 
   const activeFiltersCount =
     (filters.selectedSource !== 'all' ? 1 : 0) +
     (filters.selectedType ? 1 : 0) +
+    (filters.selectedCountry ? 1 : 0) +
+    (filters.selectedLanguage ? 1 : 0) +
     (filters.selectedStatus ? 1 : 0) +
     filters.includedTags.length +
     filters.excludedTags.length;
@@ -191,7 +197,7 @@ export const BentoGrid: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `kuroscroll-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `kuroscroll-library-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -207,9 +213,9 @@ export const BentoGrid: React.FC = () => {
       if (content) {
         const success = importUserData(content);
         if (success) {
-          alert('Personal shelves & reading continuity successfully restored!');
+          alert('Library & reading history restored successfully.');
         } else {
-          alert('Failed to parse backup JSON file.');
+          alert('Invalid backup JSON file.');
         }
       }
     };
@@ -228,8 +234,15 @@ export const BentoGrid: React.FC = () => {
     return `${days}d ago`;
   };
 
+  const getOriginLabel = (type?: string, country?: string) => {
+    if (type === 'Manhwa' || country === 'KR') return { flag: '🇰🇷', label: 'Manhwa', origin: 'Korea' };
+    if (type === 'Manhua' || country === 'CN') return { flag: '🇨🇳', label: 'Manhua', origin: 'China' };
+    if (type === 'OEL' || country === 'US') return { flag: '🌐', label: 'Global', origin: 'Western' };
+    return { flag: '🇯🇵', label: 'Manga', origin: 'Japan' };
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-24">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16 pb-28">
       {/* Filter Drawer Component */}
       <FilterDrawer
         isOpen={drawerOpen}
@@ -249,587 +262,700 @@ export const BentoGrid: React.FC = () => {
       />
 
       {/* ======================================================== */}
-      {/* TAB 1: CODEX CATALOG VIEW                                */}
+      {/* PRIMARY TAB: DISCOVER / ARCHIVE (3-SECTION EXPERIENCE)   */}
       {/* ======================================================== */}
       {activeTab === 'catalog' && (
         <>
-          {/* Dual-Source Engine Selector Switcher */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-2xl bg-void-900 border border-void-750 shadow-md">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-bold text-slate-400 uppercase tracking-wider pl-1 hidden sm:inline">
-                Data Stream:
-              </span>
-
-              {/* Source Switcher Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                <button
-                  onClick={() => setFilters({ ...filters, selectedSource: 'all' })}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 ${
-                    filters.selectedSource === 'all'
-                      ? 'bg-solar-500 text-void-950 shadow-md shadow-solar-500/20'
-                      : 'bg-void-950 text-slate-400 hover:text-slate-200 border border-void-750'
-                  }`}
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span>Unified Matrix</span>
-                </button>
-
-                <button
-                  onClick={() => setFilters({ ...filters, selectedSource: 'weebcentral' })}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 ${
-                    filters.selectedSource === 'weebcentral'
-                      ? 'bg-solar-500 text-void-950 shadow-md shadow-solar-500/20'
-                      : 'bg-void-950 text-slate-400 hover:text-solar-400 border border-void-750'
-                  }`}
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>WeebCentral Stream</span>
-                </button>
-
-                <button
-                  onClick={() => setFilters({ ...filters, selectedSource: 'mangadex' })}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold flex items-center gap-1.5 transition-all shrink-0 ${
-                    filters.selectedSource === 'mangadex'
-                      ? 'bg-telemetry-cyan text-void-950 shadow-md shadow-telemetry-cyan/20'
-                      : 'bg-void-950 text-slate-400 hover:text-telemetry-cyan border border-void-750'
-                  }`}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-telemetry-cyan" />
-                  <span>MangaDex Safe Vault</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="text-[11px] font-mono text-slate-400 hidden md:flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Multi-Upstream Bypass Active</span>
-            </div>
-          </div>
-
-          {/* Futuristic Editorial Hero Showcase */}
-          {featured && !filters.query && (
-            <div className="relative rounded-3xl overflow-hidden bg-void-900 border border-void-700/70 p-6 sm:p-8 shadow-2xl group">
-              <div className="absolute inset-0 bg-gradient-to-r from-void-950 via-void-950/90 to-void-950/30 z-10" />
-
-              <div
-                className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-25 group-hover:opacity-40 transition-opacity"
-                style={{ backgroundImage: `url(${featured.cover})` }}
-              />
-
-              <div className="relative z-20 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div className="max-w-2xl space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="px-3 py-1 rounded-full bg-gradient-to-r from-solar-400 to-amber-600 text-void-950 text-xs font-serif font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md">
-                      <Flame className="w-3.5 h-3.5 fill-current" />
-                      {filters.selectedType ? `${filters.selectedType} Pinnacle` : '#1 Ranked Masterpiece'}
-                    </span>
-                    <span className="text-xs text-slate-400 font-mono">
-                      {featured.source === 'mangadex' ? 'MangaDex Safe Vault' : 'WeebCentral Stream'}
-                    </span>
-                  </div>
-
-                  <h1 className="font-serif text-2xl sm:text-4xl font-extrabold text-slate-100 tracking-tight leading-tight">
-                    {featured.title}
-                  </h1>
-
-                  {featured.description && (
-                    <p className="text-sm text-slate-300 line-clamp-2 leading-relaxed">
-                      {featured.description}
-                    </p>
-                  )}
-
-                  <div className="pt-2 flex flex-wrap items-center gap-3">
-                    <button
-                      onClick={() => openManga(featured.id, featured.title, featured.cover)}
-                      className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-solar-500 to-amber-500 hover:from-amber-400 hover:to-solar-500 text-void-950 font-serif font-bold text-sm shadow-xl shadow-solar-500/25 hover:scale-105 transition-all flex items-center gap-2"
-                    >
-                      <BookOpen className="w-4 h-4" />
-                      <span>Decipher Grimoire</span>
-                    </button>
-
-                    <button
-                      onClick={() => setDrawerOpen(true)}
-                      className="px-4 py-2.5 rounded-xl bg-void-850 hover:bg-void-800 border border-void-700 text-xs text-solar-400 hover:border-solar-500/60 transition-all flex items-center gap-2 font-mono font-medium shadow-sm"
-                    >
-                      <Filter className="w-3.5 h-3.5" />
-                      <span>Codex Filter ({activeFiltersCount})</span>
-                    </button>
-                  </div>
-                </div>
-
+          {/* ==================================================== */}
+          {/* SECTION 01 — DISCOVER                                */}
+          {/* ==================================================== */}
+          <section className="space-y-8" aria-label="Discover Section">
+            {/* Featured Editorial Hero */}
+            {featured && !filters.query && (
+              <div className="relative rounded-2xl overflow-hidden bg-[#111318] border border-[#292A2D] shadow-2xl">
+                {/* Ambient artistic backdrop */}
                 <div
-                  onClick={() => openManga(featured.id, featured.title, featured.cover)}
-                  className="w-32 sm:w-44 aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border-2 border-solar-500/40 shrink-0 cursor-pointer hover:scale-105 transition-transform"
-                >
-                  <img
-                    src={featured.cover}
-                    alt={featured.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+                  className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-20 pointer-events-none"
+                  style={{
+                    backgroundImage: `url(${heroImageError ? FALLBACK_COVER : getProxyImageUrl(featured.cover)})`,
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#090A0C] via-[#090A0C]/90 to-transparent pointer-events-none" />
 
-          {/* "Resume Chronicle" Quick Bar */}
-          {lastRead && (
-            <div
-              onClick={() => openChapter(lastRead.mangaId, lastRead.chapterId, lastRead.chapterTitle, lastRead.mangaTitle, lastRead.mangaCover)}
-              className="p-3 sm:p-4 rounded-2xl bg-void-900 border border-solar-500/40 hover:border-solar-500 flex items-center justify-between gap-4 cursor-pointer group shadow-lg transition-all"
-            >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-10 h-13 rounded-lg overflow-hidden bg-void-950 shrink-0 border border-void-700">
-                  <img src={lastRead.mangaCover} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div className="truncate">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-solar-400 animate-ping" />
-                    <span className="text-[10px] uppercase font-mono tracking-wider text-solar-400 font-bold">
-                      Resume Chronicle
-                    </span>
+                <div className="relative z-10 p-6 sm:p-10 lg:p-12 flex flex-col-reverse md:flex-row items-center justify-between gap-8 lg:gap-12">
+                  {/* Left Editorial Copy */}
+                  <div className="w-full md:w-3/5 space-y-4 text-left">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-[10px] font-mono uppercase tracking-widest text-[#C69A45] font-semibold">
+                        Editorial Feature • Vol. 2026
+                      </span>
+                      {(() => {
+                        const origin = getOriginLabel(featured.type, featured.country);
+                        return (
+                          <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-[10px] font-mono text-[#AAA69D] flex items-center gap-1.5">
+                            <span>{origin.flag}</span>
+                            <span>{origin.origin} • {origin.label}</span>
+                          </span>
+                        );
+                      })()}
+                      {featured.status && (
+                        <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-[10px] font-mono text-[#AAA69D] flex items-center gap-1.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${featured.status.toLowerCase() === 'ongoing' ? 'bg-[#42B8A8]' : 'bg-[#AAA69D]'}`} />
+                          <span>{featured.status}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[#F0E9DC] tracking-tight leading-tight">
+                      {featured.title}
+                    </h1>
+
+                    {featured.description && (
+                      <p className="text-sm sm:text-base text-[#AAA69D] leading-relaxed line-clamp-3 max-w-2xl font-sans">
+                        {featured.description}
+                      </p>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="pt-2 flex flex-wrap items-center gap-3">
+                      <button
+                        onClick={() => openManga(featured.id, featured.title, featured.cover)}
+                        className="px-6 py-3 rounded-lg bg-[#C69A45] hover:bg-[#D8AA55] text-[#090A0C] font-semibold text-sm transition-all shadow-lg shadow-[#C69A45]/15 flex items-center gap-2"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        <span>Start Reading</span>
+                      </button>
+
+                      <button
+                        onClick={() => openManga(featured.id, featured.title, featured.cover)}
+                        className="px-5 py-3 rounded-lg bg-[#191A1F] hover:bg-[#21232A] border border-[#292A2D] text-xs font-medium text-[#F0E9DC] transition-all"
+                      >
+                        View Chronicle Details
+                      </button>
+                    </div>
                   </div>
-                  <h4 className="font-serif text-sm font-bold text-slate-100 truncate group-hover:text-solar-400 transition-colors">
-                    {lastRead.mangaTitle}
-                  </h4>
-                  <p className="text-xs text-solar-400/90 font-mono">
-                    {lastRead.chapterTitle} • Page {lastRead.pageIndex}
-                  </p>
+
+                  {/* Right Artwork Showcase */}
+                  <div
+                    onClick={() => openManga(featured.id, featured.title, featured.cover)}
+                    className="w-44 sm:w-56 md:w-64 aspect-[3/4] rounded-lg overflow-hidden shadow-2xl border border-[#292A2D] shrink-0 cursor-pointer hover:scale-102 transition-transform duration-300 bg-[#111318]"
+                  >
+                    <img
+                      src={heroImageError ? FALLBACK_COVER : getProxyImageUrl(featured.cover)}
+                      alt={featured.title}
+                      onError={() => setHeroImageError(true)}
+                      className="w-full h-full object-cover object-center"
+                      loading="eager"
+                    />
+                  </div>
                 </div>
               </div>
+            )}
 
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-solar-500/20 text-solar-300 text-xs font-mono font-bold group-hover:bg-solar-500 group-hover:text-void-950 transition-all shrink-0">
-                <span>Continue</span>
-                <ChevronRight className="w-4 h-4" />
+            {/* Trending This Week (Compact recommendations below hero) */}
+            {trendingList.length > 0 && !filters.query && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-[#292A2D] pb-3">
+                  <div>
+                    <h2 className="font-serif text-lg sm:text-xl font-bold text-[#F0E9DC]">
+                      Trending This Week
+                    </h2>
+                    <p className="text-xs text-[#AAA69D] font-sans">
+                      Top curated works experiencing high community readership
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {trendingList.map((manga, idx) => (
+                    <MangaCard key={manga.id} manga={manga} rank={idx + 2} />
+                  ))}
+                </div>
               </div>
+            )}
+          </section>
+
+          {/* ==================================================== */}
+          {/* SECTION 02 — THE READER'S DESK                       */}
+          {/* ==================================================== */}
+          <section className="space-y-6 pt-2" aria-label="Reader's Desk Section">
+            <div className="flex items-center justify-between border-b border-[#292A2D] pb-3">
+              <div>
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#F0E9DC]">
+                  The Reader's Desk
+                </h2>
+                <p className="text-xs text-[#AAA69D] font-sans">
+                  Reading continuity, saved bookmarks & latest updates
+                </p>
+              </div>
+
+              {historyList.length > 0 && (
+                <button
+                  onClick={() => setActiveTab('history')}
+                  className="text-xs text-[#C69A45] hover:underline font-sans flex items-center gap-1"
+                >
+                  <span>View All Chronicles</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
-          )}
 
-          {/* Origin Pills & Sort Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-void-700/60 pb-3">
-            {/* Origin Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              <button
-                onClick={() => setFilters({ ...filters, selectedType: null })}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all shrink-0 ${
-                  filters.selectedType === null
-                    ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
-                    : 'bg-void-900 text-slate-400 hover:text-slate-200 hover:bg-void-850 border border-void-750'
-                }`}
+            {/* Primary Continue Reading Panel */}
+            {lastRead ? (
+              <div
+                onClick={() =>
+                  openChapter(
+                    lastRead.mangaId,
+                    lastRead.chapterId,
+                    lastRead.chapterTitle,
+                    lastRead.mangaTitle,
+                    lastRead.mangaCover
+                  )
+                }
+                className="p-4 sm:p-6 rounded-xl bg-[#111318] border border-[#292A2D] hover:border-[#C69A45]/40 transition-all duration-300 cursor-pointer group shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
               >
-                🌐 All Origins
-              </button>
+                <div className="flex items-center gap-4 sm:gap-6 min-w-0 w-full sm:w-auto">
+                  <div className="w-16 sm:w-20 aspect-[3/4] rounded-lg overflow-hidden bg-[#090A0C] shrink-0 border border-[#292A2D]">
+                    <img
+                      src={lastRead.mangaCover || FALLBACK_COVER}
+                      alt={lastRead.mangaTitle}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
 
-              {TYPE_OPTIONS.map((t) => {
-                const isSelected = filters.selectedType === t.id;
-                return (
+                  <div className="space-y-1.5 truncate">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#C69A45]" />
+                      <span className="text-[10px] uppercase font-mono tracking-wider text-[#C69A45] font-semibold">
+                        Continue Reading
+                      </span>
+                      <span className="text-[10px] text-[#AAA69D] font-mono">
+                        • {formatRelativeTime(lastRead.updatedAt)}
+                      </span>
+                    </div>
+
+                    <h3 className="font-serif text-base sm:text-lg font-bold text-[#F0E9DC] truncate group-hover:text-[#C69A45] transition-colors">
+                      {lastRead.mangaTitle}
+                    </h3>
+
+                    <p className="text-xs text-[#AAA69D] font-mono">
+                      {lastRead.chapterTitle} • Page {lastRead.pageIndex || 1}
+                      {lastRead.totalImages ? ` of ${lastRead.totalImages}` : ''}
+                    </p>
+
+                    {/* Progress Bar */}
+                    {lastRead.totalImages && lastRead.totalImages > 0 && (
+                      <div className="w-48 h-1 bg-[#191A1F] rounded-full overflow-hidden mt-2">
+                        <div
+                          className="h-full bg-[#C69A45] rounded-full"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.round(((lastRead.pageIndex || 1) / lastRead.totalImages) * 100)
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#C69A45] text-[#090A0C] text-xs font-semibold group-hover:bg-[#D8AA55] transition-all shrink-0 self-end sm:self-center shadow-md">
+                  <span>Resume Reading</span>
+                  <ChevronRight className="w-4 h-4" />
+                </div>
+              </div>
+            ) : (
+              <div className="p-8 rounded-xl bg-[#111318] border border-[#292A2D] text-center space-y-3">
+                <div className="w-10 h-10 rounded-lg bg-[#191A1F] border border-[#292A2D] flex items-center justify-center mx-auto text-[#C69A45]">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <h3 className="font-serif text-base font-bold text-[#F0E9DC]">
+                  Your Reading Desk is Clear
+                </h3>
+                <p className="text-xs text-[#AAA69D] max-w-md mx-auto leading-relaxed">
+                  Select any volume from the archive below or begin with this week's editorial feature to start tracking your reading journey.
+                </p>
+              </div>
+            )}
+
+            {/* Recently Visited Shelves (if multiple history items exist) */}
+            {historyList.length > 1 && (
+              <div className="space-y-3">
+                <span className="text-xs font-mono uppercase tracking-wider text-[#AAA69D]">
+                  Recently Read Volumes
+                </span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {historyList.slice(1, 6).map((hist) => (
+                    <div
+                      key={hist.mangaId}
+                      onClick={() =>
+                        openChapter(
+                          hist.mangaId,
+                          hist.chapterId,
+                          hist.chapterTitle,
+                          hist.mangaTitle,
+                          hist.mangaCover
+                        )
+                      }
+                      className="p-2.5 rounded-lg bg-[#111318] border border-[#292A2D] hover:border-[#C69A45]/40 transition-colors cursor-pointer group flex items-center gap-3"
+                    >
+                      <img
+                        src={hist.mangaCover || FALLBACK_COVER}
+                        alt=""
+                        className="w-10 h-13 rounded object-cover shrink-0 bg-[#090A0C] border border-[#292A2D]"
+                      />
+                      <div className="min-w-0">
+                        <h4 className="font-serif text-xs font-bold text-[#F0E9DC] truncate group-hover:text-[#C69A45] transition-colors">
+                          {hist.mangaTitle}
+                        </h4>
+                        <p className="text-[10px] text-[#AAA69D] font-mono truncate">
+                          {hist.chapterTitle}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* ==================================================== */}
+          {/* SECTION 03 — THE ARCHIVE                             */}
+          {/* ==================================================== */}
+          <section className="space-y-6 pt-4" aria-label="Explore the Archive Section">
+            {/* Header & Controls Bar */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#292A2D] pb-4">
+              <div>
+                <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#F0E9DC]">
+                  Explore the Archive
+                </h2>
+                <p className="text-xs text-[#AAA69D] font-sans">
+                  The curated catalog of international graphic literature
+                </p>
+              </div>
+
+              {/* Filter Controls & Origin Selector */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Origin Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
                   <button
-                    key={t.id}
-                    onClick={() => setFilters({ ...filters, selectedType: t.id })}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-all shrink-0 ${
-                      isSelected
-                        ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
-                        : 'bg-void-900 text-slate-300 hover:text-solar-400 hover:bg-void-850 border border-void-750'
+                    onClick={() => setFilters({ ...filters, selectedType: null })}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-sans transition-all shrink-0 ${
+                      filters.selectedType === null
+                        ? 'bg-[#191A1F] text-[#C69A45] border border-[#C69A45]/40 font-semibold'
+                        : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
                     }`}
                   >
-                    <span>{t.flag}</span>
-                    <span>{t.label}</span>
+                    All Origins
                   </button>
-                );
-              })}
+
+                  {TYPE_OPTIONS.map((t) => {
+                    const isSelected = filters.selectedType === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setFilters({ ...filters, selectedType: isSelected ? null : t.id })}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-sans flex items-center gap-1.5 transition-all shrink-0 ${
+                          isSelected
+                            ? 'bg-[#191A1F] text-[#C69A45] border border-[#C69A45]/40 font-semibold'
+                            : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
+                        }`}
+                      >
+                        <span>{t.flag}</span>
+                        <span>{t.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="h-4 w-px bg-[#292A2D] hidden md:block" />
+
+                {/* Sort Dropdown */}
+                <select
+                  value={filters.sort}
+                  onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
+                  className="px-3 py-1.5 rounded-lg bg-[#111318] border border-[#292A2D] text-xs text-[#AAA69D] focus:outline-none focus:border-[#C69A45]/60 cursor-pointer font-sans"
+                >
+                  {SORT_OPTIONS.map((s) => (
+                    <option key={s.id} value={s.id} className="bg-[#111318] text-[#F0E9DC]">
+                      Sort: {s.label}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Filter Drawer Trigger */}
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-sans flex items-center gap-1.5 transition-all border ${
+                    activeFiltersCount > 0
+                      ? 'bg-[#191A1F] border-[#C69A45] text-[#C69A45] font-semibold'
+                      : 'bg-[#111318] border-[#292A2D] text-[#AAA69D] hover:text-[#F0E9DC]'
+                  }`}
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  <span>Filters</span>
+                  {activeFiltersCount > 0 && (
+                    <span className="w-4 h-4 rounded-full bg-[#C69A45] text-[#090A0C] text-[10px] flex items-center justify-center font-mono font-bold">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
-            {/* Sort & Filter Drawer Button */}
-            <div className="flex items-center gap-2 shrink-0">
-              <select
-                value={filters.sort}
-                onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
-                className="px-3 py-1.5 rounded-xl bg-void-900 border border-void-750 text-xs font-mono text-slate-300 focus:outline-none focus:border-solar-500/60 cursor-pointer"
-              >
-                {SORT_OPTIONS.map((s) => (
-                  <option key={s.id} value={s.id} className="bg-void-900 text-slate-200">
-                    {s.label}
-                  </option>
-                ))}
-              </select>
+            {/* Active Filter Badges */}
+            {activeFiltersCount > 0 && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-[11px] font-mono text-[#AAA69D]">Active Filters:</span>
 
-              <button
-                onClick={() => setDrawerOpen(true)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono flex items-center gap-2 transition-all border ${
-                  activeFiltersCount > 0
-                    ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
-                    : 'bg-void-900 border-void-750 text-slate-300 hover:text-solar-400'
-                }`}
-              >
-                <Filter className="w-3.5 h-3.5" />
-                <span>Filters</span>
-                {activeFiltersCount > 0 && (
-                  <span className="w-4 h-4 rounded-full bg-solar-500 text-void-950 text-[10px] flex items-center justify-center font-mono font-bold">
-                    {activeFiltersCount}
+                {filters.selectedCountry && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#C69A45]">
+                    <span>Country: {filters.selectedCountry}</span>
+                    <button
+                      onClick={() => setFilters({ ...filters, selectedCountry: null })}
+                      className="hover:text-[#F0E9DC]"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                   </span>
                 )}
-              </button>
-            </div>
-          </div>
 
-          {/* Active Filter Criteria Tags */}
-          {activeFiltersCount > 0 && (
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className="text-[11px] font-mono text-slate-400">Criteria:</span>
+                {filters.selectedLanguage && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#C69A45]">
+                    <span>Lang: {filters.selectedLanguage.toUpperCase()}</span>
+                    <button
+                      onClick={() => setFilters({ ...filters, selectedLanguage: null })}
+                      className="hover:text-[#F0E9DC]"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
 
-              {filters.selectedSource !== 'all' && (
-                <span className="px-2.5 py-1 rounded-lg bg-telemetry-cyan/20 text-telemetry-cyan text-xs font-mono font-bold flex items-center gap-1 border border-telemetry-cyan/40">
-                  <span>Stream: {filters.selectedSource === 'mangadex' ? 'MangaDex Safe' : 'WeebCentral'}</span>
-                  <X
-                    className="w-3 h-3 cursor-pointer hover:scale-125"
-                    onClick={() => setFilters({ ...filters, selectedSource: 'all' })}
-                  />
-                </span>
-              )}
+                {filters.selectedType && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#C69A45]">
+                    <span>Origin: {filters.selectedType}</span>
+                    <button
+                      onClick={() => setFilters({ ...filters, selectedType: null })}
+                      className="hover:text-[#F0E9DC]"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
 
-              {filters.selectedType && (
-                <span className="px-2.5 py-1 rounded-lg bg-solar-500/20 text-solar-400 text-xs font-mono font-bold flex items-center gap-1 border border-solar-500/40">
-                  <span>Origin: {filters.selectedType}</span>
-                  <X
-                    className="w-3 h-3 cursor-pointer hover:scale-125"
-                    onClick={() => setFilters({ ...filters, selectedType: null })}
-                  />
-                </span>
-              )}
+                {filters.selectedStatus && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#C69A45]">
+                    <span>Status: {filters.selectedStatus}</span>
+                    <button
+                      onClick={() => setFilters({ ...filters, selectedStatus: null })}
+                      className="hover:text-[#F0E9DC]"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                )}
 
-              {filters.selectedStatus && (
-                <span className="px-2.5 py-1 rounded-lg bg-void-800 text-slate-200 text-xs font-mono font-bold flex items-center gap-1 border border-void-700">
-                  <span>Status: {filters.selectedStatus}</span>
-                  <X
-                    className="w-3 h-3 cursor-pointer hover:scale-125"
-                    onClick={() => setFilters({ ...filters, selectedStatus: null })}
-                  />
-                </span>
-              )}
+                {filters.includedTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#F0E9DC]"
+                  >
+                    <span>+{tag}</span>
+                    <button
+                      onClick={() =>
+                        setFilters({
+                          ...filters,
+                          includedTags: filters.includedTags.filter((t) => t !== tag),
+                        })
+                      }
+                      className="hover:text-[#C69A45]"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
 
-              {filters.includedTags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2.5 py-1 rounded-lg bg-emerald-950/80 text-emerald-300 text-xs font-mono flex items-center gap-1 border border-emerald-500/50"
+                <button
+                  onClick={() => setFilters(DEFAULT_FILTERS)}
+                  className="text-xs text-[#AAA69D] hover:text-[#C69A45] underline ml-2 font-mono"
                 >
-                  <Check className="w-3 h-3 text-emerald-400" />
-                  <span>{tag}</span>
-                  <X
-                    className="w-3 h-3 cursor-pointer hover:scale-125"
-                    onClick={() =>
-                      setFilters({
-                        ...filters,
-                        includedTags: filters.includedTags.filter((t) => t !== tag),
-                      })
-                    }
-                  />
-                </span>
-              ))}
+                  Clear all
+                </button>
+              </div>
+            )}
 
-              <button
-                onClick={() => setFilters(DEFAULT_FILTERS)}
-                className="text-[11px] font-mono text-solar-400 hover:underline ml-1"
-              >
-                Reset All
-              </button>
-            </div>
-          )}
-
-          {/* Main Catalog Grid */}
-          {loadingInitial ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {[...Array(15)].map((_, i) => (
-                <div key={i} className="aspect-[3/4] rounded-2xl bg-void-900 animate-pulse border border-void-800" />
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-8">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-                {items.map((manga, idx) => (
-                  <MangaCard
-                    key={manga.id}
-                    manga={manga}
-                    rank={idx < 10 && !filters.query ? idx + 1 : undefined}
-                  />
+            {/* Archive Catalogue Grid */}
+            {loadingInitial ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                {Array.from({ length: 15 }).map((_, i) => (
+                  <div key={i} className="space-y-3 animate-pulse">
+                    <div className="aspect-[3/4] bg-[#111318] rounded-lg border border-[#292A2D]" />
+                    <div className="h-4 bg-[#111318] rounded w-3/4" />
+                    <div className="h-3 bg-[#111318] rounded w-1/2" />
+                  </div>
                 ))}
               </div>
-
-              {/* Infinite Scroll Sentinel Target */}
-              <div ref={observerTarget} className="h-10 w-full" />
-
-              {loadingMore && (
-                <div className="py-8 flex flex-col items-center justify-center space-y-2">
-                  <Loader2 className="w-7 h-7 text-solar-500 animate-spin" />
-                  <p className="font-serif text-xs text-amber-200">
-                    Streaming more scrolls from {filters.selectedSource === 'mangadex' ? 'MangaDex Vault' : 'WeebCentral'}...
-                  </p>
+            ) : items.length === 0 ? (
+              <div className="text-center py-16 space-y-4 rounded-xl bg-[#111318] border border-[#292A2D]">
+                <div className="w-12 h-12 rounded-lg bg-[#191A1F] border border-[#292A2D] flex items-center justify-center mx-auto text-[#AAA69D]">
+                  <Compass className="w-6 h-6" />
                 </div>
-              )}
+                <h3 className="font-serif text-lg font-bold text-[#F0E9DC]">
+                  No Archive Records Found
+                </h3>
+                <p className="text-xs text-[#AAA69D] max-w-md mx-auto">
+                  No works match your current filter parameters. Try broadening your criteria or reset the search filters.
+                </p>
+                <button
+                  onClick={() => setFilters(DEFAULT_FILTERS)}
+                  className="px-4 py-2 rounded-lg bg-[#C69A45] text-[#090A0C] font-semibold text-xs hover:bg-[#D8AA55] transition-colors"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                {items.map((manga) => (
+                  <MangaCard key={manga.id} manga={manga} />
+                ))}
+              </div>
+            )}
 
-              {hasMore && !loadingMore && items.length > 0 && (
-                <div className="pt-4 flex justify-center">
+            {/* Pagination & Infinite Scroll Indicator */}
+            {items.length > 0 && (
+              <div className="pt-8 text-center space-y-4">
+                <div ref={observerTarget} className="h-4" />
+
+                {loadingMore ? (
+                  <div className="flex items-center justify-center gap-2 text-xs text-[#AAA69D] font-mono">
+                    <Loader2 className="w-4 h-4 text-[#C69A45] animate-spin" />
+                    <span>Loading next archive folio...</span>
+                  </div>
+                ) : hasMore ? (
                   <button
                     onClick={loadMore}
-                    className="px-8 py-3 rounded-2xl bg-gradient-to-r from-void-900 to-void-850 hover:bg-void-800 border border-solar-500/40 hover:border-solar-500 text-solar-400 font-serif font-bold text-xs tracking-wide shadow-xl shadow-solar-500/10 hover:scale-105 transition-all flex items-center gap-2"
+                    className="px-6 py-2.5 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] hover:border-[#C69A45]/40 text-xs font-medium text-[#F0E9DC] transition-all"
                   >
-                    <Sparkles className="w-4 h-4 text-solar-400" />
-                    <span>Summon More Scrolls (Loaded {items.length})</span>
+                    Load More Titles ({items.length} loaded)
                   </button>
-                </div>
-              )}
-
-              {!hasMore && items.length > 0 && (
-                <div className="py-8 text-center">
-                  <p className="text-xs text-slate-500 font-serif">
-                    ❦ All manuscripts of this realm have been unveiled ❦
+                ) : (
+                  <p className="text-xs text-[#AAA69D]/60 font-mono">
+                    End of current archive folio • {items.length} titles
                   </p>
-                </div>
-              )}
-
-              {items.length === 0 && !loadingInitial && (
-                <div className="py-24 text-center space-y-3">
-                  <p className="text-sm text-slate-400 font-serif">
-                    No manuscripts found matching the selected stream or tags.
-                  </p>
-                  <button
-                    onClick={() => setFilters(DEFAULT_FILTERS)}
-                    className="px-4 py-2 rounded-xl bg-void-850 border border-solar-500/40 text-xs text-solar-400 font-mono"
-                  >
-                    Reset Codex Filters
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </section>
         </>
       )}
 
       {/* ======================================================== */}
-      {/* TAB 2: PERSONAL CODEX SHELVES (BOOKMARKS)                */}
+      {/* TAB 2: MY LIBRARY (PERSONAL SHELVES)                     */}
       {/* ======================================================== */}
       {activeTab === 'bookmarks' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-void-700/60 pb-4">
+        <section className="space-y-6" aria-label="My Library Section">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#292A2D] pb-4">
             <div>
-              <h2 className="font-serif text-2xl font-bold text-slate-100 flex items-center gap-2">
-                <span>Personal Codex Shelves</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-solar-500/20 text-solar-400 font-mono font-bold">
-                  {bookmarks.length} Titles
-                </span>
+              <h2 className="font-serif text-2xl font-bold text-[#F0E9DC]">
+                My Personal Library
               </h2>
-              <p className="text-xs text-slate-400 font-mono mt-1">
-                Encrypted local shelf library with JSON backup & restore
+              <p className="text-xs text-[#AAA69D] font-sans">
+                Organized reading shelves, bookmarks & personal archives
               </p>
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={handleExport}
-                className="px-3 py-1.5 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-300 hover:text-solar-400 text-xs font-mono flex items-center gap-1.5 transition-all"
-                title="Export library backup JSON"
+                className="px-3 py-1.5 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-xs text-[#AAA69D] hover:text-[#F0E9DC] flex items-center gap-1.5 transition-colors"
+                title="Export Library JSON"
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export JSON</span>
+                <Download className="w-3.5 h-3.5 text-[#C69A45]" />
+                <span>Backup</span>
               </button>
+
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-300 hover:text-solar-400 text-xs font-mono flex items-center gap-1.5 transition-all"
-                title="Import library backup JSON"
+                className="px-3 py-1.5 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-xs text-[#AAA69D] hover:text-[#F0E9DC] flex items-center gap-1.5 transition-colors"
+                title="Restore Library JSON"
               >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Restore JSON</span>
+                <Upload className="w-3.5 h-3.5 text-[#C69A45]" />
+                <span>Restore</span>
               </button>
             </div>
           </div>
 
-          {/* Shelves Category Tabs & Search Bar */}
+          {/* Shelves Selector & Search */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              <button
-                onClick={() => setSelectedShelf('all')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all shrink-0 ${
-                  selectedShelf === 'all'
-                    ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
-                    : 'bg-void-900 text-slate-400 hover:text-slate-200 border border-void-750'
-                }`}
-              >
-                All ({bookmarks.length})
-              </button>
-              <button
-                onClick={() => setSelectedShelf('reading')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all shrink-0 ${
-                  selectedShelf === 'reading'
-                    ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
-                    : 'bg-void-900 text-slate-400 hover:text-slate-200 border border-void-750'
-                }`}
-              >
-                📖 Reading ({bookmarks.filter((b) => b.category === 'reading').length})
-              </button>
-              <button
-                onClick={() => setSelectedShelf('plan')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all shrink-0 ${
-                  selectedShelf === 'plan'
-                    ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
-                    : 'bg-void-900 text-slate-400 hover:text-slate-200 border border-void-750'
-                }`}
-              >
-                ⏳ Plan ({bookmarks.filter((b) => b.category === 'plan').length})
-              </button>
-              <button
-                onClick={() => setSelectedShelf('completed')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all shrink-0 ${
-                  selectedShelf === 'completed'
-                    ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
-                    : 'bg-void-900 text-slate-400 hover:text-slate-200 border border-void-750'
-                }`}
-              >
-                🏆 Completed ({bookmarks.filter((b) => b.category === 'completed').length})
-              </button>
-              <button
-                onClick={() => setSelectedShelf('favorites')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-mono transition-all shrink-0 ${
-                  selectedShelf === 'favorites'
-                    ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
-                    : 'bg-void-900 text-slate-400 hover:text-slate-200 border border-void-750'
-                }`}
-              >
-                ⭐ Favorites ({bookmarks.filter((b) => b.category === 'favorites').length})
-              </button>
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              {(['all', 'reading', 'completed', 'on-hold', 'plan-to-read'] as const).map((cat) => {
+                const count =
+                  cat === 'all'
+                    ? bookmarks.length
+                    : bookmarks.filter((b) => b.category === cat).length;
+                const isSelected = selectedShelf === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedShelf(cat)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-sans capitalize transition-all shrink-0 flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-[#191A1F] text-[#C69A45] border border-[#C69A45]/40 font-semibold'
+                        : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
+                    }`}
+                  >
+                    <span>{cat.replace('-', ' ')}</span>
+                    <span className="text-[10px] font-mono opacity-70">({count})</span>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="relative max-w-xs flex-1">
-              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <div className="w-full sm:w-64">
               <input
                 type="text"
+                placeholder="Search saved volumes..."
                 value={shelfSearch}
                 onChange={(e) => setShelfSearch(e.target.value)}
-                placeholder="Search shelves..."
-                className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-void-900 border border-void-750 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-solar-500/60 font-mono"
+                className="w-full px-3 py-1.5 rounded-lg bg-[#111318] border border-[#292A2D] text-xs text-[#F0E9DC] placeholder-[#AAA69D]/50 focus:outline-none focus:border-[#C69A45]/60"
               />
             </div>
           </div>
 
-          {filteredBookmarks.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-              {filteredBookmarks.map((manga) => (
-                <MangaCard key={manga.id} manga={manga} />
-              ))}
-            </div>
-          ) : (
-            <div className="py-24 text-center space-y-4">
-              <Bookmark className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="font-serif text-lg text-slate-300">No Manuscripts in this Shelf</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto font-mono">
-                Explore the Unified Matrix and click the bookmark ribbon to archive manuscripts here.
+          {/* Bookmarks Grid */}
+          {filteredBookmarks.length === 0 ? (
+            <div className="text-center py-16 space-y-3 rounded-xl bg-[#111318] border border-[#292A2D]">
+              <Bookmark className="w-8 h-8 text-[#AAA69D] mx-auto" />
+              <h3 className="font-serif text-base font-bold text-[#F0E9DC]">
+                No Volumes on this Shelf
+              </h3>
+              <p className="text-xs text-[#AAA69D] max-w-sm mx-auto">
+                Explore the archive catalogue and use the bookmark icon on any manga card to organize your personal reading library.
               </p>
               <button
                 onClick={() => setActiveTab('catalog')}
-                className="px-6 py-2 rounded-xl bg-solar-500 text-void-950 font-serif font-bold text-xs shadow-lg shadow-solar-500/20 hover:scale-105 transition-all"
+                className="px-4 py-2 rounded-lg bg-[#C69A45] text-[#090A0C] font-semibold text-xs hover:bg-[#D8AA55] transition-colors"
               >
-                Explore Codex
+                Browse Archive
               </button>
             </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+              {filteredBookmarks.map((b) => (
+                <MangaCard
+                  key={b.id}
+                  manga={{
+                    id: b.id,
+                    title: b.title,
+                    cover: b.coverImage,
+                    source: b.source,
+                  }}
+                />
+              ))}
+            </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* ======================================================== */}
-      {/* TAB 3: CHRONICLES (READING HISTORY)                      */}
+      {/* TAB 3: READING HISTORY (CHRONICLES)                      */}
       {/* ======================================================== */}
       {activeTab === 'history' && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between border-b border-void-700/60 pb-4">
+        <section className="space-y-6" aria-label="Reading History Section">
+          <div className="flex items-center justify-between border-b border-[#292A2D] pb-4">
             <div>
-              <h2 className="font-serif text-2xl font-bold text-slate-100 flex items-center gap-2">
-                <span>Reading Chronicles</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-solar-500/20 text-solar-400 font-mono font-bold">
-                  {historyList.length} In-Progress
-                </span>
+              <h2 className="font-serif text-2xl font-bold text-[#F0E9DC]">
+                Reading History
               </h2>
-              <p className="text-xs text-slate-400 font-mono mt-1">
-                Your uninterrupted reading continuity across all scrolls
+              <p className="text-xs text-[#AAA69D] font-sans">
+                Timeline of all read chapters and current page continuity
               </p>
             </div>
 
             {historyList.length > 0 && (
               <button
                 onClick={() => {
-                  if (confirm('Clear all reading chronicles?')) {
-                    clearHistory();
-                  }
+                  if (confirm('Clear all reading history records?')) clearHistory();
                 }}
-                className="px-3 py-1.5 rounded-xl bg-void-900 hover:bg-rose-950/40 border border-void-750 hover:border-rose-500/40 text-slate-400 hover:text-rose-400 text-xs font-mono flex items-center gap-1.5 transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#292A2D] hover:border-rose-800 text-xs text-[#AAA69D] hover:text-rose-400 flex items-center gap-1.5 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Clear Chronicles</span>
+                <span>Clear History</span>
               </button>
             )}
           </div>
 
-          {historyList.length > 0 ? (
+          {historyList.length === 0 ? (
+            <div className="text-center py-16 space-y-3 rounded-xl bg-[#111318] border border-[#292A2D]">
+              <Clock className="w-8 h-8 text-[#AAA69D] mx-auto" />
+              <h3 className="font-serif text-base font-bold text-[#F0E9DC]">
+                No History Recorded
+              </h3>
+              <p className="text-xs text-[#AAA69D] max-w-sm mx-auto">
+                As you read chapters, your progress and last-viewed pages will be systematically logged here for effortless continuity.
+              </p>
+            </div>
+          ) : (
             <div className="space-y-3">
-              {historyList.map((item) => (
+              {historyList.map((hist) => (
                 <div
-                  key={item.mangaId}
-                  className="p-4 rounded-2xl bg-void-900 border border-void-750 hover:border-solar-500/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all shadow-md group"
+                  key={`${hist.mangaId}-${hist.chapterId}`}
+                  onClick={() =>
+                    openChapter(
+                      hist.mangaId,
+                      hist.chapterId,
+                      hist.chapterTitle,
+                      hist.mangaTitle,
+                      hist.mangaCover
+                    )
+                  }
+                  className="p-4 rounded-xl bg-[#111318] border border-[#292A2D] hover:border-[#C69A45]/40 transition-all cursor-pointer group flex items-center justify-between gap-4"
                 >
-                  <div
-                    onClick={() => openManga(item.mangaId, item.mangaTitle, item.mangaCover)}
-                    className="flex items-center gap-4 cursor-pointer min-w-0"
-                  >
-                    <div className="w-14 h-20 rounded-xl overflow-hidden bg-void-950 shrink-0 border border-void-700">
-                      <img src={item.mangaCover} alt="" className="w-full h-full object-cover" />
-                    </div>
-
-                    <div className="truncate">
-                      <h4 className="font-serif text-base font-bold text-slate-100 group-hover:text-solar-400 transition-colors truncate">
-                        {item.mangaTitle}
+                  <div className="flex items-center gap-4 min-w-0">
+                    <img
+                      src={hist.mangaCover || FALLBACK_COVER}
+                      alt=""
+                      className="w-12 h-16 rounded object-cover shrink-0 bg-[#090A0C] border border-[#292A2D]"
+                    />
+                    <div className="min-w-0 space-y-1">
+                      <h4 className="font-serif text-sm font-bold text-[#F0E9DC] truncate group-hover:text-[#C69A45] transition-colors">
+                        {hist.mangaTitle}
                       </h4>
-                      <p className="text-xs text-solar-400 font-mono mt-0.5">
-                        {item.chapterTitle} • Page {item.pageIndex} of {item.totalImages}
+                      <p className="text-xs text-[#C69A45] font-mono">
+                        {hist.chapterTitle} • Page {hist.pageIndex || 1}
                       </p>
-                      <p className="text-[11px] text-slate-500 font-mono mt-1 flex items-center gap-1.5">
-                        <Clock className="w-3 h-3" />
-                        <span>Read {formatRelativeTime(item.updatedAt)}</span>
+                      <p className="text-[10px] text-[#AAA69D] font-mono">
+                        {new Date(hist.updatedAt).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => openChapter(item.mangaId, item.chapterId, item.chapterTitle, item.mangaTitle, item.mangaCover)}
-                      className="px-4 py-2 rounded-xl bg-solar-500 hover:bg-solar-400 text-void-950 font-serif font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-solar-500/20"
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>Resume Scroll</span>
-                    </button>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#191A1F] border border-[#292A2D] text-xs font-sans text-[#F0E9DC] group-hover:bg-[#C69A45] group-hover:text-[#090A0C] transition-all shrink-0">
+                    <span>Continue</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="py-24 text-center space-y-4">
-              <Clock className="w-12 h-12 text-slate-600 mx-auto" />
-              <h3 className="font-serif text-lg text-slate-300">Chronicle Journal is Blank</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto font-mono">
-                Start reading any manga to have your exact scroll position and chapter history logged here.
-              </p>
-              <button
-                onClick={() => setActiveTab('catalog')}
-                className="px-6 py-2 rounded-xl bg-solar-500 text-void-950 font-serif font-bold text-xs shadow-lg shadow-solar-500/20 hover:scale-105 transition-all"
-              >
-                Browse Unified Stream
-              </button>
-            </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* Floating Back to Top Button */}
       {showBackToTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-void-900/90 backdrop-blur-xl border border-solar-500/50 text-solar-400 hover:bg-solar-500 hover:text-void-950 shadow-2xl shadow-solar-500/25 transition-all hover:scale-110"
-          title="Return to Zenith"
+          className="fixed bottom-6 right-6 p-3 rounded-full bg-[#111318] border border-[#292A2D] text-[#C69A45] shadow-2xl hover:border-[#C69A45] transition-all z-30"
+          title="Scroll to top"
+          aria-label="Scroll to top"
         >
           <ArrowUp className="w-5 h-5" />
         </button>

@@ -11,6 +11,7 @@ export interface MangaItem {
   type?: string;
   tags?: string[];
   source?: 'weebcentral' | 'mangadex';
+  country?: string; // JP, KR, CN, US
 }
 
 export interface MangaDetails extends MangaItem {
@@ -26,6 +27,7 @@ export interface ChapterItem {
   chapterNumber?: string;
   date?: string;
   pages?: number;
+  language?: string; // 'en', 'es', 'pt-br', 'fr', 'id', 'ja', 'ko', 'zh'
 }
 
 export interface ReadingHistoryItem {
@@ -77,6 +79,8 @@ export interface FilterState {
   query: string;
   selectedSource: MangaSource; // 'all' | 'weebcentral' | 'mangadex'
   selectedType: string | null; // null = All, 'Manga' | 'Manhwa' | 'Manhua' | 'OEL'
+  selectedCountry?: string | null; // null = All, 'JP' | 'KR' | 'CN' | 'GLOBAL'
+  selectedLanguage?: string | null; // null = All, 'en' | 'es' | 'pt-br' | 'fr' | 'id' | 'ja' | 'ko' | 'zh'
   selectedStatus: string | null; // null = All, 'Ongoing' | 'Complete' | 'Hiatus'
   includedTags: string[];
   excludedTags: string[];

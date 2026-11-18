@@ -40,7 +40,6 @@ interface ChapterBlock {
   images: string[];
 }
 
-// 2026 Holo-Cylinder 3D Curve Panel
 const HoloPanel3D: React.FC<{
   imgUrl: string;
   pageIdx: number;
@@ -50,6 +49,8 @@ const HoloPanel3D: React.FC<{
 }> = ({ imgUrl, pageIdx, total, scroll3D, imageFitClass }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState('');
+  const [loadError, setLoadError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     if (!scroll3D) {
@@ -65,10 +66,10 @@ const HoloPanel3D: React.FC<{
       const elemCenter = rect.top + rect.height / 2;
       const diff = (elemCenter - viewportCenter) / (window.innerHeight / 2);
       const clamped = Math.max(-1, Math.min(1, diff));
-      // Parabolic subtle cylinder bow: rotateX between -6deg and +6deg, subtle translateZ
-      const rotX = clamped * -5;
-      const tz = Math.abs(clamped) * -15;
-      setTransform(`perspective(1100px) rotateX(${rotX.toFixed(2)}deg) translateZ(${tz.toFixed(1)}px)`);
+      // Parabolic subtle cylinder bow: rotateX between -6.5deg and +6.5deg, translateZ backward towards edges
+      const rotX = clamped * -6.5;
+      const tz = Math.abs(clamped) * -22;
+      setTransform(`perspective(1200px) rotateX(${rotX.toFixed(2)}deg) translateZ(${tz.toFixed(1)}px)`);
     };
 
     const onScroll = () => {
@@ -90,7 +91,7 @@ const HoloPanel3D: React.FC<{
       ref={panelRef}
       className={`relative w-full overflow-hidden group transition-all ${
         scroll3D
-          ? 'shadow-2xl rounded-xl border border-solar-500/10 hover:border-solar-500/30 duration-100 my-1'
+          ? 'shadow-2xl rounded-xl border border-[#292A2D] my-2 duration-100'
           : 'duration-300'
       }`}
       style={{
@@ -99,19 +100,36 @@ const HoloPanel3D: React.FC<{
         willChange: scroll3D ? 'transform' : 'auto',
       }}
     >
-      <img
-        src={getProxyImageUrl(imgUrl)}
-        alt={`Page ${pageIdx + 1}`}
-        className={`block select-none pointer-events-none transition-all duration-300 ${imageFitClass}`}
-        loading={pageIdx < 4 ? 'eager' : 'lazy'}
-      />
+      {loadError ? (
+        <div className="min-h-[300px] flex flex-col items-center justify-center p-6 bg-[#111318] border border-[#292A2D] text-center space-y-2">
+          <p className="text-xs text-[#AAA69D] font-mono">Panel {pageIdx + 1} temporarily unavailable</p>
+          <button
+            onClick={() => {
+              setLoadError(false);
+              setRetryKey((k) => k + 1);
+            }}
+            className="px-3 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#C69A45] hover:bg-[#C69A45] hover:text-[#090A0C] transition-colors"
+          >
+            Reload Panel
+          </button>
+        </div>
+      ) : (
+        <img
+          key={retryKey}
+          src={getProxyImageUrl(imgUrl)}
+          alt={`Page ${pageIdx + 1}`}
+          onError={() => setLoadError(true)}
+          className={`block select-none pointer-events-none transition-all duration-300 ${imageFitClass}`}
+          loading={pageIdx < 4 ? 'eager' : 'lazy'}
+        />
+      )}
       {/* Subtle Micro Page Counter */}
-      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-void-950/80 backdrop-blur-md text-[9px] font-mono text-slate-400 border border-void-700/60 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-[#090A0C]/85 backdrop-blur-sm text-[9px] font-mono text-[#AAA69D] border border-[#292A2D] opacity-0 group-hover:opacity-100 transition-opacity">
         p.{pageIdx + 1} / {total}
       </div>
       {/* 3D Holo Rim Glare */}
       {scroll3D && (
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-solar-500/[0.04] via-transparent to-solar-500/[0.04] opacity-50" />
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#C69A45]/[0.05] via-transparent to-[#C69A45]/[0.05] opacity-60" />
       )}
     </div>
   );
@@ -588,14 +606,30 @@ export const ReaderView: React.FC = () => {
               )}
             </button>
 
+            {/* Continuous Mode: 3D Holo-Scroll Toggle (Direct HUD Access) */}
+            {readerSettings.readingMode === 'vertical' && (
+              <button
+                onClick={() => updateReaderSettings({ scroll3D: !readerSettings.scroll3D })}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition-all ${
+                  readerSettings.scroll3D
+                    ? 'bg-[#C69A45] text-[#090A0C] border-[#C69A45] shadow-md shadow-[#C69A45]/20 font-bold'
+                    : 'bg-[#111318] border-[#292A2D] text-[#AAA69D] hover:text-[#C69A45]'
+                }`}
+                title="Toggle 3D Cylinder Scroll Depth"
+              >
+                <Box className={`w-3.5 h-3.5 ${readerSettings.scroll3D ? 'stroke-[2.5]' : ''}`} />
+                <span className="hidden sm:inline">3D Scroll</span>
+              </button>
+            )}
+
             {/* Continuous Mode: Auto Scroll Button */}
             {readerSettings.readingMode === 'vertical' && (
               <button
                 onClick={() => setAutoScrollActive(!autoScrollActive)}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-mono font-medium flex items-center gap-1.5 transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg border text-xs font-mono font-medium flex items-center gap-1.5 transition-all ${
                   autoScrollActive
-                    ? 'bg-solar-500 text-void-950 border-solar-500 shadow-md shadow-solar-500/30 font-bold'
-                    : 'bg-void-900 border-void-750 text-slate-300 hover:text-solar-400'
+                    ? 'bg-[#C69A45] text-[#090A0C] border-[#C69A45] shadow-md shadow-[#C69A45]/30 font-bold'
+                    : 'bg-[#111318] border-[#292A2D] text-[#AAA69D] hover:text-[#C69A45]'
                 }`}
                 title="Toggle Auto-Scroll"
               >

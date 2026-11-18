@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Search, Bookmark, History, ChevronLeft, Compass, Sparkles } from 'lucide-react';
+import { BookOpen, Search, Bookmark, History, ChevronLeft, Compass, SlidersHorizontal } from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
 
 export const Navbar: React.FC = () => {
@@ -8,17 +8,17 @@ export const Navbar: React.FC = () => {
   const historyCount = Object.keys(history).length;
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-2xl bg-void-950/85 border-b border-void-700/60 transition-all">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-[#090A0C]/90 border-b border-[#292A2D] transition-all">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand / Logo */}
         <div className="flex items-center gap-3">
           {currentView !== 'home' && (
             <button
               onClick={() => setView('home')}
-              className="p-2 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-300 hover:text-solar-400 transition-all"
-              title="Return to Grimoire Hub"
+              className="p-2 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-[#AAA69D] hover:text-[#C69A45] transition-colors"
+              title="Return to Archive"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
           )}
 
@@ -27,117 +27,104 @@ export const Navbar: React.FC = () => {
               setView('home');
               setActiveTab('catalog');
             }}
-            className="flex items-center gap-2.5 cursor-pointer group select-none"
+            className="flex items-center gap-3 cursor-pointer group select-none"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-solar-400 via-amber-600 to-void-950 p-[1.5px] shadow-lg shadow-solar-500/15 group-hover:shadow-solar-500/30 transition-all">
-              <div className="w-full h-full bg-void-950 rounded-[10px] flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-solar-400 group-hover:scale-110 transition-transform" />
-              </div>
+            {/* Literary Archival Monogram */}
+            <div className="w-8 h-8 rounded-md bg-[#111318] border border-[#292A2D] flex items-center justify-center group-hover:border-[#C69A45]/60 transition-colors shadow-sm">
+              <span className="font-serif text-sm font-bold text-[#C69A45]">K</span>
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-serif text-lg font-black tracking-wider bg-gradient-to-r from-solar-400 via-amber-200 to-solar-500 bg-clip-text text-transparent">
-                  KURO<span className="text-slate-100 font-sans">SCROLL</span>
+              <div className="flex items-center gap-2">
+                <span className="font-serif text-base sm:text-lg font-bold tracking-wider text-[#F0E9DC]">
+                  KURO<span className="text-[#C69A45]">SCROLL</span>
                 </span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-solar-500/15 text-solar-400 border border-solar-500/30 font-mono font-bold">
-                  2026
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#191A1F] text-[#AAA69D] border border-[#292A2D] font-mono uppercase tracking-widest hidden sm:inline">
+                  Archive
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400 font-mono tracking-tight hidden sm:block">
-                Neo-Archive Victorian Core
+              <p className="text-[10px] text-[#AAA69D] font-sans tracking-tight hidden md:block">
+                Neo-Editorial Manga Discovery
               </p>
             </div>
           </div>
         </div>
 
-        {/* Center Search Pill (Tactical Futuristic Pill) */}
+        {/* Center Search Input (Editorial Search Bar) */}
         <div className="flex-1 max-w-md hidden md:block">
           <button
             onClick={() => setSearchOpen(true)}
-            className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-400 hover:text-slate-200 text-xs font-mono transition-all shadow-inner group"
+            className="w-full flex items-center justify-between px-3.5 py-2 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] hover:border-[#C69A45]/40 text-[#AAA69D] hover:text-[#F0E9DC] text-xs transition-all group"
           >
             <div className="flex items-center gap-2.5">
-              <Search className="w-4 h-4 text-solar-400 group-hover:scale-105 transition-transform" />
-              <span>Search WeebCentral titles, authors, genres...</span>
+              <Search className="w-3.5 h-3.5 text-[#AAA69D] group-hover:text-[#C69A45] transition-colors" />
+              <span className="font-sans">Search titles, authors, genres...</span>
             </div>
-            <kbd className="px-2 py-0.5 text-[10px] rounded bg-void-800 text-slate-400 border border-void-700 font-mono">
-              Ctrl K
+            <kbd className="px-1.5 py-0.5 text-[10px] rounded bg-[#191A1F] text-[#AAA69D] border border-[#292A2D] font-mono">
+              ⌘K
             </kbd>
           </button>
         </div>
 
-        {/* Right Navigation Pills */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Right Navigation */}
+        <nav className="flex items-center gap-1 sm:gap-2">
           {/* Mobile Search Button */}
           <button
             onClick={() => setSearchOpen(true)}
-            className="md:hidden p-2 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-300 hover:text-solar-400 transition-colors"
-            title="Search"
+            className="md:hidden p-2 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-[#AAA69D] hover:text-[#C69A45] transition-colors"
+            title="Search Archive"
           >
             <Search className="w-4 h-4" />
           </button>
 
-          {/* Catalog Tab */}
+          {/* Discover Tab */}
           <button
             onClick={() => setActiveTab('catalog')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-medium transition-all ${
               currentView === 'home' && activeTab === 'catalog'
-                ? 'bg-solar-500 text-void-950 border-solar-500 shadow-md shadow-solar-500/20 font-bold'
-                : 'bg-void-900 hover:bg-void-850 border-void-750 text-slate-300 hover:text-solar-400'
+                ? 'bg-[#191A1F] text-[#C69A45] border border-[#C69A45]/40 font-semibold'
+                : 'bg-transparent text-[#AAA69D] hover:text-[#F0E9DC] hover:bg-[#111318]'
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Codex</span>
+            <span>Discover</span>
           </button>
 
-          {/* Library Shelves Pill */}
+          {/* My Library Tab */}
           <button
             onClick={() => setActiveTab('bookmarks')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-medium transition-all ${
               currentView === 'home' && activeTab === 'bookmarks'
-                ? 'bg-solar-500 text-void-950 border-solar-500 shadow-md shadow-solar-500/20 font-bold'
-                : 'bg-void-900 hover:bg-void-850 border-void-750 text-slate-300 hover:text-solar-400'
+                ? 'bg-[#191A1F] text-[#C69A45] border border-[#C69A45]/40 font-semibold'
+                : 'bg-transparent text-[#AAA69D] hover:text-[#F0E9DC] hover:bg-[#111318]'
             }`}
           >
             <Bookmark className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Shelves</span>
+            <span className="hidden sm:inline">My Library</span>
             {bookmarkCount > 0 && (
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  currentView === 'home' && activeTab === 'bookmarks'
-                    ? 'bg-void-950 text-solar-400'
-                    : 'bg-solar-500/20 text-solar-400'
-                }`}
-              >
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-[#C69A45]/20 text-[#C69A45]">
                 {bookmarkCount}
               </span>
             )}
           </button>
 
-          {/* History Pill */}
+          {/* Reading History Tab */}
           <button
             onClick={() => setActiveTab('history')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-medium transition-all ${
               currentView === 'home' && activeTab === 'history'
-                ? 'bg-solar-500 text-void-950 border-solar-500 shadow-md shadow-solar-500/20 font-bold'
-                : 'bg-void-900 hover:bg-void-850 border-void-750 text-slate-300 hover:text-solar-400'
+                ? 'bg-[#191A1F] text-[#C69A45] border border-[#C69A45]/40 font-semibold'
+                : 'bg-transparent text-[#AAA69D] hover:text-[#F0E9DC] hover:bg-[#111318]'
             }`}
           >
             <History className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Chronicles</span>
+            <span className="hidden sm:inline">History</span>
             {historyCount > 0 && (
-              <span
-                className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                  currentView === 'home' && activeTab === 'history'
-                    ? 'bg-void-950 text-solar-400'
-                    : 'bg-solar-500/20 text-solar-400'
-                }`}
-              >
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold bg-[#191A1F] text-[#AAA69D] border border-[#292A2D]">
                 {historyCount}
               </span>
             )}
           </button>
-        </div>
+        </nav>
       </div>
     </header>
   );

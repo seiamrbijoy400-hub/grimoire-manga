@@ -13,6 +13,7 @@ export interface MangaDexItem {
   type?: string;
   tags?: string[];
   source: 'mangadex';
+  country?: string;
 }
 
 export interface MangaDexDetails extends MangaDexItem {
@@ -29,10 +30,54 @@ export interface MangaDexChapter {
   chapterNumber?: string;
   date?: string;
   pages?: number;
+  language?: string;
+}
+
+export interface MangaDexFilterOptions {
+  country?: string; // JP, KR, CN, US, GLOBAL
+  lang?: string; // en, es, pt-br, fr, id, ja, ko, zh
+  types?: string[]; // Manga, Manhwa, Manhua, OEL
+  status?: string[]; // Ongoing, Complete, Hiatus
+}
+
+function applyMangaDexFilters(params: URLSearchParams, options?: MangaDexFilterOptions) {
+  if (!options) return;
+
+  // 1. Country & Original Language
+  if (options.country) {
+    if (options.country === 'JP') params.append('originalLanguage[]', 'ja');
+    else if (options.country === 'KR') params.append('originalLanguage[]', 'ko');
+    else if (options.country === 'CN') {
+      params.append('originalLanguage[]', 'zh');
+      params.append('originalLanguage[]', 'zh-hk');
+    } else if (options.country === 'US' || options.country === 'GLOBAL') {
+      params.append('originalLanguage[]', 'en');
+    }
+  } else if (options.types && options.types.length > 0) {
+    if (options.types.includes('Manhwa')) params.append('originalLanguage[]', 'ko');
+    if (options.types.includes('Manhua')) {
+      params.append('originalLanguage[]', 'zh');
+      params.append('originalLanguage[]', 'zh-hk');
+    }
+    if (options.types.includes('Manga')) params.append('originalLanguage[]', 'ja');
+    if (options.types.includes('OEL')) params.append('originalLanguage[]', 'en');
+  }
+
+  // 2. Translated Edition Language
+  if (options.lang) {
+    params.append('availableTranslatedLanguage[]', options.lang.toLowerCase());
+  }
+
+  // 3. Status
+  if (options.status && options.status.length > 0) {
+    if (options.status.includes('Ongoing')) params.append('status[]', 'ongoing');
+    if (options.status.includes('Complete')) params.append('status[]', 'completed');
+    if (options.status.includes('Hiatus')) params.append('status[]', 'hiatus');
+  }
 }
 
 // Fetch MangaDex Popular / Safe Manga
-export async function getMangaDexTrending(offset: number = 0, limit: number = 32): Promise<MangaDexItem[]> {
+export async function getMangaDexTrending(offset: number = 0, limit: number = 32, options?: MangaDexFilterOptions): Promise<MangaDexItem[]> {
   try {
     const params = new URLSearchParams({
       limit: String(limit),
@@ -43,6 +88,7 @@ export async function getMangaDexTrending(offset: number = 0, limit: number = 32
     params.append('includes[]', 'author');
     params.append('contentRating[]', 'safe');
     params.append('hasAvailableChapters', 'true');
+    applyMangaDexFilters(params, options);
 
     const res = await fetch(`${MANGADEX_BASE}/manga?${params.toString()}`, {
       headers: {
@@ -65,7 +111,7 @@ export async function getMangaDexTrending(offset: number = 0, limit: number = 32
 }
 
 // Fetch MangaDex Latest Safe Updates
-export async function getMangaDexLatest(offset: number = 0, limit: number = 32): Promise<MangaDexItem[]> {
+export async function getMangaDexLatest(offset: number = 0, limit: number = 32, options?: MangaDexFilterOptions): Promise<MangaDexItem[]> {
   try {
     const params = new URLSearchParams({
       limit: String(limit),
@@ -75,6 +121,7 @@ export async function getMangaDexLatest(offset: number = 0, limit: number = 32):
     params.append('includes[]', 'cover_art');
     params.append('contentRating[]', 'safe');
     params.append('hasAvailableChapters', 'true');
+    applyMangaDexFilters(params, options);
 
     const res = await fetch(`${MANGADEX_BASE}/manga?${params.toString()}`, {
       headers: {
@@ -93,7 +140,7 @@ export async function getMangaDexLatest(offset: number = 0, limit: number = 32):
 }
 
 // Search MangaDex Safe Manga
-export async function searchMangaDex(query: string, offset: number = 0, limit: number = 32): Promise<MangaDexItem[]> {
+export async function searchMangaDex(query: string, offset: number = 0, limit: number = 32, options?: MangaDexFilterOptions): Promise<MangaDexItem[]> {
   try {
     const params = new URLSearchParams({
       limit: String(limit),
@@ -107,6 +154,7 @@ export async function searchMangaDex(query: string, offset: number = 0, limit: n
     }
     params.append('includes[]', 'cover_art');
     params.append('contentRating[]', 'safe');
+    applyMangaDexFilters(params, options);
 
     const res = await fetch(`${MANGADEX_BASE}/manga?${params.toString()}`, {
       headers: {
@@ -206,10 +254,10 @@ export async function getMangaDexChapters(rawId: string): Promise<MangaDexChapte
     return rawChapters.map((c: any) => {
       const chNum = c.attributes?.chapter;
       const chTitle = c.attributes?.title;
-      const lang = c.attributes?.translatedLanguage ? ` [${c.attributes.translatedLanguage.toUpperCase()}]` : '';
+      const lang = (c.attributes?.translatedLanguage || 'en').toLowerCase();
       const displayTitle = chNum
-        ? `Chapter ${chNum}${chTitle ? `: ${chTitle}` : ''}${lang}`
-        : `${chTitle || 'Chapter'}${lang}`;
+        ? `Chapter ${chNum}${chTitle ? `: ${chTitle}` : ''}`
+        : `${chTitle || 'Chapter'}`;
 
       const dateStr = c.attributes?.readableAt || c.attributes?.publishAt;
       const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : undefined;
@@ -221,6 +269,7 @@ export async function getMangaDexChapters(rawId: string): Promise<MangaDexChapte
         chapterNumber: chNum,
         date: formattedDate,
         pages: c.attributes?.pages,
+        language: lang,
       };
     });
   } catch (err) {
@@ -290,11 +339,20 @@ function formatMangaDexItem(raw: any): MangaDexItem {
   const statusRaw = attributes.status || 'ongoing';
   const status = statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1);
 
-  // Type / Demographics
+  // Type / Demographics & Country
   const origLang = attributes.originalLanguage;
   let type = 'Manga';
-  if (origLang === 'ko') type = 'Manhwa';
-  else if (origLang === 'zh' || origLang === 'zh-hk') type = 'Manhua';
+  let country = 'JP';
+  if (origLang === 'ko') {
+    type = 'Manhwa';
+    country = 'KR';
+  } else if (origLang === 'zh' || origLang === 'zh-hk') {
+    type = 'Manhua';
+    country = 'CN';
+  } else if (origLang === 'en') {
+    type = 'OEL';
+    country = 'US';
+  }
 
   // Tags
   const tags = (attributes.tags || [])
@@ -310,6 +368,7 @@ function formatMangaDexItem(raw: any): MangaDexItem {
     description: description.replace(/\r\n/g, '\n').slice(0, 300),
     status,
     type,
+    country,
     tags,
     source: 'mangadex',
   };

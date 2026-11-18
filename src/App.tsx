@@ -24,20 +24,32 @@ export const App: React.FC = () => {
         {currentView === 'reader' && <ReaderView />}
       </div>
 
-      {/* Footer on Home & Details */}
+      {/* Editorial Archive Footer on Home & Details */}
       {currentView === 'home' && (
-        <footer className="border-t border-void-700/60 bg-void-950 py-8 px-4 text-center space-y-2">
-          <div className="flex items-center justify-center gap-2">
-            <span className="font-serif text-sm font-black text-solar-400 tracking-wider">
-              KUROSCROLL // NEO-ARCHIVE
-            </span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-solar-500/15 text-solar-400 border border-solar-500/30 font-mono font-bold">
-              2026 Core
-            </span>
+        <footer className="border-t border-[#292A2D] bg-[#090A0C] py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-1 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-2.5">
+                <span className="font-serif text-base font-bold tracking-wider text-[#F0E9DC]">
+                  KURO<span className="text-[#C69A45]">SCROLL</span>
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#191A1F] text-[#AAA69D] border border-[#292A2D] font-mono">
+                  Archive Ed. 2026
+                </span>
+              </div>
+              <p className="text-xs text-[#AAA69D] max-w-md leading-relaxed">
+                A curated digital archive dedicated to the appreciation and preservation of graphic storytelling from Japan, Korea, China, and across the globe.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-[#AAA69D]">
+              <span className="font-mono text-[11px] text-[#AAA69D]/70">Tokyo • Seoul • Shanghai</span>
+              <span className="hidden sm:inline text-[#292A2D]">|</span>
+              <span className="hover:text-[#F0E9DC] cursor-default transition-colors">Continuous & Tankōbon RTL</span>
+              <span className="hidden sm:inline text-[#292A2D]">|</span>
+              <span className="hover:text-[#F0E9DC] cursor-default transition-colors">Press ⌘K to Search</span>
+            </div>
           </div>
-          <p className="text-xs text-slate-500 font-mono">
-            Dual-Engine Continuous Webtoon & Tankōbon RTL Reader • WeebCentral Synchronized
-          </p>
         </footer>
       )}
     </div>

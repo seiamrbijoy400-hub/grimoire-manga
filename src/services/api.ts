@@ -64,6 +64,12 @@ export async function fetchAdvancedSearch(filter: Partial<FilterState>, offset: 
     if (filter.selectedType) {
       params.append('type', filter.selectedType);
     }
+    if (filter.selectedCountry) {
+      params.append('country', filter.selectedCountry);
+    }
+    if (filter.selectedLanguage) {
+      params.append('lang', filter.selectedLanguage);
+    }
     if (filter.selectedStatus) {
       params.append('status', filter.selectedStatus);
     }

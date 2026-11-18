@@ -7,43 +7,56 @@ export default {
   theme: {
     extend: {
       colors: {
+        // KuroScroll 2026 Neo-Editorial Palette
+        editorial: {
+          bg: '#090A0C',          // Main background
+          surface: '#111318',     // Secondary surface
+          elevated: '#191A1F',    // Elevated surface / drawers / modals
+          gold: '#C69A45',        // Muted antique gold (Primary accent)
+          'gold-light': '#D8AA55',
+          'gold-dark': '#A77F32',
+          ivory: '#F0E9DC',       // Primary text
+          subtext: '#AAA69D',     // Secondary text
+          border: '#292A2D',      // Subtle hairline borders
+          teal: '#42B8A8',        // Restrained status teal
+        },
         void: {
-          950: '#050608', // OLED Abyss
-          900: '#0a0c10', // Dark canvas
-          850: '#11141c', // Card & elevated panel
-          800: '#181c26', // Hover / elevated border
-          750: '#1e2330', // Active state
-          700: '#262d3e', // Divider hair lines
-          600: '#39435b', // Subdued borders
+          950: '#090A0C', // Main background
+          900: '#111318', // Secondary surface
+          850: '#15171D', // Slightly elevated
+          800: '#191A1F', // Elevated surface / card
+          750: '#21232A', // Interactive hover
+          700: '#292A2D', // Subtle hairline border
+          600: '#383A42', // Slightly emphasized border
         },
         solar: {
-          400: '#fbbf24', // Radiant flare
-          500: '#f59e0b', // Primary signature core
-          600: '#d97706', // Burnished gold
-          700: '#b45309', // Deep amber
+          400: '#D8AA55', // Light antique gold
+          500: '#C69A45', // Signature antique gold
+          600: '#B58938', // Burnished gold
+          700: '#96702A', // Deep antique gold
         },
         telemetry: {
-          cyan: '#06b6d4',
-          emerald: '#10b981',
-          crimson: '#e11d48',
-          violet: '#8b5cf6',
+          cyan: '#42B8A8', // Restrained status teal
+          emerald: '#34D399',
+          crimson: '#E05D5D',
+          violet: '#9D7FE6',
         },
         // Backward compatibility mappings
         victorian: {
-          gold: '#f59e0b',
-          'gold-light': '#fbbf24',
-          'gold-dark': '#d97706',
-          crimson: '#e11d48',
-          'crimson-bright': '#f43f5e',
-          parchment: '#f7f1e5',
-          'parchment-dark': '#1e1a14',
-          'parchment-border': '#3d3425',
+          gold: '#C69A45',
+          'gold-light': '#D8AA55',
+          'gold-dark': '#A77F32',
+          crimson: '#E05D5D',
+          'crimson-bright': '#F87171',
+          parchment: '#F0E9DC',
+          'parchment-dark': '#15171D',
+          'parchment-border': '#292A2D',
         },
         genz: {
-          amethyst: '#8b5cf6',
-          violet: '#a855f7',
-          cyan: '#06b6d4',
-          rose: '#e11d48',
+          amethyst: '#9D7FE6',
+          violet: '#B490F5',
+          cyan: '#42B8A8',
+          rose: '#E05D5D',
         }
       },
       fontFamily: {
