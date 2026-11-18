@@ -251,6 +251,29 @@ function isNotFound(err: unknown): boolean {
   );
 }
 
+/** Read a `<li><strong>Label:</strong> <a>value</a></li>` row from the details sidebar. */
+function metaRow($: cheerio.CheerioAPI, label: string): cheerio.Cheerio<any> {
+  const needle = label.toLowerCase();
+  let row: cheerio.Cheerio<any> | null = null;
+
+  $('strong').each((_, el) => {
+    if (row) return;
+    const text = $(el).text().replace(/:\s*$/, '').trim().toLowerCase();
+    if (text === needle || text.startsWith(needle)) {
+      row = $(el).closest('li');
+      if (!row.length) row = $(el).parent();
+    }
+  });
+
+  return row ?? $();
+}
+
+function metaValue($: cheerio.CheerioAPI, label: string): string {
+  const row = metaRow($, label);
+  if (!row.length) return '';
+  return row.find('a').first().text().trim() || row.find('span').last().text().trim();
+}
+
 export async function getMangaDetails(id: string): Promise<MangaDetails | null> {
   let html: string;
   try {
@@ -272,35 +295,37 @@ export async function getMangaDetails(id: string): Promise<MangaDetails | null> 
   );
 
   // Synopsis / Description
-  const synopsis = $('p.leading-relaxed, [x-data*="showMore"] p, div.whitespace-pre-line').first().text().trim() ||
+  const synopsis = $('p.whitespace-pre-wrap, p.leading-relaxed, [x-data*="showMore"] p, div.whitespace-pre-line')
+    .first().text().trim() ||
     $('meta[name="description"]').attr('content') || '';
 
-  // Tags & Badges
+  // Tags (WeebCentral renders them as `<li><strong>Tags(s):</strong><span><a...>`)
   const tags: string[] = [];
-  $('a[href*="/search?tag="], a[href*="/search?genre="], .badge').each((_, el) => {
-    const t = $(el).text().trim();
+  metaRow($, 'tags').find('a[href*="included_tag="]').each((_, el) => {
+    const t = $(el).text().replace(/[,\s]+$/, '').trim();
     if (t && !tags.includes(t)) tags.push(t);
   });
+  if (tags.length === 0) {
+    $('a[href*="/search?tag="], a[href*="/search?genre="], .badge').each((_, el) => {
+      const t = $(el).text().trim();
+      if (t && !tags.includes(t)) tags.push(t);
+    });
+  }
 
   // Author & Artist
-  let author = '';
-  let artist = '';
-  $('section, div').each((_, el) => {
-    const text = $(el).text();
-    if (text.includes('Author:') && !author) {
-      author = $(el).find('a, span').last().text().trim();
-    }
-    if (text.includes('Artist:') && !artist) {
-      artist = $(el).find('a, span').last().text().trim();
-    }
-  });
+  const author = metaValue($, 'author');
+  const artist = metaValue($, 'artist');
 
   // Status & Type
-  let status = 'Ongoing';
-  let type = 'Manga';
-  if (html.includes('Complete') || html.includes('Completed')) status = 'Completed';
-  if (html.includes('Manhwa') || tags.includes('Manhwa')) type = 'Manhwa';
-  else if (html.includes('Manhua') || tags.includes('Manhua')) type = 'Manhua';
+  let status = metaValue($, 'status') || 'Ongoing';
+  let type = metaValue($, 'type') || 'Manga';
+  if (!metaValue($, 'status') && (html.includes('Complete') || html.includes('Completed'))) {
+    status = 'Completed';
+  }
+  if (type === 'Manga') {
+    if (tags.includes('Manhwa') || html.includes('Manhwa')) type = 'Manhwa';
+    else if (tags.includes('Manhua') || html.includes('Manhua')) type = 'Manhua';
+  }
 
   return {
     id,
