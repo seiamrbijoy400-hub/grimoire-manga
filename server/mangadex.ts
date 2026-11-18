@@ -174,25 +174,42 @@ export async function getMangaDexChapters(rawId: string): Promise<MangaDexChapte
       'order[chapter]': 'desc',
     });
     params.append('translatedLanguage[]', 'en');
-    params.append('contentRating[]', 'safe');
 
-    const res = await fetch(`${MANGADEX_BASE}/manga/${rawId}/feed?${params.toString()}`, {
+    let res = await fetch(`${MANGADEX_BASE}/manga/${rawId}/feed?${params.toString()}`, {
       headers: {
         'User-Agent': 'KuroScroll-MangaPlatform/2026.1 (Termux/Linux)',
         'Accept': 'application/json'
       }
     });
 
-    if (!res.ok) return [];
-    const json = await res.json();
-    const chapters = json.data || [];
+    let json = res.ok ? await res.json() : { data: [] };
+    let rawChapters = (json.data || []).filter((c: any) => !c.attributes?.externalUrl && (c.attributes?.pages === undefined || c.attributes?.pages > 0));
 
-    return chapters.map((c: any) => {
+    // If no English internal chapters found, fallback to any available language chapters with pages
+    if (rawChapters.length === 0) {
+      const allLangParams = new URLSearchParams({
+        limit: '100',
+        'order[chapter]': 'desc',
+      });
+      res = await fetch(`${MANGADEX_BASE}/manga/${rawId}/feed?${allLangParams.toString()}`, {
+        headers: {
+          'User-Agent': 'KuroScroll-MangaPlatform/2026.1 (Termux/Linux)',
+          'Accept': 'application/json'
+        }
+      });
+      if (res.ok) {
+        json = await res.json();
+        rawChapters = (json.data || []).filter((c: any) => !c.attributes?.externalUrl && (c.attributes?.pages === undefined || c.attributes?.pages > 0));
+      }
+    }
+
+    return rawChapters.map((c: any) => {
       const chNum = c.attributes?.chapter;
       const chTitle = c.attributes?.title;
+      const lang = c.attributes?.translatedLanguage ? ` [${c.attributes.translatedLanguage.toUpperCase()}]` : '';
       const displayTitle = chNum
-        ? `Chapter ${chNum}${chTitle ? `: ${chTitle}` : ''}`
-        : chTitle || 'Oneshot / Extra';
+        ? `Chapter ${chNum}${chTitle ? `: ${chTitle}` : ''}${lang}`
+        : `${chTitle || 'Chapter'}${lang}`;
 
       const dateStr = c.attributes?.readableAt || c.attributes?.publishAt;
       const formattedDate = dateStr ? new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : undefined;
@@ -230,11 +247,13 @@ export async function getMangaDexChapterImages(rawChapterId: string): Promise<st
     const json = await res.json();
     const baseUrl = json.baseUrl;
     const hash = json.chapter?.hash;
-    const files = json.chapter?.data || [];
+    const isFullQuality = json.chapter?.data && json.chapter.data.length > 0;
+    const files = isFullQuality ? json.chapter.data : (json.chapter?.dataSaver || []);
+    const folder = isFullQuality ? 'data' : 'data-saver';
 
     if (!baseUrl || !hash || files.length === 0) return [];
 
-    return files.map((fileName: string) => `${baseUrl}/data/${hash}/${fileName}`);
+    return files.map((fileName: string) => `${baseUrl}/${folder}/${hash}/${fileName}`);
   } catch (err) {
     console.error(`Failed to fetch MangaDex images for chapter ${rawChapterId}:`, err);
     return [];
