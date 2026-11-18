@@ -4,79 +4,107 @@
 
 @layer base {
   :root {
-    --bg-void: #08080c;
-    --gold: #d4af37;
-    --parchment: #f4ecd8;
+    --bg-void: #050608;
+    --solar: #f59e0b;
+    --solar-glow: #fbbf24;
   }
 
   body {
     background-color: var(--bg-void);
     color: #e2e8f0;
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Custom Scrollbars */
+/* Custom Tactical Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #09090d;
+  background: #050608;
 }
 ::-webkit-scrollbar-thumb {
-  background: #272738;
+  background: #181c26;
   border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #d4af37;
+  background: #f59e0b;
 }
 
-/* Victorian Grimoire Theme Overlays */
+/* Neo-Archive Surface Cards */
+.neo-card {
+  background: #0a0c10;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.neo-card:hover {
+  border-color: rgba(245, 158, 11, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 16px 36px -8px rgba(0, 0, 0, 0.8), 0 0 20px rgba(245, 158, 11, 0.08);
+}
+
+/* Readers Themes */
+.theme-void {
+  background-color: #050608 !important;
+  color: #e2e8f0 !important;
+}
+
+.theme-graphite {
+  background-color: #0d1117 !important;
+  color: #e6edf3 !important;
+}
+
 .theme-parchment {
   background-color: #1a1713 !important;
   color: #eeddbb !important;
 }
 
 .theme-parchment img {
-  filter: sepia(0.22) contrast(1.04) brightness(0.96);
+  filter: sepia(0.25) contrast(1.05) brightness(0.95);
 }
 
 .theme-amethyst {
-  background-color: #0d0a14 !important;
+  background-color: #0c0914 !important;
+  color: #e9d5ff !important;
 }
 
-/* Victorian Wax Seal Effect */
-.wax-seal {
-  background: radial-gradient(circle at 35% 35%, #b91c1c, #7f1d1d 75%, #450a0a);
-  box-shadow: 0 4px 15px rgba(185, 28, 28, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.25), inset 0 -2px 4px rgba(0, 0, 0, 0.6);
-  border: 2px solid #ef4444;
+/* Manga High-Contrast Night Inversion */
+.invert-manga img {
+  filter: invert(0.92) hue-rotate(180deg) contrast(1.1) !important;
 }
 
-/* Victorian Gilded Border */
-.gilded-border {
-  border: 1px solid rgba(212, 175, 55, 0.35);
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.08);
-}
-
-.gilded-border:hover {
-  border-color: rgba(212, 175, 55, 0.7);
-  box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
-}
-
-/* Ambient Backlight Glow */
+/* Dynamic Ambient Glow Layer */
 .ambient-glow-layer {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: radial-gradient(circle at 50% 40%, rgba(139, 92, 246, 0.12) 0%, rgba(212, 175, 55, 0.06) 45%, transparent 75%);
+  background: radial-gradient(circle at 50% 30%, rgba(245, 158, 11, 0.08) 0%, rgba(6, 182, 212, 0.04) 45%, transparent 75%);
   transition: background 1.5s ease;
 }
 
-/* Ribbon Bookmark */
+/* Tactical Wax Seal & Ribbon */
+.wax-seal {
+  background: radial-gradient(circle at 35% 35%, #e11d48, #9f1239 70%, #4c0519);
+  box-shadow: 0 4px 15px rgba(225, 29, 72, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.3), inset 0 -2px 4px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(244, 63, 94, 0.6);
+}
+
 .ribbon-bookmark {
-  width: 24px;
-  background: linear-gradient(180deg, #991b1b 0%, #7f1d1d 90%, transparent 100%);
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+  width: 28px;
+  background: linear-gradient(180deg, #9f1239 0%, #881337 80%, transparent 100%);
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.7));
+}
+
+/* Hide scrollbar for clean UI carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

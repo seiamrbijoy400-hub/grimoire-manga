@@ -12,11 +12,27 @@ import {
   CheckCircle2,
   Scroll,
   Loader2,
-  Flame
+  Flame,
+  Maximize2,
+  Minimize2,
+  List,
+  Layers,
+  Sun,
+  Moon,
+  ChevronDown,
+  Eye,
+  Columns,
+  Square,
+  Volume2,
+  VolumeX,
+  Radio,
+  ShieldCheck,
+  Zap,
+  Box
 } from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
 import { fetchChapterImages, fetchChapterList, getProxyImageUrl } from '../services/api.ts';
-import { ChapterItem } from '../types.ts';
+import { ChapterItem, ReadingMode, VisualTheme, ImageFitMode, AudioAmbience } from '../types.ts';
 
 interface ChapterBlock {
   chapterId: string;
@@ -24,9 +40,88 @@ interface ChapterBlock {
   images: string[];
 }
 
+// 2026 Holo-Cylinder 3D Curve Panel
+const HoloPanel3D: React.FC<{
+  imgUrl: string;
+  pageIdx: number;
+  total: number;
+  scroll3D: boolean;
+  imageFitClass: string;
+}> = ({ imgUrl, pageIdx, total, scroll3D, imageFitClass }) => {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [transform, setTransform] = useState('');
+
+  useEffect(() => {
+    if (!scroll3D) {
+      setTransform('');
+      return;
+    }
+
+    let rafId: number;
+    const updateTilt = () => {
+      if (!panelRef.current) return;
+      const rect = panelRef.current.getBoundingClientRect();
+      const viewportCenter = window.innerHeight / 2;
+      const elemCenter = rect.top + rect.height / 2;
+      const diff = (elemCenter - viewportCenter) / (window.innerHeight / 2);
+      const clamped = Math.max(-1, Math.min(1, diff));
+      // Parabolic subtle cylinder bow: rotateX between -6deg and +6deg, subtle translateZ
+      const rotX = clamped * -5;
+      const tz = Math.abs(clamped) * -15;
+      setTransform(`perspective(1100px) rotateX(${rotX.toFixed(2)}deg) translateZ(${tz.toFixed(1)}px)`);
+    };
+
+    const onScroll = () => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateTilt);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    updateTilt();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(rafId);
+    };
+  }, [scroll3D]);
+
+  return (
+    <div
+      ref={panelRef}
+      className={`relative w-full overflow-hidden group transition-all ${
+        scroll3D
+          ? 'shadow-2xl rounded-xl border border-solar-500/10 hover:border-solar-500/30 duration-100 my-1'
+          : 'duration-300'
+      }`}
+      style={{
+        transform: scroll3D ? transform : undefined,
+        transformStyle: 'preserve-3d',
+        willChange: scroll3D ? 'transform' : 'auto',
+      }}
+    >
+      <img
+        src={getProxyImageUrl(imgUrl)}
+        alt={`Page ${pageIdx + 1}`}
+        className={`block select-none pointer-events-none transition-all duration-300 ${imageFitClass}`}
+        loading={pageIdx < 4 ? 'eager' : 'lazy'}
+      />
+      {/* Subtle Micro Page Counter */}
+      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-void-950/80 backdrop-blur-md text-[9px] font-mono text-slate-400 border border-void-700/60 opacity-0 group-hover:opacity-100 transition-opacity">
+        p.{pageIdx + 1} / {total}
+      </div>
+      {/* 3D Holo Rim Glare */}
+      {scroll3D && (
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-solar-500/[0.04] via-transparent to-solar-500/[0.04] opacity-50" />
+      )}
+    </div>
+  );
+};
+
 export const ReaderView: React.FC = () => {
   const {
     activeMangaId,
+    activeMangaTitle,
+    activeMangaCover,
     activeChapterId,
     activeChapterTitle,
     openChapter,
@@ -34,6 +129,7 @@ export const ReaderView: React.FC = () => {
     readerSettings,
     updateReaderSettings,
     updateHistory,
+    markChapterRead,
   } = useStore();
 
   const [loadedChapters, setLoadedChapters] = useState<ChapterBlock[]>([]);
@@ -44,12 +140,41 @@ export const ReaderView: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showHud, setShowHud] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showChapterDrawer, setShowChapterDrawer] = useState(false);
+  const [chapterSearch, setChapterSearch] = useState('');
   const [autoScrollActive, setAutoScrollActive] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const lastScrollY = useRef(0);
   const autoScrollRaf = useRef<number | null>(null);
   const loadingNextRef = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const isMangaDex = activeChapterId?.startsWith('md:') || activeMangaId?.startsWith('md:');
+
+  // Fullscreen state listener
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.warn('Fullscreen request failed:', err);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.warn('Exit fullscreen failed:', err);
+        });
+      }
+    }
+  };
 
   // Load initial chapter and chapter catalog
   useEffect(() => {
@@ -67,7 +192,8 @@ export const ReaderView: React.FC = () => {
 
       if (mounted) {
         setChapters(chList);
-        const initialTitle = chList.find((c) => c.id === activeChapterId)?.title || activeChapterTitle || 'Chapter';
+        const initialTitle =
+          chList.find((c) => c.id === activeChapterId)?.title || activeChapterTitle || 'Chapter';
         setLoadedChapters([
           {
             chapterId: activeChapterId!,
@@ -76,8 +202,20 @@ export const ReaderView: React.FC = () => {
           },
         ]);
         setCurrentDisplayTitle(initialTitle);
-        setLoadingInitial(false);
         setCurrentPage(1);
+        setLoadingInitial(false);
+
+        // Update history & status
+        updateHistory({
+          mangaId: activeMangaId!,
+          mangaTitle: activeMangaTitle || 'Unknown Chronicle',
+          mangaCover: activeMangaCover || imgList[0] || '',
+          chapterId: activeChapterId!,
+          chapterTitle: initialTitle,
+          pageIndex: 1,
+          totalImages: imgList.length,
+        });
+        markChapterRead(activeChapterId!, true, 1);
       }
     }
     load();
@@ -88,21 +226,27 @@ export const ReaderView: React.FC = () => {
     };
   }, [activeChapterId, activeMangaId]);
 
-  // Total pages across all loaded chapters
+  // Current primary chapter block for Paged mode
+  const currentBlock = loadedChapters[0] || {
+    chapterId: activeChapterId || '',
+    chapterTitle: currentDisplayTitle,
+    images: [],
+  };
+  const currentImages = currentBlock.images;
+  const totalPagesInCurrentChapter = currentImages.length;
+
+  // Total pages across all loaded chapters (for continuous mode)
   const totalLoadedImages = loadedChapters.reduce((acc, ch) => acc + ch.images.length, 0);
 
-  // Function to load the next chapter seamlessly
+  // Seamless next chapter loader for Continuous mode
   const loadNextChapterSeamlessly = useCallback(async () => {
     if (loadingNextRef.current || loadedChapters.length === 0 || chapters.length === 0) return;
 
     const lastLoaded = loadedChapters[loadedChapters.length - 1];
     const lastIdx = chapters.findIndex((c) => c.id === lastLoaded.chapterId);
 
-    // WeebCentral lists chapters newest to oldest. Reading order is oldest to newest, so next chapter is index - 1
-    if (lastIdx <= 0) {
-      // Reached the newest released chapter!
-      return;
-    }
+    // Reading order: next chapter is lastIdx - 1
+    if (lastIdx <= 0) return;
 
     const nextChapterMeta = chapters[lastIdx - 1];
     if (!nextChapterMeta) return;
@@ -121,6 +265,7 @@ export const ReaderView: React.FC = () => {
             images: nextImages,
           },
         ]);
+        markChapterRead(nextChapterMeta.id, true, 1);
       }
     } catch (err) {
       console.error('Failed to append next chapter:', err);
@@ -128,10 +273,12 @@ export const ReaderView: React.FC = () => {
       loadingNextRef.current = false;
       setLoadingNext(false);
     }
-  }, [loadedChapters, chapters]);
+  }, [loadedChapters, chapters, markChapterRead]);
 
-  // Track scroll position, active chapter title, and trigger infinite next chapter
+  // Track scroll position in Continuous Mode
   useEffect(() => {
+    if (readerSettings.readingMode !== 'vertical') return;
+
     const handleScroll = () => {
       const currentScroll = window.scrollY;
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -139,19 +286,19 @@ export const ReaderView: React.FC = () => {
       setScrollProgress(progress);
 
       // Auto-hide HUD on downward scroll, reveal on upward scroll
-      if (currentScroll > lastScrollY.current + 35 && currentScroll > 150) {
+      if (currentScroll > lastScrollY.current + 40 && currentScroll > 150) {
         setShowHud(false);
       } else if (currentScroll < lastScrollY.current - 20) {
         setShowHud(true);
       }
       lastScrollY.current = currentScroll;
 
-      // Infinite Chapter Trigger: When within 1400px of bottom or > 80% scroll
+      // Infinite Chapter Trigger
       if (docHeight > 0 && docHeight - currentScroll < 1600 && !loadingNextRef.current) {
         loadNextChapterSeamlessly();
       }
 
-      // Track active chapter block currently in viewport
+      // Track active chapter block in viewport
       for (const block of loadedChapters) {
         const el = document.getElementById(`chapter-block-${block.chapterId}`);
         if (el) {
@@ -162,8 +309,8 @@ export const ReaderView: React.FC = () => {
               if (activeMangaId) {
                 updateHistory({
                   mangaId: activeMangaId,
-                  mangaTitle: 'Manga Grimoire',
-                  mangaCover: block.images[0] || '',
+                  mangaTitle: activeMangaTitle || 'Unknown Chronicle',
+                  mangaCover: activeMangaCover || block.images[0] || '',
                   chapterId: block.chapterId,
                   chapterTitle: block.chapterTitle,
                   pageIndex: 1,
@@ -179,11 +326,11 @@ export const ReaderView: React.FC = () => {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loadedChapters, currentDisplayTitle, activeMangaId, updateHistory, loadNextChapterSeamlessly]);
+  }, [readerSettings.readingMode, loadedChapters, currentDisplayTitle, activeMangaId, updateHistory, loadNextChapterSeamlessly]);
 
   // Auto-scroll loop
   useEffect(() => {
-    if (!autoScrollActive) {
+    if (!autoScrollActive || readerSettings.readingMode !== 'vertical') {
       if (autoScrollRaf.current) cancelAnimationFrame(autoScrollRaf.current);
       return;
     }
@@ -198,95 +345,303 @@ export const ReaderView: React.FC = () => {
     return () => {
       if (autoScrollRaf.current) cancelAnimationFrame(autoScrollRaf.current);
     };
-  }, [autoScrollActive, readerSettings.autoScrollSpeed]);
+  }, [autoScrollActive, readerSettings.readingMode, readerSettings.autoScrollSpeed]);
+
+  // Jump to Next / Previous Chapter in Paged Mode
+  const goToNextChapter = useCallback(() => {
+    const currentIdx = chapters.findIndex((c) => c.id === activeChapterId);
+    if (currentIdx > 0) {
+      const nextCh = chapters[currentIdx - 1];
+      openChapter(activeMangaId!, nextCh.id, nextCh.title, activeMangaTitle || undefined, activeMangaCover || undefined);
+    }
+  }, [chapters, activeChapterId, activeMangaId, openChapter, activeMangaTitle, activeMangaCover]);
+
+  const goToPrevChapter = useCallback(() => {
+    const currentIdx = chapters.findIndex((c) => c.id === activeChapterId);
+    if (currentIdx < chapters.length - 1 && currentIdx >= 0) {
+      const prevCh = chapters[currentIdx + 1];
+      openChapter(activeMangaId!, prevCh.id, prevCh.title, activeMangaTitle || undefined, activeMangaCover || undefined);
+    }
+  }, [chapters, activeChapterId, activeMangaId, openChapter, activeMangaTitle, activeMangaCover]);
+
+  // Paged Mode Page Navigators
+  const isRtl =
+    readerSettings.readingMode === 'paged-rtl' ||
+    readerSettings.readingMode === 'double-rtl';
+
+  const isDouble =
+    readerSettings.readingMode === 'double-rtl' ||
+    readerSettings.readingMode === 'double-ltr' ||
+    readerSettings.readingMode === 'double';
+
+  const stepPages = isDouble ? 2 : 1;
+
+  const nextPage = useCallback(() => {
+    if (currentPage + stepPages <= totalPagesInCurrentChapter) {
+      const nextP = currentPage + stepPages;
+      setCurrentPage(nextP);
+      window.scrollTo({ top: 0 });
+      if (activeMangaId && activeChapterId) {
+        updateHistory({
+          mangaId: activeMangaId,
+          mangaTitle: activeMangaTitle || 'Unknown Chronicle',
+          mangaCover: activeMangaCover || currentImages[0] || '',
+          chapterId: activeChapterId,
+          chapterTitle: currentDisplayTitle,
+          pageIndex: nextP,
+          totalImages: totalPagesInCurrentChapter,
+        });
+      }
+    } else {
+      goToNextChapter();
+    }
+  }, [currentPage, stepPages, totalPagesInCurrentChapter, activeMangaId, activeChapterId, activeMangaTitle, activeMangaCover, currentImages, currentDisplayTitle, updateHistory, goToNextChapter]);
+
+  const prevPage = useCallback(() => {
+    if (currentPage > 1) {
+      const prevP = Math.max(1, currentPage - stepPages);
+      setCurrentPage(prevP);
+      window.scrollTo({ top: 0 });
+    } else {
+      goToPrevChapter();
+    }
+  }, [currentPage, stepPages, goToPrevChapter]);
+
+  // Keyboard navigation shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.tagName === 'INPUT') return;
+
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+      } else if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        setShowHud((prev) => !prev);
+      } else if (e.key === 'z' || e.key === 'Z') {
+        e.preventDefault();
+        updateReaderSettings({ zenMode: !readerSettings.zenMode });
+      } else if (e.key === 'Escape') {
+        setShowSettings(false);
+        setShowChapterDrawer(false);
+      }
+
+      if (readerSettings.readingMode !== 'vertical') {
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+          e.preventDefault();
+          if (isRtl) prevPage();
+          else nextPage();
+        } else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+          e.preventDefault();
+          if (isRtl) nextPage();
+          else prevPage();
+        } else if (e.key === ' ') {
+          e.preventDefault();
+          nextPage();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [readerSettings.readingMode, readerSettings.zenMode, isRtl, nextPage, prevPage, updateReaderSettings]);
+
+  const filteredChapters = chapters.filter((c) =>
+    c.title.toLowerCase().includes(chapterSearch.toLowerCase())
+  );
+
+  const getThemeClass = () => {
+    switch (readerSettings.visualTheme) {
+      case 'graphite':
+        return 'theme-graphite';
+      case 'parchment':
+        return 'theme-parchment';
+      case 'amethyst':
+        return 'theme-amethyst';
+      case 'void':
+      default:
+        return 'theme-void';
+    }
+  };
+
+  const getImageFitClass = () => {
+    switch (readerSettings.imageFit) {
+      case 'fit-height':
+        return 'h-[90vh] w-auto max-w-full object-contain mx-auto';
+      case 'original':
+        return 'max-w-none w-auto mx-auto';
+      case 'smart-stretch':
+        return 'w-full h-auto object-cover';
+      case 'fit-width':
+      default:
+        return 'w-full h-auto object-contain';
+    }
+  };
 
   return (
     <div
-      className={`min-h-screen relative select-none transition-colors duration-500 ${
-        readerSettings.visualTheme === 'parchment'
-          ? 'theme-parchment'
-          : readerSettings.visualTheme === 'amethyst'
-          ? 'theme-amethyst'
-          : 'bg-void-950'
+      ref={containerRef}
+      className={`min-h-screen relative select-none transition-colors duration-500 overflow-x-hidden ${getThemeClass()} ${
+        readerSettings.invertColors ? 'invert-manga' : ''
       }`}
     >
       {/* Dynamic Ambient Glow Layer */}
-      {readerSettings.ambientGlow && (
-        <div className="ambient-glow-layer opacity-40" />
+      {readerSettings.ambientGlow && <div className="ambient-glow-layer opacity-40" />}
+
+      {/* Floating Satin Ribbon Bookmark Indicator (Continuous mode) */}
+      {readerSettings.readingMode === 'vertical' && !readerSettings.zenMode && (
+        <div
+          className="fixed top-0 right-4 sm:right-8 z-30 flex flex-col items-center pointer-events-none transition-all duration-300"
+          style={{
+            transform: `translateY(${Math.min(14, scrollProgress * 0.15)}px)`,
+          }}
+        >
+          <div className="w-8 sm:w-10 pt-2 pb-4 bg-gradient-to-b from-telemetry-crimson via-red-900 to-red-950 rounded-b-md shadow-2xl border-x border-b border-red-500/40 flex flex-col items-center">
+            <div className="w-2.5 h-2.5 rounded-full bg-solar-400 mb-1 shadow-inner" />
+            <span className="text-[10px] sm:text-xs font-serif font-black text-amber-200">
+              {scrollProgress}%
+            </span>
+            <span className="text-[8px] font-mono text-amber-300/80">
+              {loadedChapters.length} ch
+            </span>
+          </div>
+        </div>
       )}
 
-      {/* Floating Victorian Satin Ribbon Bookmark Indicator */}
-      <div
-        className="fixed top-0 right-4 sm:right-8 z-30 flex flex-col items-center pointer-events-none transition-all duration-300"
-        style={{
-          transform: `translateY(${Math.min(14, scrollProgress * 0.15)}px)`,
-        }}
-      >
-        <div className="w-8 sm:w-10 pt-2 pb-4 bg-gradient-to-b from-victorian-crimson via-red-800 to-red-950 rounded-b-md shadow-2xl border-x border-b border-red-500/30 flex flex-col items-center">
-          <div className="w-3 h-3 rounded-full bg-victorian-gold/80 mb-1 shadow-inner" />
-          <span className="text-[10px] sm:text-xs font-serif font-black text-amber-200">
-            {scrollProgress}%
-          </span>
-          <span className="text-[8px] font-mono text-amber-300/80">
-            {loadedChapters.length} ch
-          </span>
-        </div>
-      </div>
-
-      {/* Floating Top Navigation HUD */}
+      {/* Zenith Floating Island HUD (Top Bar) */}
       <nav
-        className={`fixed top-0 inset-x-0 z-40 backdrop-blur-xl bg-void-950/85 border-b border-void-800/80 px-4 py-2.5 transition-transform duration-300 ${
-          showHud ? 'translate-y-0' : '-translate-y-full'
+        className={`fixed top-0 inset-x-0 z-40 backdrop-blur-2xl bg-void-950/85 border-b border-void-700/60 px-3 sm:px-6 py-2.5 transition-transform duration-300 ${
+          showHud && !readerSettings.zenMode ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          {/* Left: Back & Chapter Info */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => setView('details')}
-              className="p-2 rounded-xl bg-void-900 hover:bg-void-850 text-slate-300 hover:text-victorian-gold transition-colors border border-void-800"
+              className="p-2 rounded-xl bg-void-900 hover:bg-void-850 text-slate-300 hover:text-solar-400 border border-void-700/60 transition-all shadow-sm"
               title="Return to Details"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <div className="truncate max-w-[200px] sm:max-w-md">
+
+            <div className="truncate">
               <div className="flex items-center gap-2">
                 <h2 className="text-xs sm:text-sm font-serif font-bold text-slate-100 truncate">
                   {currentDisplayTitle}
                 </h2>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-victorian-gold/20 text-victorian-gold border border-victorian-gold/40 font-mono hidden sm:inline">
-                  Infinite Scroll Active
-                </span>
+                {isMangaDex ? (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-telemetry-cyan/15 text-telemetry-cyan border border-telemetry-cyan/40 font-mono font-bold flex items-center gap-1 shrink-0">
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>MD Safe</span>
+                  </span>
+                ) : (
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-solar-500/15 text-solar-400 border border-solar-500/30 font-mono hidden md:inline">
+                    {readerSettings.readingMode === 'vertical' ? 'Continuous Webtoon' : isRtl ? 'Manga RTL' : 'Paged LTR'}
+                  </span>
+                )}
               </div>
-              <p className="text-[10px] text-slate-400 font-mono">
-                {totalLoadedImages} Pages in Stream • Victorian Endless Strip
+              <p className="text-[10px] text-slate-400 font-mono tracking-tight truncate">
+                {readerSettings.readingMode === 'vertical'
+                  ? `${totalLoadedImages} Panels in Stream • Endless Scroll`
+                  : `Page ${currentPage}${isDouble && currentPage + 1 <= totalPagesInCurrentChapter ? `-${currentPage + 1}` : ''} of ${totalPagesInCurrentChapter}`}
               </p>
             </div>
           </div>
 
-          {/* Quick HUD Controls */}
-          <div className="flex items-center gap-2">
-            {/* Auto-scroll Play/Pause */}
+          {/* Right: Controls & Ambience */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Audio Ambience Synthesizer Pill */}
             <button
-              onClick={() => setAutoScrollActive(!autoScrollActive)}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-medium flex items-center gap-1.5 transition-all ${
-                autoScrollActive
-                  ? 'bg-victorian-gold text-void-950 border-victorian-gold shadow-md shadow-victorian-gold/30'
-                  : 'bg-void-900 border-void-800 text-slate-300 hover:text-victorian-gold'
+              onClick={() => {
+                const nextMode: AudioAmbience =
+                  readerSettings.audioAmbience === 'off'
+                    ? 'rain'
+                    : readerSettings.audioAmbience === 'rain'
+                    ? 'lofi'
+                    : readerSettings.audioAmbience === 'lofi'
+                    ? 'void'
+                    : 'off';
+                updateReaderSettings({ audioAmbience: nextMode });
+              }}
+              className={`px-2.5 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-1.5 transition-all ${
+                readerSettings.audioAmbience !== 'off'
+                  ? 'bg-solar-500/20 text-solar-400 border-solar-500/60 shadow-sm'
+                  : 'bg-void-900 border-void-750 text-slate-400 hover:text-slate-200'
               }`}
+              title={`Audio Ambience: ${readerSettings.audioAmbience.toUpperCase()}`}
             >
-              {autoScrollActive ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">Auto-Scroll</span>
+              {readerSettings.audioAmbience !== 'off' ? (
+                <div className="flex items-center gap-1">
+                  <Volume2 className="w-3.5 h-3.5 text-solar-400" />
+                  <span className="hidden sm:inline font-bold uppercase text-[10px]">
+                    {readerSettings.audioAmbience === 'rain' ? '🌧️ Rain' : readerSettings.audioAmbience === 'lofi' ? '☕ Lo-Fi' : '🌌 Void'}
+                  </span>
+                  <div className="flex items-center gap-0.5 ml-1">
+                    <span className="w-0.5 h-2 bg-solar-400 animate-pulse" />
+                    <span className="w-0.5 h-3 bg-solar-400 animate-pulse delay-75" />
+                    <span className="w-0.5 h-1.5 bg-solar-400 animate-pulse delay-150" />
+                  </div>
+                </div>
+              ) : (
+                <VolumeX className="w-3.5 h-3.5" />
+              )}
+            </button>
+
+            {/* Continuous Mode: Auto Scroll Button */}
+            {readerSettings.readingMode === 'vertical' && (
+              <button
+                onClick={() => setAutoScrollActive(!autoScrollActive)}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs font-mono font-medium flex items-center gap-1.5 transition-all ${
+                  autoScrollActive
+                    ? 'bg-solar-500 text-void-950 border-solar-500 shadow-md shadow-solar-500/30 font-bold'
+                    : 'bg-void-900 border-void-750 text-slate-300 hover:text-solar-400'
+                }`}
+                title="Toggle Auto-Scroll"
+              >
+                {autoScrollActive ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">Auto</span>
+              </button>
+            )}
+
+            {/* Chapter Jumper Drawer Trigger */}
+            <button
+              onClick={() => {
+                setShowChapterDrawer(!showChapterDrawer);
+                setShowSettings(false);
+              }}
+              className={`p-2 rounded-xl border transition-all text-xs flex items-center gap-1.5 ${
+                showChapterDrawer
+                  ? 'bg-solar-500/20 text-solar-400 border-solar-500/50'
+                  : 'bg-void-900 border-void-750 text-slate-300 hover:text-solar-400'
+              }`}
+              title="Chapter Quick-Jump"
+            >
+              <List className="w-4 h-4" />
+              <span className="hidden md:inline font-mono text-[11px]">Chapters</span>
+            </button>
+
+            {/* Fullscreen Toggle */}
+            <button
+              onClick={toggleFullscreen}
+              className="p-2 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-300 hover:text-solar-400 transition-colors"
+              title={isFullscreen ? 'Exit Fullscreen' : 'Immersive Fullscreen (F)'}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
 
             {/* Reader Settings Toggle */}
             <button
-              onClick={() => setShowSettings(!showSettings)}
+              onClick={() => {
+                setShowSettings(!showSettings);
+                setShowChapterDrawer(false);
+              }}
               className={`p-2 rounded-xl border transition-colors ${
                 showSettings
-                  ? 'bg-victorian-gold/20 text-victorian-gold border-victorian-gold'
-                  : 'bg-void-900 border-void-800 text-slate-400 hover:text-slate-200'
+                  ? 'bg-solar-500/20 text-solar-400 border-solar-500'
+                  : 'bg-void-900 border-void-750 text-slate-400 hover:text-slate-200'
               }`}
-              title="Reader Preferences"
+              title="Reading Console"
             >
               <Sliders className="w-4 h-4" />
             </button>
@@ -294,243 +649,507 @@ export const ReaderView: React.FC = () => {
         </div>
       </nav>
 
-      {/* Reader Settings Dropdown Modal */}
+      {/* Chapter Jumper Slide-Out Drawer */}
+      {showChapterDrawer && (
+        <div className="fixed inset-0 z-50 overflow-hidden bg-void-950/70 backdrop-blur-sm animate-fade-in flex justify-start">
+          <div className="absolute inset-0" onClick={() => setShowChapterDrawer(false)} />
+          <div className="relative w-80 max-w-[85vw] h-full bg-void-900 border-r border-void-700/60 shadow-2xl flex flex-col z-10">
+            <div className="p-4 border-b border-void-700/60 flex items-center justify-between bg-void-950/80">
+              <span className="font-serif text-sm font-bold text-solar-400 flex items-center gap-1.5">
+                <Scroll className="w-4 h-4" />
+                Select Chapter
+              </span>
+              <button
+                onClick={() => setShowChapterDrawer(false)}
+                className="text-slate-400 hover:text-slate-200 text-sm font-mono p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 border-b border-void-750">
+              <input
+                type="text"
+                value={chapterSearch}
+                onChange={(e) => setChapterSearch(e.target.value)}
+                placeholder="Find chapter (e.g. 120)..."
+                className="w-full px-3 py-1.5 rounded-xl bg-void-950 border border-void-700 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-solar-500/60 font-mono"
+              />
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {filteredChapters.map((ch) => {
+                const isCurrent = ch.id === activeChapterId;
+                return (
+                  <button
+                    key={ch.id}
+                    onClick={() => {
+                      setShowChapterDrawer(false);
+                      openChapter(activeMangaId!, ch.id, ch.title);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-xl text-xs font-mono flex items-center justify-between transition-all ${
+                      isCurrent
+                        ? 'bg-solar-500 text-void-950 font-bold shadow-md shadow-solar-500/20'
+                        : 'text-slate-300 hover:bg-void-850 hover:text-solar-400'
+                    }`}
+                  >
+                    <span className="truncate">{ch.title}</span>
+                    {isCurrent && <CheckCircle2 className="w-3.5 h-3.5 shrink-0 ml-1.5" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reader Settings Modal Console */}
       {showSettings && (
-        <div className="fixed top-16 right-4 sm:right-12 z-50 w-72 p-4 rounded-2xl bg-void-900/95 backdrop-blur-2xl border border-victorian-gold/40 shadow-2xl shadow-victorian-gold/15 space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between border-b border-void-800 pb-2">
-            <span className="text-xs font-serif font-bold text-victorian-gold flex items-center gap-1.5">
-              <Scroll className="w-3.5 h-3.5" />
-              Scroll Preferences
+        <div className="fixed top-14 right-3 sm:right-6 z-50 w-84 max-w-[92vw] p-4 rounded-2xl bg-void-900/95 backdrop-blur-2xl border border-solar-500/40 shadow-2xl shadow-solar-500/10 space-y-4 animate-fade-in text-xs max-h-[85vh] overflow-y-auto">
+          <div className="flex items-center justify-between border-b border-void-750 pb-2.5">
+            <span className="font-serif font-bold text-solar-400 flex items-center gap-1.5 text-xs">
+              <Sliders className="w-3.5 h-3.5" />
+              Tactical Reading Console
             </span>
             <button
               onClick={() => setShowSettings(false)}
-              className="text-slate-400 hover:text-slate-200 text-xs font-mono"
+              className="text-slate-400 hover:text-slate-200 font-mono"
             >
               ✕
             </button>
           </div>
 
-          {/* Theme Palette */}
+          {/* Reading Engine / Mode */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-mono text-slate-400">Visual Aesthetic</label>
-            <div className="grid grid-cols-3 gap-1.5">
+            <label className="text-[11px] font-mono text-slate-400 flex items-center justify-between">
+              <span>Reading Engine</span>
+              <span className="text-solar-400 font-bold uppercase">{readerSettings.readingMode}</span>
+            </label>
+            <div className="grid grid-cols-2 gap-1.5">
               <button
-                onClick={() => updateReaderSettings({ visualTheme: 'void' })}
-                className={`py-1.5 rounded-lg text-[10px] font-serif border ${
-                  readerSettings.visualTheme === 'void'
-                    ? 'bg-void-800 border-victorian-gold text-victorian-gold font-bold'
-                    : 'bg-void-950 border-void-800 text-slate-400'
+                onClick={() => updateReaderSettings({ readingMode: 'vertical' })}
+                className={`py-2 px-2.5 rounded-xl border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
+                  readerSettings.readingMode === 'vertical'
+                    ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
+                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                OLED Void
+                <Scroll className="w-3 h-3" />
+                <span>Webtoon Strip</span>
               </button>
               <button
-                onClick={() => updateReaderSettings({ visualTheme: 'parchment' })}
-                className={`py-1.5 rounded-lg text-[10px] font-serif border ${
-                  readerSettings.visualTheme === 'parchment'
-                    ? 'bg-amber-950/60 border-amber-500 text-amber-300 font-bold'
-                    : 'bg-void-950 border-void-800 text-slate-400'
+                onClick={() => updateReaderSettings({ readingMode: 'paged-rtl' })}
+                className={`py-2 px-2.5 rounded-xl border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
+                  readerSettings.readingMode === 'paged-rtl'
+                    ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
+                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Parchment
+                <BookOpen className="w-3 h-3" />
+                <span>Manga (RTL)</span>
               </button>
               <button
-                onClick={() => updateReaderSettings({ visualTheme: 'amethyst' })}
-                className={`py-1.5 rounded-lg text-[10px] font-serif border ${
-                  readerSettings.visualTheme === 'amethyst'
-                    ? 'bg-purple-950/60 border-purple-500 text-purple-300 font-bold'
-                    : 'bg-void-950 border-void-800 text-slate-400'
+                onClick={() => updateReaderSettings({ readingMode: 'paged-ltr' })}
+                className={`py-2 px-2.5 rounded-xl border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
+                  readerSettings.readingMode === 'paged-ltr'
+                    ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
+                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-slate-200'
                 }`}
               >
-                Amethyst
+                <ChevronRight className="w-3 h-3" />
+                <span>Paged (LTR)</span>
+              </button>
+              <button
+                onClick={() => updateReaderSettings({ readingMode: 'double-rtl' })}
+                className={`py-2 px-2.5 rounded-xl border text-[11px] font-mono flex items-center justify-center gap-1.5 transition-all ${
+                  readerSettings.readingMode === 'double-rtl'
+                    ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
+                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Columns className="w-3 h-3" />
+                <span>Double Spread</span>
               </button>
             </div>
           </div>
 
-          {/* Auto-Scroll Velocity */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-[11px] font-mono text-slate-400">
-              <span>Auto-Scroll Velocity</span>
-              <span className="text-victorian-gold">{readerSettings.autoScrollSpeed}x</span>
+          {/* 3D Cylinder Scroll Toggle (2026 Gen-Z Dimension) */}
+          {readerSettings.readingMode === 'vertical' && (
+            <div className="p-2.5 rounded-xl bg-void-950 border border-void-750 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Box className="w-4 h-4 text-solar-400" />
+                <div>
+                  <div className="text-[11px] font-mono text-slate-200 font-bold">3D Holo-Scroll Depth</div>
+                  <div className="text-[9px] text-slate-400 font-mono">Curved cylindrical perspective</div>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={readerSettings.scroll3D}
+                onChange={(e) => updateReaderSettings({ scroll3D: e.target.checked })}
+                className="w-4 h-4 accent-solar-500 cursor-pointer"
+              />
             </div>
-            <input
-              type="range"
-              min="1"
-              max="8"
-              value={readerSettings.autoScrollSpeed}
-              onChange={(e) => updateReaderSettings({ autoScrollSpeed: Number(e.target.value) })}
-              className="w-full accent-victorian-gold cursor-pointer"
-            />
-          </div>
+          )}
 
-          {/* Strip Gap */}
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-[11px] font-mono text-slate-400">
-              <span>Panel Gap</span>
-              <span className="text-victorian-gold">{readerSettings.stripGap}px</span>
+          {/* Procedural Audio Ambience Synthesizer */}
+          <div className="space-y-2 p-2.5 rounded-xl bg-void-950 border border-void-750">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Volume2 className="w-4 h-4 text-solar-400" />
+                <div>
+                  <div className="text-[11px] font-mono text-slate-200 font-bold">Reading Soundscape</div>
+                  <div className="text-[9px] text-slate-400 font-mono">Web Audio procedural synth</div>
+                </div>
+              </div>
+              <span className="text-[10px] font-mono text-solar-400 uppercase font-bold">
+                {readerSettings.audioAmbience}
+              </span>
             </div>
+
             <div className="grid grid-cols-4 gap-1">
-              {[0, 4, 8, 16].map((gap) => (
+              {(['off', 'rain', 'lofi', 'void'] as AudioAmbience[]).map((mode) => (
                 <button
-                  key={gap}
-                  onClick={() => updateReaderSettings({ stripGap: gap })}
-                  className={`py-1 rounded-md text-[10px] font-mono border ${
-                    readerSettings.stripGap === gap
-                      ? 'bg-victorian-gold/20 border-victorian-gold text-victorian-gold'
-                      : 'bg-void-950 border-void-800 text-slate-400'
+                  key={mode}
+                  onClick={() => updateReaderSettings({ audioAmbience: mode })}
+                  className={`py-1.5 rounded-lg text-[10px] font-mono border transition-all ${
+                    readerSettings.audioAmbience === mode
+                      ? 'bg-solar-500 text-void-950 border-solar-500 font-bold shadow-sm'
+                      : 'bg-void-900 border-void-750 text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  {gap === 0 ? 'Gapless' : `${gap}px`}
+                  {mode === 'off' ? 'Off' : mode === 'rain' ? '🌧️ Rain' : mode === 'lofi' ? '☕ Lo-Fi' : '🌌 Void'}
+                </button>
+              ))}
+            </div>
+
+            {readerSettings.audioAmbience !== 'off' && (
+              <div className="space-y-1 pt-1">
+                <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                  <span>Volume</span>
+                  <span>{Math.round(readerSettings.audioVolume * 100)}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.05"
+                  max="1"
+                  step="0.05"
+                  value={readerSettings.audioVolume}
+                  onChange={(e) => updateReaderSettings({ audioVolume: Number(e.target.value) })}
+                  className="w-full accent-solar-500 cursor-pointer h-1.5 bg-void-900 rounded-lg"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Visual Aesthetic / Theme */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-mono text-slate-400">Visual Surface</label>
+            <div className="grid grid-cols-4 gap-1">
+              {(['void', 'graphite', 'parchment', 'amethyst'] as VisualTheme[]).map((thm) => (
+                <button
+                  key={thm}
+                  onClick={() => updateReaderSettings({ visualTheme: thm })}
+                  className={`py-1.5 rounded-lg text-[10px] font-mono border uppercase ${
+                    readerSettings.visualTheme === thm
+                      ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
+                      : 'bg-void-950 border-void-750 text-slate-400'
+                  }`}
+                >
+                  {thm}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Ambient Glow Toggle */}
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-[11px] font-mono text-slate-300">Ambient Backlight</span>
-            <button
-              onClick={() => updateReaderSettings({ ambientGlow: !readerSettings.ambientGlow })}
-              className={`w-9 h-5 rounded-full transition-colors relative ${
-                readerSettings.ambientGlow ? 'bg-victorian-gold' : 'bg-void-800'
-              }`}
-            >
-              <div
-                className={`w-3.5 h-3.5 rounded-full bg-void-950 absolute top-0.5 transition-transform ${
-                  readerSettings.ambientGlow ? 'right-1' : 'left-1'
-                }`}
-              />
-            </button>
+          {/* Image Fit */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-mono text-slate-400">Image Fit Scale</label>
+            <div className="grid grid-cols-3 gap-1">
+              {(['fit-width', 'fit-height', 'original'] as ImageFitMode[]).map((fit) => (
+                <button
+                  key={fit}
+                  onClick={() => updateReaderSettings({ imageFit: fit })}
+                  className={`py-1.5 rounded-lg text-[10px] font-mono border ${
+                    readerSettings.imageFit === fit
+                      ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold'
+                      : 'bg-void-950 border-void-750 text-slate-400'
+                  }`}
+                >
+                  {fit === 'fit-width' ? 'Fit Width' : fit === 'fit-height' ? 'Fit Height' : 'Original'}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* High-Contrast Inversion & Zen Mode toggles */}
+          <div className="pt-2 border-t border-void-750 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono text-slate-300">Night High-Contrast Invert</span>
+              <input
+                type="checkbox"
+                checked={readerSettings.invertColors}
+                onChange={(e) => updateReaderSettings({ invertColors: e.target.checked })}
+                className="w-4 h-4 accent-solar-500 cursor-pointer"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono text-slate-300">Zen Focus Cinema Mode (Z)</span>
+              <input
+                type="checkbox"
+                checked={readerSettings.zenMode}
+                onChange={(e) => updateReaderSettings({ zenMode: e.target.checked })}
+                className="w-4 h-4 accent-solar-500 cursor-pointer"
+              />
+            </div>
+          </div>
+
+          {/* Auto-Scroll Velocity (Continuous mode) */}
+          {readerSettings.readingMode === 'vertical' && (
+            <div className="space-y-1.5 pt-2 border-t border-void-750">
+              <div className="flex items-center justify-between text-[11px] font-mono">
+                <span className="text-slate-400">Auto-Scroll Velocity</span>
+                <span className="text-solar-400 font-bold">{readerSettings.autoScrollSpeed}x</span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="8"
+                step="1"
+                value={readerSettings.autoScrollSpeed}
+                onChange={(e) => updateReaderSettings({ autoScrollSpeed: Number(e.target.value) })}
+                className="w-full accent-solar-500 cursor-pointer h-1.5 bg-void-950 rounded-lg"
+              />
+            </div>
+          )}
         </div>
       )}
 
-      {/* Main Continuous Infinite Scroll Canvas */}
+      {/* Main Reading Container */}
       <main
-        className="max-w-4xl mx-auto px-0 sm:px-4 pt-16 pb-32 flex flex-col items-center"
-        onClick={() => setShowHud(!showHud)}
+        className="mx-auto transition-all duration-300 relative"
+        style={{
+          maxWidth: `${readerSettings.maxWidth}px`,
+          perspective: readerSettings.scroll3D ? '1200px' : 'none',
+        }}
       >
-        {/* Initial Loading Skeleton */}
         {loadingInitial ? (
-          <div className="w-full max-w-2xl space-y-4 px-4 py-24 animate-pulse">
-            <div className="h-[80vh] bg-void-900 rounded-3xl border border-void-800 flex flex-col items-center justify-center space-y-4 text-slate-500 font-serif">
-              <Loader2 className="w-8 h-8 text-victorian-gold animate-spin" />
-              <span>Summoning Victorian Manuscript...</span>
-            </div>
+          <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-4">
+            <Loader2 className="w-8 h-8 text-solar-500 animate-spin" />
+            <p className="font-serif text-sm font-bold text-amber-200/90 tracking-wider">
+              Deciphering Ancient Panels...
+            </p>
+            <p className="text-xs text-slate-500 font-mono">
+              {isMangaDex ? 'MangaDex Safe Network Active' : 'KuroStream Engine Active'}
+            </p>
           </div>
-        ) : loadedChapters.length > 0 ? (
-          <div className="w-full flex flex-col items-center">
-            {loadedChapters.map((block, blockIdx) => (
+        ) : (
+          <>
+            {/* ======================================================== */}
+            {/* ENGINE 1: CONTINUOUS WEBTOON SCROLL (WITH 3D CYLINDER)   */}
+            {/* ======================================================== */}
+            {readerSettings.readingMode === 'vertical' && (
               <div
-                key={block.chapterId}
-                id={`chapter-block-${block.chapterId}`}
-                className="w-full flex flex-col items-center"
+                className={`flex flex-col items-center transition-all ${
+                  readerSettings.scroll3D ? 'space-y-3' : ''
+                }`}
+                style={{ gap: `${readerSettings.stripGap}px` }}
+                onClick={() => setShowHud((prev) => !prev)}
               >
-                {/* Victorian Chapter Divider Banner */}
-                <div className="w-full py-10 px-4 text-center space-y-2 select-none">
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="h-[1px] w-20 bg-gradient-to-r from-transparent via-victorian-gold/60 to-transparent" />
-                    <div className="wax-seal w-8 h-8 rounded-full flex items-center justify-center text-amber-200 text-xs font-serif font-black shadow-xl">
-                      ❦
+                {loadedChapters.map((block, chIdx) => (
+                  <div
+                    key={block.chapterId}
+                    id={`chapter-block-${block.chapterId}`}
+                    className="w-full flex flex-col items-center"
+                  >
+                    {/* Chapter Header Card with Wax Seal */}
+                    <div className="w-full py-8 sm:py-12 px-4 flex flex-col items-center justify-center text-center space-y-3">
+                      <div className="wax-seal w-12 h-12 rounded-full flex items-center justify-center text-amber-100 font-serif font-black text-sm shadow-xl">
+                        {chIdx + 1}
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-solar-400">
+                          {isMangaDex ? 'MangaDex Safe Chapter' : 'Chronicle Chapter'}
+                        </span>
+                        <h2 className="font-serif text-lg sm:text-2xl font-bold text-slate-100">
+                          {block.chapterTitle}
+                        </h2>
+                      </div>
+                      <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-solar-500/50 to-transparent" />
                     </div>
-                    <div className="h-[1px] w-20 bg-gradient-to-r from-transparent via-victorian-gold/60 to-transparent" />
-                  </div>
-                  {blockIdx > 0 && (
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-victorian-gold/80 block">
-                      Chapter Seamlessly Continued
-                    </span>
-                  )}
-                  <h2 className="font-serif text-lg sm:text-2xl font-bold tracking-wide text-amber-100">
-                    {block.chapterTitle}
-                  </h2>
-                  <p className="text-[11px] text-slate-400 font-mono">
-                    {block.images.length} Illuminated Pages
-                  </p>
-                </div>
 
-                {/* Chapter Images Strip */}
-                <div
-                  className="w-full flex flex-col items-center"
-                  style={{ gap: `${readerSettings.stripGap}px` }}
-                >
-                  {block.images.map((imgUrl, idx) => (
-                    <div
-                      key={idx}
-                      className="relative w-full max-w-3xl flex justify-center bg-void-950 overflow-hidden shadow-2xl"
-                    >
-                      <img
-                        src={getProxyImageUrl(imgUrl)}
-                        alt={`${block.chapterTitle} - Page ${idx + 1}`}
-                        className="w-full h-auto object-contain transition-all duration-300"
-                        loading="lazy"
-                        decoding="async"
+                    {/* Image Stream (with 3D cylinder curve if enabled) */}
+                    {block.images.map((imgUrl, pageIdx) => (
+                      <HoloPanel3D
+                        key={`${block.chapterId}-p-${pageIdx}`}
+                        imgUrl={imgUrl}
+                        pageIdx={pageIdx}
+                        total={block.images.length}
+                        scroll3D={!!readerSettings.scroll3D}
+                        imageFitClass={getImageFitClass()}
                       />
+                    ))}
 
-                      {/* Subtle Page Watermark */}
-                      <span className="absolute bottom-2 right-3 text-[10px] font-mono text-slate-500/60 bg-void-950/70 px-1.5 py-0.5 rounded backdrop-blur-sm pointer-events-none">
-                        {idx + 1}
-                      </span>
+                    {/* Chapter Conclusion Milestone Divider */}
+                    <div className="w-full py-12 px-4 flex flex-col items-center justify-center text-center space-y-3 bg-void-950/60 border-y border-void-800/80 my-4">
+                      <div className="w-8 h-8 rounded-full bg-void-900 border border-solar-500/40 flex items-center justify-center text-solar-400">
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                      <h4 className="font-serif text-sm font-bold text-slate-200">
+                        End of {block.chapterTitle}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 font-mono">
+                        Scroll further to decipher subsequent chronicle...
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+                  </div>
+                ))}
 
-            {/* Seamless Infinite Next Chapter Loader */}
-            {loadingNext && (
-              <div className="w-full py-16 flex flex-col items-center justify-center space-y-3 bg-void-950/80">
-                <Loader2 className="w-8 h-8 text-victorian-gold animate-spin" />
-                <p className="font-serif text-sm text-amber-200 font-bold">
-                  Unrolling Subsequent Chapter...
-                </p>
-                <p className="text-xs text-slate-500 font-mono">
-                  Continuous scroll streaming from WeebCentral
-                </p>
+                {/* Infinite Next Chapter Loading Skeleton */}
+                {loadingNext && (
+                  <div className="w-full py-16 flex flex-col items-center justify-center space-y-3">
+                    <Loader2 className="w-6 h-6 text-solar-400 animate-spin" />
+                    <span className="text-xs font-serif font-bold text-slate-300">
+                      Deciphering Next Chronicle...
+                    </span>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        ) : null}
+
+            {/* ======================================================== */}
+            {/* ENGINE 2: PAGED MANGA MODE (SINGLE / DOUBLE / RTL / LTR) */}
+            {/* ======================================================== */}
+            {readerSettings.readingMode !== 'vertical' && (
+              <div className="min-h-screen pt-16 pb-24 flex flex-col justify-center relative">
+                {/* Click Zone Overlay */}
+                <div className="relative w-full flex items-center justify-center min-h-[75vh]">
+                  {/* Left Touch Zone (35%) */}
+                  <div
+                    onClick={isRtl ? nextPage : prevPage}
+                    className="absolute inset-y-0 left-0 w-[35%] z-20 cursor-w-resize group flex items-center justify-start pl-4"
+                    title={isRtl ? 'Next Page' : 'Previous Page'}
+                  >
+                    <div className="w-9 h-9 rounded-full bg-void-950/80 backdrop-blur-md border border-void-700 text-slate-400 group-hover:text-solar-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronLeft className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  {/* Middle Touch Zone (30% - toggles HUD) */}
+                  <div
+                    onClick={() => setShowHud((prev) => !prev)}
+                    className="absolute inset-y-0 left-[35%] w-[30%] z-20 cursor-pointer"
+                  />
+
+                  {/* Right Touch Zone (35%) */}
+                  <div
+                    onClick={isRtl ? prevPage : nextPage}
+                    className="absolute inset-y-0 right-0 w-[35%] z-20 cursor-e-resize group flex items-center justify-end pr-4"
+                    title={isRtl ? 'Previous Page' : 'Next Page'}
+                  >
+                    <div className="w-9 h-9 rounded-full bg-void-950/80 backdrop-blur-md border border-void-700 text-slate-400 group-hover:text-solar-400 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <ChevronRight className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  {/* Pages Artwork Display */}
+                  <div className={`w-full flex items-center justify-center ${isDouble ? 'flex-row gap-2' : ''}`}>
+                    {/* Primary Page */}
+                    {currentImages[currentPage - 1] && (
+                      <div className="relative max-w-full flex justify-center shadow-2xl">
+                        <img
+                          src={getProxyImageUrl(currentImages[currentPage - 1])}
+                          alt={`Page ${currentPage}`}
+                          className={`select-none transition-all duration-300 ${getImageFitClass()}`}
+                        />
+                      </div>
+                    )}
+
+                    {/* Secondary Page (for Double Spread) */}
+                    {isDouble && currentImages[currentPage] && (
+                      <div className="relative max-w-full flex justify-center shadow-2xl">
+                        <img
+                          src={getProxyImageUrl(currentImages[currentPage])}
+                          alt={`Page ${currentPage + 1}`}
+                          className={`select-none transition-all duration-300 ${getImageFitClass()}`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bottom Paged Navigation Dock (HUD) */}
+                <div
+                  className={`fixed bottom-0 inset-x-0 z-40 backdrop-blur-2xl bg-void-950/90 border-t border-void-700/60 px-4 py-3 transition-transform duration-300 ${
+                    showHud && !readerSettings.zenMode ? 'translate-y-0' : 'translate-y-full'
+                  }`}
+                >
+                  <div className="max-w-2xl mx-auto flex flex-col gap-2">
+                    {/* Interactive Page Scrubber Slider */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                        p.{currentPage}
+                      </span>
+                      <input
+                        type="range"
+                        min="1"
+                        max={totalPagesInCurrentChapter}
+                        value={currentPage}
+                        onChange={(e) => {
+                          const p = Number(e.target.value);
+                          setCurrentPage(p);
+                        }}
+                        className="flex-1 accent-solar-500 cursor-pointer h-1.5 bg-void-850 rounded-lg"
+                      />
+                      <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                        /{totalPagesInCurrentChapter}
+                      </span>
+                    </div>
+
+                    {/* Step Controls */}
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={prevPage}
+                        className="px-3.5 py-1.5 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-300 hover:text-solar-400 font-mono text-xs flex items-center gap-1.5 transition-all"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <span>Prev</span>
+                      </button>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={goToPrevChapter}
+                          className="px-2.5 py-1 rounded-lg bg-void-900 border border-void-800 text-[10px] font-mono text-slate-400 hover:text-slate-200"
+                        >
+                          Prev Ch
+                        </button>
+                        <span className="text-[11px] font-mono text-solar-400 font-bold">
+                          {Math.round((currentPage / totalPagesInCurrentChapter) * 100)}%
+                        </span>
+                        <button
+                          onClick={goToNextChapter}
+                          className="px-2.5 py-1 rounded-lg bg-void-900 border border-void-800 text-[10px] font-mono text-slate-400 hover:text-slate-200"
+                        >
+                          Next Ch
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={nextPage}
+                        className="px-3.5 py-1.5 rounded-xl bg-solar-500 hover:bg-solar-400 text-void-950 font-mono text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-solar-500/20"
+                      >
+                        <span>Next</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </main>
-
-      {/* Floating Bottom Quick HUD */}
-      <footer
-        className={`fixed bottom-0 inset-x-0 z-40 backdrop-blur-xl bg-void-950/85 border-t border-void-800/80 px-4 py-2.5 transition-transform duration-300 ${
-          showHud ? 'translate-y-0' : 'translate-y-full'
-        }`}
-      >
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-serif font-bold text-amber-200 truncate max-w-[160px] sm:max-w-xs">
-              {currentDisplayTitle}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Manual Next Chapter Load Trigger */}
-            <button
-              onClick={loadNextChapterSeamlessly}
-              disabled={loadingNext}
-              className="px-3.5 py-1.5 rounded-xl bg-void-900 hover:bg-void-850 border border-victorian-gold/40 text-victorian-gold hover:border-victorian-gold text-xs font-serif font-semibold flex items-center gap-1.5 transition-all shadow-sm"
-            >
-              {loadingNext ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Flame className="w-3.5 h-3.5 text-victorian-gold" />
-              )}
-              <span>Load Next Chapter</span>
-            </button>
-
-            {/* Scroll to Top */}
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="p-2 rounded-xl bg-void-900 border border-void-800 text-slate-400 hover:text-victorian-gold transition-colors"
-              title="Scroll to Top"
-            >
-              <ArrowUp className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };

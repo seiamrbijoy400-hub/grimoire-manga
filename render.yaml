@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: kuroscroll-manga
+    env: node
+    plan: free
+    buildCommand: pnpm install && pnpm run build
+    startCommand: pnpm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production

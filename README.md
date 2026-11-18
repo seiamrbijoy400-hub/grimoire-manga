@@ -1,33 +1,40 @@
-# 📜 GrimoireX (KuroScroll)
-> **2026 Gen-Z Victorian Scroll Manga Reading Platform**  
-> Powered by WeebCentral Engine • Optimized for Mobile & Web on Termux
+# ⚡ KuroScroll // Neo-Archive
+> **2026 Future-Tech Dual-Engine Manga Platform**  
+> Powered by WeebCentral Scraper Engine • Optimized for Mobile & Desktop on Termux
 
 ---
 
-## ✨ Features
+## ✨ Features & Architecture
 
-- **Victorian Scroll Reading Core**:
-  - **Gapless Continuous Vertical Strip**: True webtoon/manhwa & tankobon manga seamless reading.
-  - **Victorian Satin Ribbon Bookmark**: Floating ribbon progress marker showing exact scroll percentage and current page.
-  - **Wax-Seal Milestones**: Antique wax seal markers at chapter headers and chapter conclusion cards.
-  - **Visual Themes**:
-    - `OLED Void`: Deep AMOLED obsidian black (`#09090b`).
-    - `Victorian Parchment`: Vintage sepia grain paper filter.
-    - `Midnight Amethyst`: Gen-Z deep purple aesthetic.
-  - **Auto-Scroll Engine**: Fluid velocity acceleration with adjustable speed (1x to 8x).
-  - **Dynamic Ambient Backlight**: Gentle ambient lighting responding to the mood of the panels.
-  - **Adjustable Panel Gap**: From seamless (0px) up to 16px.
+### 1. Dual-Engine Reading Core
+- **Engine A: Continuous Webtoon Strip**:
+  - Endless gapless strip with infinite next-chapter streaming.
+  - Micro page-number watermark overlay on panel edges.
+  - Granular auto-scroll velocity engine (1x to 8x).
+  - Wax-seal milestones between chapter transitions.
+- **Engine B: Traditional Tankōbon Paged Reader**:
+  - Right-to-Left (RTL Japanese) and Left-to-Right (LTR) reading directions.
+  - Double-page spread viewing mode.
+  - Keyboard shortcuts (`←`/`→`, `A`/`D`, `Space`, `F` for Fullscreen, `H` for HUD).
+  - Interactive page scrubber range slider.
+- **Universal Immersive Tools**:
+  - Native browser fullscreen immersion mode.
+  - Slide-out Chapter Jumper Drawer with live search.
+  - Visual Surface Themes: `OLED Abyss (#050608)`, `Dark Graphite (#0D1117)`, `Warm Parchment (#1A1713)`, `Amethyst (#0C0914)`.
+  - Image scaling: `Fit Width`, `Fit Height`, `Original Native`, `Smart Auto-Fill`.
+  - Night high-contrast inversion filter.
 
-- **WeebCentral Content Integration**:
-  - Live Trending & Latest Updates discovery.
-  - Instant Spotlight Search (`Ctrl + K`).
-  - Immersive Cover & Metadata View (Author, Artist, Tags, Synopsis).
-  - Complete Chapter List with instant filter & date tags.
-  - Built-in Streaming Image Proxy bypassing anti-hotlink 403 blocks.
+### 2. Personal Codex Shelves & Sovereignty
+- Shelves: `Reading 📖`, `Plan to Read ⏳`, `Completed 🏆`, `Favorites ⭐`.
+- In-shelf live title search.
+- **JSON Data Sovereignty**: One-click **Export Library (.json)** and **Restore Library (.json)**.
+- Reading Chronicles (History) with relative timestamps and exact resume points.
 
-- **Local-First Privacy**:
-  - Zero login required.
-  - Bookmarks & reading history saved to `localStorage` / `IndexedDB`.
+### 3. Manga Codex & Chapter Management
+- Series overview with high-res cover backdrop, synopsis, and metadata.
+- Smart chapter chunking (`Ch 1–50`, `51–100`, etc.) for series with hundreds of chapters.
+- Read status checkmarks on completed chapters.
+- Quick batch utilities: `Mark All Read` and ascending/descending ordering.
 
 ---
 
@@ -35,11 +42,11 @@
 
 Inside `/data/user/0/com.termux/files/home/projects/grimoire-manga`:
 
-### Start Production Server (Single Port: 3001)
+### Start Production Server (Port 3001)
 ```bash
 pnpm start
 ```
-Then open your mobile or desktop browser at:
+Then open:
 👉 **`http://localhost:3001`**
 
 ### Development Mode (with Vite HMR)

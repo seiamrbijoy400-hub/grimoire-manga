@@ -1,7 +1,25 @@
 import * as cheerio from 'cheerio';
 
 const WEEB_BASE = 'https://weebcentral.com';
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+// Realistic 2026 Chrome/Edge Browser Headers to maximize bypass
+const BROWSER_HEADERS: Record<string, string> = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Sec-Ch-Ua': '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+  'Sec-Ch-Ua-Mobile': '?0',
+  'Sec-Ch-Ua-Platform': '"Windows"',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'same-origin',
+  'Sec-Fetch-User': '?1',
+  'Upgrade-Insecure-Requests': '1',
+  'Cache-Control': 'max-age=0',
+};
+
+// Optional upstream proxy support (e.g. Cloudflare Worker or residential proxy)
+const UPSTREAM_PROXY_URL = process.env.UPSTREAM_PROXY_URL || '';
 
 export interface MangaItem {
   id: string;
@@ -28,33 +46,92 @@ export interface ChapterItem {
   date?: string;
 }
 
-export async function searchManga(
-  query: string,
-  sort: string = 'Popularity',
-  offset: number = 0,
-  limit: number = 32
-): Promise<MangaItem[]> {
+export interface AdvancedSearchFilter {
+  query?: string;
+  sort?: string;
+  order?: 'Ascending' | 'Descending';
+  types?: string[]; // Manga, Manhwa, Manhua, OEL
+  status?: string[]; // Ongoing, Complete, Hiatus, Canceled
+  includedTags?: string[];
+  excludedTags?: string[];
+  official?: 'Any' | 'True' | 'False';
+  anime?: 'Any' | 'True' | 'False';
+  adult?: 'Any' | 'True' | 'False';
+  offset?: number;
+  limit?: number;
+}
+
+export const ALL_AVAILABLE_TAGS = [
+  "Action", "Adult", "Adventure", "Comedy", "Doujinshi", "Drama", "Ecchi",
+  "Fantasy", "Gender Bender", "Harem", "Hentai", "Historical", "Horror",
+  "Isekai", "Josei", "Lolicon", "Martial Arts", "Mature", "Mecha",
+  "Mystery", "Psychological", "Romance", "School Life", "Sci-fi",
+  "Seinen", "Shotacon", "Shoujo", "Shoujo Ai", "Shounen", "Shounen Ai",
+  "Slice of Life", "Smut", "Sports", "Supernatural", "Tragedy", "Yaoi",
+  "Yuri", "Other"
+] as const;
+
+export const ALL_AVAILABLE_TYPES = [
+  { id: 'Manga', label: 'Manga', flag: '🇯🇵', desc: 'Japanese Comics' },
+  { id: 'Manhwa', label: 'Manhwa', flag: '🇰🇷', desc: 'Korean Webtoons' },
+  { id: 'Manhua', label: 'Manhua', flag: '🇨🇳', desc: 'Chinese Comics' },
+  { id: 'OEL', label: 'OEL', flag: '🌐', desc: 'Original English' },
+] as const;
+
+export const ALL_AVAILABLE_STATUSES = [
+  "Ongoing", "Complete", "Hiatus", "Canceled"
+] as const;
+
+async function doFetch(targetUrl: string, initHeaders?: Record<string, string>): Promise<Response> {
+  const urlToFetch = UPSTREAM_PROXY_URL
+    ? `${UPSTREAM_PROXY_URL}?url=${encodeURIComponent(targetUrl)}`
+    : targetUrl;
+
+  return fetch(urlToFetch, {
+    headers: {
+      ...BROWSER_HEADERS,
+      ...initHeaders,
+    },
+  });
+}
+
+export async function searchMangaAdvanced(filter: AdvancedSearchFilter): Promise<MangaItem[]> {
   try {
-    const params = new URLSearchParams({
-      text: query,
-      sort: sort,
-      order: 'Descending',
-      display_mode: 'Full Display',
-      limit: String(limit),
-      offset: String(offset),
-      official: 'Any',
-      anime: 'Any',
-      adult: 'Any'
+    const params = new URLSearchParams();
+
+    params.append('text', filter.query || '');
+    params.append('sort', filter.sort || 'Popularity');
+    params.append('order', filter.order || 'Descending');
+    params.append('display_mode', 'Full Display');
+    params.append('limit', String(filter.limit || 32));
+    params.append('offset', String(filter.offset || 0));
+    params.append('official', filter.official || 'Any');
+    params.append('anime', filter.anime || 'Any');
+    params.append('adult', filter.adult || 'Any');
+
+    // Types
+    if (filter.types && filter.types.length > 0) {
+      filter.types.forEach(t => params.append('included_type', t));
+    }
+
+    // Statuses
+    if (filter.status && filter.status.length > 0) {
+      filter.status.forEach(s => params.append('included_status', s));
+    }
+
+    // Included & Excluded Tags
+    if (filter.includedTags && filter.includedTags.length > 0) {
+      filter.includedTags.forEach(t => params.append('included_tag', t));
+    }
+    if (filter.excludedTags && filter.excludedTags.length > 0) {
+      filter.excludedTags.forEach(t => params.append('excluded_tag', t));
+    }
+
+    const res = await doFetch(`${WEEB_BASE}/search/data?${params.toString()}`, {
+      'HX-Request': 'true'
     });
 
-    const res = await fetch(`${WEEB_BASE}/search/data?${params.toString()}`, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        'HX-Request': 'true'
-      }
-    });
-
-    if (!res.status.toString().startsWith('2')) {
+    if (!res.ok) {
       console.error(`Search error status: ${res.status}`);
       return [];
     }
@@ -93,19 +170,25 @@ export async function searchManga(
         if (tagText && !tags.includes(tagText) && tagText !== 'Official') tags.push(tagText);
       });
 
+      // Type determination from tags or slug
+      let type = 'Manga';
+      if (tags.includes('Manhwa')) type = 'Manhwa';
+      else if (tags.includes('Manhua')) type = 'Manhua';
+
       results.push({
         id,
         title,
         slug,
         cover,
         description,
+        type,
         tags
       });
     });
 
-    // Fallback to quick search if advanced search returned 0 items and query exists and offset === 0
-    if (results.length === 0 && query.trim() && offset === 0) {
-      return await quickSearch(query);
+    // Fallback to quick search if advanced search returned 0 items and query exists and no complex filters
+    if (results.length === 0 && filter.query?.trim() && !filter.offset && (!filter.types || filter.types.length === 0)) {
+      return await quickSearch(filter.query);
     }
 
     return results;
@@ -120,10 +203,9 @@ export async function quickSearch(query: string): Promise<MangaItem[]> {
     const body = new URLSearchParams();
     body.append('text', query);
 
-    const res = await fetch(`${WEEB_BASE}/search/simple?location=main`, {
+    const res = await doFetch(`${WEEB_BASE}/search/simple?location=main`, {
       method: 'POST',
       headers: {
-        'User-Agent': USER_AGENT,
         'Content-Type': 'application/x-www-form-urlencoded',
         'HX-Request': 'true'
       },
@@ -162,13 +244,9 @@ export async function quickSearch(query: string): Promise<MangaItem[]> {
 
 export async function getMangaDetails(id: string): Promise<MangaDetails | null> {
   try {
-    const res = await fetch(`${WEEB_BASE}/series/${id}`, {
-      headers: {
-        'User-Agent': USER_AGENT
-      }
-    });
+    const res = await doFetch(`${WEEB_BASE}/series/${id}`);
 
-    if (!res.status.toString().startsWith('2')) {
+    if (!res.ok) {
       console.error(`Manga details error status: ${res.status}`);
       return null;
     }
@@ -212,8 +290,8 @@ export async function getMangaDetails(id: string): Promise<MangaDetails | null> 
     let status = 'Ongoing';
     let type = 'Manga';
     if (html.includes('Complete') || html.includes('Completed')) status = 'Completed';
-    if (html.includes('Manhwa')) type = 'Manhwa';
-    else if (html.includes('Manhua')) type = 'Manhua';
+    if (html.includes('Manhwa') || tags.includes('Manhwa')) type = 'Manhwa';
+    else if (html.includes('Manhua') || tags.includes('Manhua')) type = 'Manhua';
 
     return {
       id,
@@ -234,14 +312,11 @@ export async function getMangaDetails(id: string): Promise<MangaDetails | null> 
 
 export async function getChapterList(seriesId: string): Promise<ChapterItem[]> {
   try {
-    const res = await fetch(`${WEEB_BASE}/series/${seriesId}/full-chapter-list`, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        'HX-Request': 'true'
-      }
+    const res = await doFetch(`${WEEB_BASE}/series/${seriesId}/full-chapter-list`, {
+      'HX-Request': 'true'
     });
 
-    if (!res.status.toString().startsWith('2')) {
+    if (!res.ok) {
       return [];
     }
 
@@ -275,14 +350,11 @@ export async function getChapterList(seriesId: string): Promise<ChapterItem[]> {
 
 export async function getChapterImages(chapterId: string): Promise<string[]> {
   try {
-    const res = await fetch(`${WEEB_BASE}/chapters/${chapterId}/images?reading_style=long_strip`, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        'HX-Request': 'true'
-      }
+    const res = await doFetch(`${WEEB_BASE}/chapters/${chapterId}/images?reading_style=long_strip`, {
+      'HX-Request': 'true'
     });
 
-    if (!res.status.toString().startsWith('2')) {
+    if (!res.ok) {
       return [];
     }
 
