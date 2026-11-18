@@ -24,6 +24,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
+import { MobileTabBar } from '../components/Navbar.tsx';
 import { fetchAdvancedSearch, getProxyImageUrl } from '../services/api.ts';
 import { MangaItem, FilterState, MangaSource } from '../types.ts';
 import {
@@ -58,10 +59,10 @@ const GENRE_CHIPS = [
 ];
 
 const SORT_OPTIONS = [
-  { value: 'relevance', label: '🔥 Popularity' },
-  { value: 'latest',    label: '⚡ Latest Updates' },
-  { value: 'alpha',     label: '🔤 A → Z' },
-  { value: 'rating',    label: '⭐ Top Rated' },
+  { value: 'relevance', label: 'Popularity' },
+  { value: 'latest',    label: 'Latest updates' },
+  { value: 'alpha',     label: 'A → Z' },
+  { value: 'rating',    label: 'Top rated' },
 ];
 
 type SortKey = 'relevance' | 'latest' | 'alpha' | 'rating';
@@ -88,10 +89,10 @@ function clearHistory() {
 
 // ─── Skeleton Card ────────────────────────────────────────────────────────────
 const SkeletonCard = () => (
-  <div className="flex flex-col gap-2 p-2.5 bg-[#111318] rounded-xl border border-[#292A2D]">
-    <div className="shimmer-skeleton w-full aspect-[2/3] rounded-lg" />
-    <div className="shimmer-skeleton h-3.5 w-3/4 rounded mt-1" />
-    <div className="shimmer-skeleton h-3 w-1/2 rounded" />
+  <div className="flex flex-col gap-2.5">
+    <div className="shimmer-skeleton aspect-[2/3] w-full rounded-md border border-ink-700" />
+    <div className="shimmer-skeleton h-3.5 w-3/4 rounded-sm" />
+    <div className="shimmer-skeleton h-2.5 w-1/2 rounded-sm" />
   </div>
 );
 
@@ -326,24 +327,21 @@ export const SearchPage: React.FC = () => {
   }, [results, typeFilter, statusFilter, genreFilter, sourceFilter, sortKey]);
 
   return (
-    <div className="min-h-screen bg-[#090A0C] text-[#F0E9DC] flex flex-col">
-      {/* ── Sticky Top Bar ──────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 bg-[#090A0C]/95 backdrop-blur-md border-b border-[#292A2D]">
-        <div className="flex items-center gap-2.5 px-3 py-3 max-w-6xl mx-auto w-full">
-          {/* Back Button */}
+    <div className="flex min-h-screen flex-col bg-ink-950 text-paper">
+      {/* ── Search bar ─────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-30 border-b border-ink-700 bg-ink-950/95 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-2 px-4 py-3">
           <button
             onClick={() => {
               setView('home');
               navigate('/');
             }}
-            className="shrink-0 p-2 rounded-xl text-[#AAA69D] hover:text-[#C69A45] hover:bg-[#191A1F] transition-colors border border-transparent hover:border-[#292A2D]"
-            aria-label="Return to Archive Home"
-            title="Return to Home"
+            className="btn-icon"
+            aria-label="Back to the index"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
 
-          {/* Search Form */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -351,8 +349,8 @@ export const SearchPage: React.FC = () => {
             }}
             className="relative flex-1"
           >
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#111318] border border-[#292A2D] focus-within:border-[#C69A45]/60 transition-colors">
-              <Search className="shrink-0 w-4 h-4 text-[#C69A45]" />
+            <div className="flex h-11 items-center gap-2.5 rounded-md border border-ink-700 bg-ink-900 px-3 transition-colors focus-within:border-paper-dim">
+              <Search className="h-4 w-4 shrink-0 text-stamp" />
               <input
                 ref={inputRef}
                 type="text"
@@ -366,8 +364,9 @@ export const SearchPage: React.FC = () => {
                 }}
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                placeholder="Search manga, manhwa, authors, genres... (Press Enter to search)"
-                className="flex-1 min-w-0 bg-transparent text-[#F0E9DC] placeholder-[#AAA69D]/50 text-sm focus:outline-none font-sans"
+                placeholder="Titles, authors, genres…"
+                aria-label="Search the archive"
+                className="min-w-0 flex-1 bg-transparent text-[13.5px] text-paper placeholder:text-paper-dim/60 focus:outline-none"
               />
               {query && (
                 <button
@@ -377,20 +376,19 @@ export const SearchPage: React.FC = () => {
                     setResults([]);
                     setShowSuggestions(false);
                   }}
-                  className="shrink-0 p-0.5 text-[#AAA69D] hover:text-[#F0E9DC] transition-colors"
-                  aria-label="Clear search text"
+                  className="shrink-0 p-1 text-paper-dim hover:text-paper"
+                  aria-label="Clear search"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
-              {loading && <Loader2 className="shrink-0 w-4 h-4 animate-spin text-[#C69A45]" />}
+              {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-stamp" />}
             </div>
 
-            {/* Autocomplete Suggestions */}
             {showSuggestions && suggestions.length > 0 && (
               <ul
                 role="listbox"
-                className="absolute top-full left-0 right-0 mt-1.5 bg-[#111318] border border-[#292A2D] rounded-xl overflow-hidden shadow-2xl z-50 py-1"
+                className="absolute inset-x-0 top-full z-50 mt-1.5 overflow-hidden rounded-md border border-ink-700 bg-ink-900 py-1 shadow-2xl"
               >
                 {suggestions.map((s) => (
                   <li
@@ -398,9 +396,9 @@ export const SearchPage: React.FC = () => {
                     role="option"
                     aria-selected={false}
                     onMouseDown={() => commitSearch(s)}
-                    className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-[#AAA69D] hover:bg-[#191A1F] hover:text-[#C69A45] cursor-pointer transition-colors"
+                    className="flex cursor-pointer items-center gap-2.5 px-3.5 py-2 text-[13px] text-paper-dim transition-colors hover:bg-ink-800 hover:text-paper"
                   >
-                    <Search className="w-3 h-3 shrink-0 text-[#AAA69D]" />
+                    <Search className="h-3 w-3 shrink-0" />
                     <span className="truncate">{s}</span>
                   </li>
                 ))}
@@ -408,26 +406,20 @@ export const SearchPage: React.FC = () => {
             )}
           </form>
 
-          {/* Filter Toggle Button */}
           <button
             onClick={() => setShowFilters((v) => !v)}
-            className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all border ${
-              showFilters || hasActiveFilters
-                ? 'bg-[#C69A45]/15 text-[#C69A45] border-[#C69A45]/40'
-                : 'bg-[#111318] text-[#AAA69D] border-[#292A2D] hover:text-[#F0E9DC]'
-            }`}
-            aria-label="Toggle filters drawer"
+            className={`btn btn-ghost !h-11 !px-3 ${showFilters ? '!border-paper-dim !text-paper' : ''}`}
+            aria-expanded={showFilters}
+            aria-label="Toggle filters"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <SlidersHorizontal className="h-4 w-4" />
             <span className="hidden sm:inline">Filters</span>
-            {hasActiveFilters && (
-              <span className="w-2 h-2 rounded-full bg-[#C69A45] animate-pulse" />
-            )}
+            {hasActiveFilters && <span className="h-1.5 w-1.5 rounded-full bg-stamp" />}
           </button>
         </div>
 
-        {/* ── Gen-Z Quick Genre Chips Row ────────────────────────────────────── */}
-        <div className="flex items-center gap-1.5 overflow-x-auto px-4 py-2 border-t border-[#292A2D]/60 bg-[#090A0C] no-scrollbar">
+        {/* Genre row */}
+        <div className="no-scrollbar mx-auto flex w-full max-w-6xl items-center gap-1.5 overflow-x-auto px-4 pb-2.5">
           {GENRE_CHIPS.map((genre) => {
             const isSelected =
               (genre === 'All' && !genreFilter) ||
@@ -436,11 +428,8 @@ export const SearchPage: React.FC = () => {
               <button
                 key={genre}
                 onClick={() => handleGenreChipClick(genre)}
-                className={`shrink-0 px-3 py-1 rounded-full text-xs font-mono transition-all ${
-                  isSelected
-                    ? 'bg-[#C69A45] text-black font-bold shadow-[0_0_12px_rgba(198,154,69,0.35)]'
-                    : 'bg-[#111318] text-[#AAA69D] border border-[#292A2D] hover:text-[#F0E9DC] hover:border-[#C69A45]/40'
-                }`}
+                className="chip"
+                data-active={isSelected}
               >
                 {genre}
               </button>
@@ -448,15 +437,12 @@ export const SearchPage: React.FC = () => {
           })}
         </div>
 
-        {/* ── Advanced Filter Drawer ─────────────────────────────────────────── */}
+        {/* Filter drawer */}
         {showFilters && (
-          <div className="border-t border-[#292A2D] bg-[#0D0E13] px-4 py-3.5 animate-fade-in">
-            <div className="max-w-6xl mx-auto flex flex-wrap items-end gap-3 sm:gap-4">
-              {/* Source Filter */}
-              <div className="flex flex-col gap-1 min-w-[130px]">
-                <label className="text-[11px] font-mono text-[#AAA69D] uppercase tracking-wider">
-                  Source Engine
-                </label>
+          <div className="border-t border-ink-700 bg-ink-900/70 px-4 py-3.5 animate-fade-in">
+            <div className="mx-auto flex max-w-6xl flex-wrap items-end gap-3">
+              <div className="flex min-w-[130px] flex-col gap-1">
+                <label className="eyebrow">Source</label>
                 <div className="relative">
                   <select
                     value={sourceFilter}
@@ -465,21 +451,18 @@ export const SearchPage: React.FC = () => {
                       setSourceFilter(src);
                       runSearch(query, 0, undefined, undefined, undefined, undefined, src);
                     }}
-                    className="w-full appearance-none pl-3 pr-7 py-1.5 bg-[#191A1F] border border-[#292A2D] rounded-lg text-xs text-[#F0E9DC] focus:outline-none focus:border-[#C69A45]/60 cursor-pointer"
+                    className="h-9 w-full appearance-none rounded-md border border-ink-700 bg-ink-950 pl-2.5 pr-7 text-[11px] text-paper focus:border-paper-dim focus:outline-none"
                   >
-                    <option value="all">🌐 All (Weeb + MangaDex)</option>
-                    <option value="weebcentral">⚡ WeebCentral Stream</option>
-                    <option value="mangadex">🛡️ MangaDex Safe</option>
+                    <option value="all">All sources</option>
+                    <option value="weebcentral">WeebCentral</option>
+                    <option value="mangadex">MangaDex (safe)</option>
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#AAA69D] pointer-events-none" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-paper-dim" />
                 </div>
               </div>
 
-              {/* Type Filter */}
-              <div className="flex flex-col gap-1 min-w-[110px]">
-                <label className="text-[11px] font-mono text-[#AAA69D] uppercase tracking-wider">
-                  Format
-                </label>
+              <div className="flex min-w-[110px] flex-col gap-1">
+                <label className="eyebrow">Format</label>
                 <div className="relative">
                   <select
                     value={typeFilter}
@@ -488,23 +471,20 @@ export const SearchPage: React.FC = () => {
                       setTypeFilter(t);
                       runSearch(query, 0, undefined, t);
                     }}
-                    className="w-full appearance-none pl-3 pr-7 py-1.5 bg-[#191A1F] border border-[#292A2D] rounded-lg text-xs text-[#F0E9DC] focus:outline-none focus:border-[#C69A45]/60 cursor-pointer"
+                    className="h-9 w-full appearance-none rounded-md border border-ink-700 bg-ink-950 pl-2.5 pr-7 text-[11px] text-paper focus:border-paper-dim focus:outline-none"
                   >
-                    <option value="">All Formats</option>
-                    <option value="Manga">🇯🇵 Manga</option>
-                    <option value="Manhwa">🇰🇷 Manhwa</option>
-                    <option value="Manhua">🇨🇳 Manhua</option>
-                    <option value="OEL">🌐 OEL</option>
+                    <option value="">All formats</option>
+                    <option value="Manga">Manga</option>
+                    <option value="Manhwa">Manhwa</option>
+                    <option value="Manhua">Manhua</option>
+                    <option value="OEL">OEL</option>
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#AAA69D] pointer-events-none" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-paper-dim" />
                 </div>
               </div>
 
-              {/* Status Filter */}
-              <div className="flex flex-col gap-1 min-w-[110px]">
-                <label className="text-[11px] font-mono text-[#AAA69D] uppercase tracking-wider">
-                  Status
-                </label>
+              <div className="flex min-w-[110px] flex-col gap-1">
+                <label className="eyebrow">Status</label>
                 <div className="relative">
                   <select
                     value={statusFilter}
@@ -513,21 +493,18 @@ export const SearchPage: React.FC = () => {
                       setStatusFilter(s);
                       runSearch(query, 0, undefined, undefined, s);
                     }}
-                    className="w-full appearance-none pl-3 pr-7 py-1.5 bg-[#191A1F] border border-[#292A2D] rounded-lg text-xs text-[#F0E9DC] focus:outline-none focus:border-[#C69A45]/60 cursor-pointer"
+                    className="h-9 w-full appearance-none rounded-md border border-ink-700 bg-ink-950 pl-2.5 pr-7 text-[11px] text-paper focus:border-paper-dim focus:outline-none"
                   >
-                    <option value="">All Statuses</option>
-                    <option value="Ongoing">Active / Ongoing</option>
+                    <option value="">Any status</option>
+                    <option value="Ongoing">Ongoing</option>
                     <option value="Complete">Completed</option>
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#AAA69D] pointer-events-none" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-paper-dim" />
                 </div>
               </div>
 
-              {/* Sort Order */}
-              <div className="flex flex-col gap-1 min-w-[120px]">
-                <label className="text-[11px] font-mono text-[#AAA69D] uppercase tracking-wider">
-                  Sort By
-                </label>
+              <div className="flex min-w-[120px] flex-col gap-1">
+                <label className="eyebrow">Sort</label>
                 <div className="relative">
                   <select
                     value={sortKey}
@@ -536,7 +513,7 @@ export const SearchPage: React.FC = () => {
                       setSortKey(s);
                       runSearch(query, 0, undefined, undefined, undefined, s);
                     }}
-                    className="w-full appearance-none pl-3 pr-7 py-1.5 bg-[#191A1F] border border-[#292A2D] rounded-lg text-xs text-[#F0E9DC] focus:outline-none focus:border-[#C69A45]/60 cursor-pointer"
+                    className="h-9 w-full appearance-none rounded-md border border-ink-700 bg-ink-950 pl-2.5 pr-7 text-[11px] text-paper focus:border-paper-dim focus:outline-none"
                   >
                     {SORT_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value}>
@@ -544,25 +521,23 @@ export const SearchPage: React.FC = () => {
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#AAA69D] pointer-events-none" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-paper-dim" />
                 </div>
               </div>
 
-              {/* Clear Filters Button */}
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#AAA69D] hover:text-[#E05252] hover:bg-[#E05252]/10 border border-[#292A2D] transition-colors"
+                  className="flex h-9 items-center gap-1.5 rounded-md border border-ink-700 px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-paper-dim transition-colors hover:border-stamp/60 hover:text-stamp"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Reset</span>
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Reset
                 </button>
               )}
 
-              {/* Counter */}
               {!loading && results.length > 0 && (
-                <span className="ml-auto text-xs text-[#AAA69D] self-end pb-1 font-mono">
-                  Showing {displayedResults.length} manuscripts
+                <span className="ml-auto self-end pb-2 font-mono text-[9.5px] uppercase tracking-[0.14em] text-paper-dim">
+                  {displayedResults.length} results
                 </span>
               )}
             </div>
@@ -570,37 +545,32 @@ export const SearchPage: React.FC = () => {
         )}
       </header>
 
-      {/* ── Main Content ────────────────────────────────────────────────────── */}
+      {/* ── Body ───────────────────────────────────────────────────────────── */}
       <main className="flex-1 overflow-y-auto" ref={listRef}>
-        <div className="max-w-6xl mx-auto w-full px-4 py-6">
-          {/* ── Empty State: When no search and no active filters ──────────────── */}
+        <div className="mx-auto w-full max-w-6xl px-4 pb-32 pt-6">
+          {/* Idle */}
           {!query.trim() && !genreFilter && !typeFilter && !statusFilter && !loading && (
-            <div className="space-y-8 max-w-3xl mx-auto py-6">
-              {/* Recent History */}
+            <div className="mx-auto max-w-3xl space-y-10 py-2">
               {history.length > 0 && (
                 <section>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="flex items-center gap-2 text-xs font-mono font-semibold text-[#AAA69D] uppercase tracking-wider">
-                      <Clock className="w-4 h-4 text-[#C69A45]" />
-                      <span>Recent Searches</span>
+                  <div className="flex items-center justify-between border-b border-ink-700 pb-2.5">
+                    <h2 className="eyebrow flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5" />
+                      Recent searches
                     </h2>
                     <button
                       onClick={() => {
                         clearHistory();
                         setHistory([]);
                       }}
-                      className="text-xs text-[#AAA69D] hover:text-[#E05252] transition-colors"
+                      className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-paper-dim underline underline-offset-4 hover:text-paper"
                     >
                       Clear
                     </button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-1.5">
                     {history.map((term) => (
-                      <button
-                        key={term}
-                        onClick={() => commitSearch(term)}
-                        className="px-3.5 py-1.5 rounded-full text-xs bg-[#111318] border border-[#292A2D] text-[#AAA69D] hover:border-[#C69A45]/60 hover:text-[#F0E9DC] transition-colors"
-                      >
+                      <button key={term} onClick={() => commitSearch(term)} className="chip">
                         {term}
                       </button>
                     ))}
@@ -608,21 +578,32 @@ export const SearchPage: React.FC = () => {
                 </section>
               )}
 
-              {/* Recommended Discoveries */}
               <section>
-                <h2 className="flex items-center gap-2 text-xs font-mono font-semibold text-[#AAA69D] uppercase tracking-wider mb-3">
-                  <TrendingUp className="w-4 h-4 text-[#C69A45]" />
-                  <span>Popular Discoveries</span>
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                  {POPULAR_SEARCHES.map((term) => (
+                <div className="flex items-center justify-between border-b border-ink-700 pb-2.5">
+                  <h2 className="eyebrow flex items-center gap-2">
+                    <TrendingUp className="h-3.5 w-3.5" />
+                    Start here
+                  </h2>
+                  <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-paper-dim">
+                    Curated
+                  </span>
+                </div>
+                <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 sm:gap-x-8">
+                  {POPULAR_SEARCHES.map((term, i) => (
                     <button
                       key={term}
                       onClick={() => commitSearch(term)}
-                      className="p-3 text-left rounded-xl bg-[#111318] border border-[#292A2D] text-xs font-medium text-[#F0E9DC] hover:border-[#C69A45]/60 hover:bg-[#191A1F] transition-all group"
+                      className="group flex items-center justify-between border-b border-ink-700 py-2.5 text-left"
                     >
-                      <span className="text-[#C69A45] mr-1.5 font-mono">#</span>
-                      <span className="group-hover:text-[#C69A45] transition-colors">{term}</span>
+                      <span className="flex items-baseline gap-3">
+                        <span className="tnum font-mono text-[10px] text-stamp">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <span className="text-[13px] font-medium text-paper transition-colors group-hover:text-stamp">
+                          {term}
+                        </span>
+                      </span>
+                      <ArrowRight className="h-3.5 w-3.5 text-paper-dim transition-transform group-hover:translate-x-0.5 group-hover:text-paper" />
                     </button>
                   ))}
                 </div>
@@ -630,143 +611,113 @@ export const SearchPage: React.FC = () => {
             </div>
           )}
 
-          {/* ── Loading Skeletons ─────────────────────────────────────────────── */}
+          {/* Loading */}
           {loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
               {Array.from({ length: 12 }).map((_, i) => (
                 <SkeletonCard key={i} />
               ))}
             </div>
           )}
 
-          {/* ── Error State ───────────────────────────────────────────────────── */}
+          {/* Error */}
           {!loading && error && (
-            <div className="flex flex-col items-center gap-4 py-20 text-center">
-              <AlertCircle className="w-10 h-10 text-[#E05252]" />
-              <p className="text-[#E05252] font-medium text-sm">{error}</p>
-              <button
-                onClick={() => runSearch(committed || query, 0)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#111318] border border-[#292A2D] text-xs font-semibold text-[#AAA69D] hover:text-[#F0E9DC] transition-colors"
-              >
-                <RefreshCw className="w-4 h-4" /> Retry Search
+            <div className="mx-auto flex max-w-sm flex-col items-center gap-4 py-20 text-center">
+              <AlertCircle className="h-8 w-8 text-stamp" />
+              <p className="text-[13px] text-paper">{error}</p>
+              <button onClick={() => runSearch(committed || query, 0)} className="btn btn-ghost">
+                <RefreshCw className="h-4 w-4" />
+                Try again
               </button>
             </div>
           )}
 
-          {/* ── No Results Found ──────────────────────────────────────────────── */}
+          {/* Empty */}
           {!loading && !error && displayedResults.length === 0 && (query.trim() || genreFilter) && (
-            <div className="flex flex-col items-center gap-3.5 py-16 text-center">
-              <BookOpen className="w-10 h-10 text-[#AAA69D]/60" />
-              <h3 className="text-[#F0E9DC] font-serif text-lg font-bold">
-                No manuscripts found
+            <div className="mx-auto flex max-w-sm flex-col items-center gap-3 py-20 text-center">
+              <BookOpen className="h-8 w-8 text-paper-dim/60" />
+              <h3 className="font-display text-base font-semibold text-paper">
+                Nothing in the index for that
               </h3>
-              <p className="text-xs text-[#AAA69D] max-w-sm">
-                No titles match your current criteria{' '}
-                {genreFilter && <span className="text-[#C69A45]">[{genreFilter}]</span>}
-                {query.trim() && ` "${query.trim()}"`}.
+              <p className="text-[12.5px] leading-relaxed text-paper-dim">
+                No titles match{' '}
+                {genreFilter && <span className="text-stamp">{genreFilter}</span>}
+                {genreFilter && query.trim() ? ' + ' : ''}
+                {query.trim() && `“${query.trim()}”`}.
               </p>
               {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-2 mt-2 px-4 py-2 rounded-xl bg-[#111318] border border-[#292A2D] text-xs font-semibold text-[#C69A45] hover:bg-[#191A1F] transition-colors"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Clear All Filters
+                <button onClick={clearFilters} className="btn btn-stamp mt-1">
+                  Clear filters
                 </button>
               )}
             </div>
           )}
 
-          {/* ── Results Grid ──────────────────────────────────────────────────── */}
+          {/* Results */}
           {!loading && displayedResults.length > 0 && (
             <>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs text-[#AAA69D] font-mono">
-                  <span className="text-[#F0E9DC] font-semibold">{displayedResults.length}</span> results found
-                  {genreFilter && (
-                    <span className="ml-1 text-[#C69A45]">in {genreFilter}</span>
-                  )}
-                  {committed && ` for "${committed}"`}
+              <div className="mb-5 flex items-baseline justify-between border-b border-ink-700 pb-2.5">
+                <p className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-paper-dim">
+                  <span className="text-paper">{displayedResults.length}</span> results
+                  {genreFilter && <span className="text-stamp"> · {genreFilter}</span>}
+                  {committed && ` · “${committed}”`}
                 </p>
+                <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-paper-dim/70">
+                  Weeb + Dex
+                </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                 {displayedResults.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => openManga(item.id, item.title, item.cover)}
-                    className="group flex flex-col gap-2 p-2 rounded-xl bg-[#111318] border border-[#292A2D] hover:border-[#C69A45]/50 hover:bg-[#191A1F] cursor-pointer transition-all text-left shadow-md hover:shadow-xl"
+                    className="group cursor-pointer text-left"
                   >
-                    {/* Cover Art */}
-                    <div className="w-full aspect-[2/3] rounded-lg overflow-hidden bg-[#090A0C] border border-[#292A2D] relative">
+                    <div className="relative aspect-[2/3] overflow-hidden rounded-md border border-ink-700 bg-ink-900 transition-all duration-300 group-hover:-translate-y-1 group-hover:border-paper/35">
                       <img
                         src={getProxyImageUrl(item.cover)}
                         alt={item.title}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = FALLBACK_COVER;
                         }}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                         loading="lazy"
+                        decoding="async"
                       />
                       {item.id.startsWith('md:') && (
-                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[9px] font-mono bg-black/80 text-[#C69A45] border border-[#C69A45]/40 backdrop-blur-xs">
-                          MangaDex
-                        </span>
+                        <span className="tag absolute left-1.5 top-1.5 !bg-ink-950/85">Dex</span>
                       )}
                     </div>
 
-                    {/* Title */}
-                    <h3 className="font-serif font-bold text-xs leading-tight line-clamp-2 text-[#F0E9DC] group-hover:text-[#C69A45] transition-colors">
+                    <h3 className="mt-2 line-clamp-2 font-display text-[12.5px] font-semibold leading-snug text-paper transition-colors group-hover:text-stamp">
                       {item.title}
                     </h3>
 
-                    {/* Metadata Badges */}
-                    <div className="flex flex-wrap items-center gap-1 mt-auto pt-1">
-                      {item.type && (
-                        <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-[#090A0C] text-[#C69A45] border border-[#292A2D]">
-                          {item.type}
-                        </span>
-                      )}
+                    <div className="mt-1 flex items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-[0.08em] text-paper-dim">
+                      <span className="truncate">{item.type || 'Series'}</span>
                       {item.status && (
-                        <span
-                          className={`px-1.5 py-0.2 rounded text-[10px] font-mono border ${
-                            item.status.toLowerCase().includes('ongoing')
-                              ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/60'
-                              : 'bg-sky-950/40 text-sky-400 border-sky-900/60'
-                          }`}
-                        >
-                          {item.status}
+                        <span className="shrink-0 opacity-80">
+                          {item.status.toLowerCase().includes('ongoing') ? 'Ongoing' : 'Complete'}
                         </span>
                       )}
-                    </div>
-
-                    {/* Arrow Action */}
-                    <div className="flex items-center justify-between text-[10px] text-[#AAA69D] pt-1">
-                      <span className="truncate text-[#AAA69D]/70 font-mono">
-                        {item.tags?.[0] || 'Read'}
-                      </span>
-                      <ArrowRight className="w-3.5 h-3.5 text-[#AAA69D] group-hover:text-[#C69A45] group-hover:translate-x-0.5 transition-all" />
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* ── Pagination: Load More ────────────────────────────────────── */}
               {hasMore && (
-                <div className="flex justify-center mt-10 mb-6">
-                  <button
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#111318] border border-[#292A2D] text-xs font-semibold text-[#AAA69D] hover:text-[#F0E9DC] hover:border-[#C69A45]/50 transition-all disabled:opacity-50"
-                  >
+                <div className="mb-6 mt-10 flex justify-center">
+                  <button onClick={loadMore} disabled={loadingMore} className="btn btn-ghost">
                     {loadingMore ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin text-[#C69A45]" />
-                        <span>Retrieving manuscripts…</span>
+                        <Loader2 className="h-4 w-4 animate-spin text-stamp" />
+                        Loading
                       </>
                     ) : (
                       <>
-                        <span>Load Next Batch</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        Load more
+                        <ArrowRight className="h-3.5 w-3.5" />
                       </>
                     )}
                   </button>
@@ -776,6 +727,8 @@ export const SearchPage: React.FC = () => {
           )}
         </div>
       </main>
+
+      <MobileTabBar />
     </div>
   );
 };

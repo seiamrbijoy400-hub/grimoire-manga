@@ -37,10 +37,10 @@ export const ALL_TAGS = [
 ].filter((tag) => !isAdultTag(tag));
 
 export const TYPE_OPTIONS: TypeOption[] = [
-  { id: 'Manga', label: 'Manga', flag: '🇯🇵', desc: 'Japanese Tanks' },
-  { id: 'Manhwa', label: 'Manhwa', flag: '🇰🇷', desc: 'Korean Webtoons' },
-  { id: 'Manhua', label: 'Manhua', flag: '🇨🇳', desc: 'Chinese Scrolls' },
-  { id: 'OEL', label: 'OEL', flag: '🌐', desc: 'Global English' },
+  { id: 'Manga', label: 'Manga', flag: '🇯🇵', desc: 'Japanese' },
+  { id: 'Manhwa', label: 'Manhwa', flag: '🇰🇷', desc: 'Korean' },
+  { id: 'Manhua', label: 'Manhua', flag: '🇨🇳', desc: 'Chinese' },
+  { id: 'OEL', label: 'OEL', flag: '🌐', desc: 'English' },
 ];
 
 export const COUNTRY_OPTIONS = [
@@ -74,11 +74,11 @@ export const STATUS_OPTIONS = [
 ];
 
 export const SORT_OPTIONS = [
-  { id: 'Popularity', label: '🔥 Popularity' },
-  { id: 'Latest Updates', label: '⚡ Latest Updates' },
-  { id: 'Alphabet', label: '🔤 Alphabetical' },
-  { id: 'Subscribers', label: '⭐ Most Subscribed' },
-  { id: 'Recently Added', label: '✨ Recently Added' },
+  { id: 'Popularity', label: 'Popularity' },
+  { id: 'Latest Updates', label: 'Latest updates' },
+  { id: 'Alphabet', label: 'Alphabetical' },
+  { id: 'Subscribers', label: 'Most subscribed' },
+  { id: 'Recently Added', label: 'Recently added' },
 ];
 
 export const FilterDrawer: React.FC<FilterDrawerProps> = ({
@@ -128,316 +128,206 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
     filters.includedTags.length +
     filters.excludedTags.length;
 
+  const choice = (active: boolean) =>
+    `h-9 rounded-md border px-2 font-mono text-[10px] uppercase tracking-[0.08em] transition-colors ${
+      active
+        ? 'border-paper bg-paper font-semibold text-ink-950'
+        : 'border-ink-700 text-paper-dim hover:border-ink-600 hover:text-paper'
+    }`;
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-[#090A0C]/80 backdrop-blur-sm animate-fade-in flex justify-end">
-      {/* Backdrop click to dismiss */}
+    <div className="fixed inset-0 z-[70] flex justify-end overflow-hidden bg-ink-950/80 backdrop-blur-sm animate-fade-in">
       <div className="absolute inset-0" onClick={onClose} />
 
-      {/* Drawer Panel */}
-      <div className="relative w-full max-w-md h-full bg-[#111318] border-l border-[#292A2D] shadow-2xl flex flex-col z-10 overflow-hidden">
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-[#292A2D] flex items-center justify-between bg-[#090A0C]/90">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#191A1F] border border-[#292A2D] flex items-center justify-center text-[#C69A45]">
-              <Filter className="w-4 h-4" />
+      <div className="relative z-10 flex h-full w-full max-w-md flex-col overflow-hidden border-l border-ink-700 bg-ink-950 shadow-2xl">
+        {/* Head */}
+        <div className="flex items-start justify-between gap-3 border-b border-ink-700 px-5 py-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-stamp" />
+              <h2 className="font-display text-base font-semibold text-paper">Filters</h2>
+              {activeFiltersCount > 0 && (
+                <span className="tnum border border-stamp/50 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-stamp">
+                  {activeFiltersCount} on
+                </span>
+              )}
             </div>
-            <div>
-              <h2 className="font-serif text-base font-bold text-[#F0E9DC] flex items-center gap-2">
-                <span>Archive Filters</span>
-                {activeFiltersCount > 0 && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#C69A45]/20 text-[#C69A45] font-mono font-bold">
-                    {activeFiltersCount} active
-                  </span>
-                )}
-              </h2>
-              <p className="text-[11px] text-[#AAA69D] font-sans">
-                Refine by Origin, Language, Genre & Status
-              </p>
-            </div>
+            <p className="mt-1 font-mono text-[9.5px] uppercase tracking-[0.14em] text-paper-dim">
+              Origin · language · genre · status
+            </p>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <button
               onClick={onReset}
-              className="p-2 rounded-lg text-[#AAA69D] hover:text-[#C69A45] hover:bg-[#191A1F] transition-colors text-xs flex items-center gap-1 font-mono"
-              title="Reset all filters"
+              className="flex h-9 items-center gap-1 rounded-md px-2 font-mono text-[9.5px] uppercase tracking-[0.1em] text-paper-dim transition-colors hover:text-paper"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Reset</span>
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset
             </button>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg text-[#AAA69D] hover:text-[#F0E9DC] hover:bg-[#191A1F] transition-colors"
-              aria-label="Close filters"
-            >
-              <X className="w-5 h-5" />
+            <button onClick={onClose} className="btn-icon !h-9 !w-9" aria-label="Close filters">
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        {/* Scrollable Filter Controls */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
-          {/* 1. Data Stream Source (WeebCentral vs MangaDex Safe) */}
-          <div className="space-y-2.5">
+        {/* Body */}
+        <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+          {/* Source */}
+          <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-serif font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                <span>Stream Engine</span>
-              </label>
-              <span className="text-[10px] text-solar-400 font-mono uppercase font-bold">
-                {filters.selectedSource === 'all' ? 'Unified Matrix' : filters.selectedSource}
+              <label className="eyebrow">Source</label>
+              <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-paper-dim">
+                {filters.selectedSource === 'all' ? 'Both' : filters.selectedSource}
               </span>
             </div>
-
             <div className="grid grid-cols-3 gap-1.5">
-              <button
-                onClick={() => onChange({ ...filters, selectedSource: 'all' })}
-                className={`py-2 px-1.5 rounded-xl border text-center transition-all ${
-                  filters.selectedSource === 'all'
-                    ? 'bg-solar-500 text-void-950 font-bold shadow-sm'
-                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <div className="text-[11px] font-mono font-bold flex items-center justify-center gap-1">
-                  <Globe className="w-3 h-3" />
-                  <span>Unified</span>
-                </div>
+              <button onClick={() => onChange({ ...filters, selectedSource: 'all' })} className={choice(filters.selectedSource === 'all')}>
+                Both
               </button>
-
-              <button
-                onClick={() => onChange({ ...filters, selectedSource: 'weebcentral' })}
-                className={`py-2 px-1.5 rounded-xl border text-center transition-all ${
-                  filters.selectedSource === 'weebcentral'
-                    ? 'bg-solar-500 text-void-950 font-bold shadow-sm'
-                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <div className="text-[11px] font-mono font-bold flex items-center justify-center gap-1">
-                  <Zap className="w-3 h-3" />
-                  <span>WeebCentral</span>
-                </div>
+              <button onClick={() => onChange({ ...filters, selectedSource: 'weebcentral' })} className={choice(filters.selectedSource === 'weebcentral')}>
+                Weeb
               </button>
-
-              <button
-                onClick={() => onChange({ ...filters, selectedSource: 'mangadex' })}
-                className={`py-2 px-1.5 rounded-xl border text-center transition-all ${
-                  filters.selectedSource === 'mangadex'
-                    ? 'bg-telemetry-cyan text-void-950 font-bold shadow-sm'
-                    : 'bg-void-950 border-void-750 text-slate-400 hover:text-telemetry-cyan'
-                }`}
-              >
-                <div className="text-[11px] font-mono font-bold flex items-center justify-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  <span>MangaDex</span>
-                </div>
+              <button onClick={() => onChange({ ...filters, selectedSource: 'mangadex' })} className={choice(filters.selectedSource === 'mangadex')}>
+                Dex
               </button>
             </div>
-          </div>
+          </section>
 
-          {/* 2. Origin / Series Type */}
-          <div className="space-y-2.5">
+          {/* Format */}
+          <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-serif font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                <span>Origin & Medium</span>
-              </label>
-              <span className="text-[10px] text-solar-400 font-mono">
-                {filters.selectedType || 'All Origins'}
+              <label className="eyebrow">Format</label>
+              <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-paper-dim">
+                {filters.selectedType || 'Any'}
               </span>
             </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => onChange({ ...filters, selectedType: null })}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
-                  filters.selectedType === null
-                    ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold shadow-sm'
-                    : 'bg-void-950/70 border-void-750 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <div className="text-xs font-serif font-bold">🌐 All Origins</div>
-                <div className="text-[10px] text-slate-500 font-mono">Global Archive</div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button onClick={() => onChange({ ...filters, selectedType: null })} className={choice(filters.selectedType === null)}>
+                All formats
               </button>
-
               {TYPE_OPTIONS.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => onChange({ ...filters, selectedType: filters.selectedType === t.id ? null : t.id })}
-                  className={`p-2.5 rounded-xl border text-left transition-all ${
-                    filters.selectedType === t.id
-                      ? 'bg-solar-500 text-void-950 border-solar-500 font-bold shadow-md shadow-solar-500/20'
-                      : 'bg-void-950/70 border-void-750 text-slate-300 hover:text-solar-400 hover:border-void-700'
-                  }`}
+                  className={choice(filters.selectedType === t.id)}
                 >
-                  <div className="text-xs font-serif font-bold flex items-center gap-1.5">
-                    <span>{t.flag}</span>
-                    <span>{t.label}</span>
-                  </div>
-                  <div className={`text-[10px] font-mono ${filters.selectedType === t.id ? 'text-void-950/80 font-medium' : 'text-slate-500'}`}>
-                    {t.desc}
-                  </div>
+                  {t.label} · {t.desc}
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* 3. Country of Origin Filter */}
-          <div className="space-y-2.5">
+          {/* Country */}
+          <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-serif font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-solar-400" />
-                <span>Country of Origin</span>
-              </label>
-              <span className="text-[10px] text-solar-400 font-mono">
-                {COUNTRY_OPTIONS.find(c => c.id === filters.selectedCountry)?.label || 'All Regions'}
+              <label className="eyebrow">Country</label>
+              <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-paper-dim">
+                {COUNTRY_OPTIONS.find((c) => c.id === filters.selectedCountry)?.label || 'Any'}
               </span>
             </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => onChange({ ...filters, selectedCountry: null })}
-                className={`p-2 rounded-xl border text-left transition-all ${
-                  !filters.selectedCountry
-                    ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold shadow-sm'
-                    : 'bg-void-950/70 border-void-750 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <div className="text-xs font-mono font-bold">🌍 All Countries</div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button onClick={() => onChange({ ...filters, selectedCountry: null })} className={choice(!filters.selectedCountry)}>
+                All regions
               </button>
-
               {COUNTRY_OPTIONS.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => onChange({ ...filters, selectedCountry: filters.selectedCountry === c.id ? null : c.id })}
-                  className={`p-2 rounded-xl border text-left transition-all ${
-                    filters.selectedCountry === c.id
-                      ? 'bg-solar-500 text-void-950 border-solar-500 font-bold shadow-sm'
-                      : 'bg-void-950/70 border-void-750 text-slate-300 hover:text-solar-400'
-                  }`}
+                  className={choice(filters.selectedCountry === c.id)}
                 >
-                  <div className="text-xs font-mono font-bold flex items-center gap-1.5">
-                    <span>{c.flag}</span>
-                    <span>{c.label}</span>
-                  </div>
+                  {c.label}
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* 4. Preferred Language Edition Filter */}
-          <div className="space-y-2.5">
+          {/* Language */}
+          <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-serif font-bold text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-solar-400" />
-                <span>Language Edition</span>
-              </label>
-              <span className="text-[10px] text-solar-400 font-mono">
-                {LANGUAGE_OPTIONS.find(l => l.id === filters.selectedLanguage)?.label || 'All Languages'}
+              <label className="eyebrow">Language edition</label>
+              <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-paper-dim">
+                {LANGUAGE_OPTIONS.find((l) => l.id === filters.selectedLanguage)?.label || 'Any'}
               </span>
             </div>
-
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
-              <button
-                onClick={() => onChange({ ...filters, selectedLanguage: null })}
-                className={`py-1.5 px-2 rounded-xl border text-center transition-all ${
-                  !filters.selectedLanguage
-                    ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold shadow-sm'
-                    : 'bg-void-950/70 border-void-750 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span className="text-xs font-mono font-medium">All</span>
+            <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">
+              <button onClick={() => onChange({ ...filters, selectedLanguage: null })} className={choice(!filters.selectedLanguage)}>
+                All
               </button>
-
               {LANGUAGE_OPTIONS.map((l) => (
                 <button
                   key={l.id}
                   onClick={() => onChange({ ...filters, selectedLanguage: filters.selectedLanguage === l.id ? null : l.id })}
-                  className={`py-1.5 px-2 rounded-xl border text-center transition-all flex items-center justify-center gap-1 ${
-                    filters.selectedLanguage === l.id
-                      ? 'bg-solar-500 text-void-950 border-solar-500 font-bold shadow-sm'
-                      : 'bg-void-950/70 border-void-750 text-slate-300 hover:text-solar-400'
-                  }`}
+                  className={choice(filters.selectedLanguage === l.id)}
+                  title={l.label}
                 >
-                  <span className="text-xs">{l.flag}</span>
-                  <span className="text-xs font-mono font-medium truncate">{l.short}</span>
+                  {l.short}
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* 5. Publication Status */}
-          <div className="space-y-2.5">
+          {/* Status */}
+          <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-serif font-bold text-slate-200 uppercase tracking-wider">
-                Release Status
-              </label>
-              <span className="text-[10px] text-solar-400 font-mono">
-                {filters.selectedStatus || 'Any Status'}
+              <label className="eyebrow">Status</label>
+              <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-paper-dim">
+                {filters.selectedStatus || 'Any'}
               </span>
             </div>
-
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               {STATUS_OPTIONS.map((st) => (
                 <button
                   key={st.id}
                   onClick={() => onChange({ ...filters, selectedStatus: filters.selectedStatus === st.id ? null : st.id })}
-                  className={`py-2 px-2.5 rounded-xl border text-center transition-all ${
-                    filters.selectedStatus === st.id
-                      ? 'bg-solar-500/20 border-solar-500 text-solar-400 font-bold shadow-sm'
-                      : 'bg-void-950/70 border-void-750 text-slate-400 hover:text-slate-200'
-                  }`}
+                  className={choice(filters.selectedStatus === st.id)}
                 >
-                  <div className="text-xs font-mono font-medium">{st.label}</div>
+                  {st.label}
                 </button>
               ))}
             </div>
-          </div>
+          </section>
 
-          {/* 4. Sort Sequence */}
-          <div className="space-y-2.5">
-            <label className="text-xs font-serif font-bold text-slate-200 uppercase tracking-wider">
-              Sort Sequence
-            </label>
-
-            <div className="grid grid-cols-2 gap-2">
+          {/* Sort */}
+          <section className="space-y-2">
+            <label className="eyebrow">Sort</label>
+            <div className="grid grid-cols-[1fr_auto] gap-1.5">
               <select
                 value={filters.sort}
                 onChange={(e) => onChange({ ...filters, sort: e.target.value })}
-                className="w-full bg-void-950 border border-void-750 rounded-xl px-3 py-2 text-xs text-slate-200 font-mono focus:outline-none focus:border-solar-500/60"
+                className="h-9 w-full rounded-md border border-ink-700 bg-transparent px-2.5 font-mono text-[10px] uppercase tracking-[0.08em] text-paper focus:border-paper-dim focus:outline-none"
               >
                 {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.id} value={opt.id} className="bg-void-900 text-slate-200">
+                  <option key={opt.id} value={opt.id} className="bg-ink-900 text-paper">
                     {opt.label}
                   </option>
                 ))}
               </select>
-
               <button
                 onClick={() => onChange({ ...filters, order: filters.order === 'Ascending' ? 'Descending' : 'Ascending' })}
-                className="px-3 py-2 bg-void-950 hover:bg-void-850 border border-void-750 rounded-xl text-xs text-slate-300 font-mono flex items-center justify-center gap-1.5 transition-colors"
+                className="flex h-9 items-center gap-1.5 rounded-md border border-ink-700 px-2.5 font-mono text-[10px] uppercase tracking-[0.08em] text-paper-dim transition-colors hover:text-paper"
               >
-                <ArrowUpDown className="w-3.5 h-3.5 text-solar-400" />
-                <span>{filters.order}</span>
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                {filters.order === 'Ascending' ? 'Asc' : 'Desc'}
               </button>
             </div>
-          </div>
+          </section>
 
-          {/* 5. Multi-Select Genre Tags (3-State) */}
-          <div className="space-y-2.5">
-            <div className="flex items-center justify-between">
+          {/* Tags */}
+          <section className="space-y-2">
+            <div className="flex items-end justify-between">
               <div>
-                <label className="text-xs font-serif font-bold text-slate-200 uppercase tracking-wider block">
-                  Genres & Themes (3-State)
-                </label>
-                <p className="text-[10px] text-slate-500 font-mono">
-                  Tap once for <span className="text-emerald-400 font-bold">Include (+)</span>, twice for <span className="text-rose-400 font-bold">Exclude (-)</span>
+                <label className="eyebrow block">Genres & themes</label>
+                <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.1em] text-paper-dim/80">
+                  Once to include · twice to exclude
                 </p>
               </div>
-
               {(filters.includedTags.length > 0 || filters.excludedTags.length > 0) && (
                 <button
                   onClick={() => onChange({ ...filters, includedTags: [], excludedTags: [] })}
-                  className="text-[10px] font-mono text-solar-400 hover:underline"
+                  className="font-mono text-[9px] uppercase tracking-[0.12em] text-stamp underline underline-offset-4"
                 >
-                  Clear Tags
+                  Clear tags
                 </button>
               )}
             </div>
@@ -446,49 +336,44 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
               type="text"
               value={tagSearch}
               onChange={(e) => setTagSearch(e.target.value)}
-              placeholder="Filter 32+ genres (Action, Romance, Isekai...)"
-              className="w-full bg-void-950 border border-void-750 rounded-xl px-3 py-2 text-xs text-slate-200 placeholder-slate-500 font-mono focus:outline-none focus:border-solar-500/60"
+              placeholder="Filter genres"
+              aria-label="Filter genres"
+              className="h-9 w-full rounded-md border border-ink-700 bg-transparent px-2.5 text-[12px] text-paper placeholder:text-paper-dim/60 focus:border-paper-dim focus:outline-none"
             />
 
-            <div className="flex flex-wrap gap-1.5 max-h-56 overflow-y-auto pr-1">
+            <div className="flex max-h-56 flex-wrap gap-1.5 overflow-y-auto pr-1">
               {filteredTags.map((tag) => {
                 const isIncluded = filters.includedTags.includes(tag);
                 const isExcluded = filters.excludedTags.includes(tag);
-
                 return (
                   <button
                     key={tag}
                     onClick={() => cycleTagState(tag)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all flex items-center gap-1 ${
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] transition-colors ${
                       isIncluded
-                        ? 'bg-emerald-950/80 border border-emerald-500 text-emerald-300 font-bold shadow-sm'
+                        ? 'border-paper bg-paper font-semibold text-ink-950'
                         : isExcluded
-                        ? 'bg-rose-950/80 border border-rose-500 text-rose-300 font-bold shadow-sm'
-                        : 'bg-void-950 border border-void-750 text-slate-400 hover:text-slate-200 hover:border-void-700'
+                          ? 'border-stamp/70 bg-stamp/10 text-stamp'
+                          : 'border-ink-700 text-paper-dim hover:border-ink-600 hover:text-paper'
                     }`}
                   >
-                    {isIncluded && <Check className="w-3 h-3 text-emerald-400" />}
-                    {isExcluded && <Ban className="w-3 h-3 text-rose-400" />}
-                    <span>{tag}</span>
+                    {isIncluded && <Check className="h-3 w-3" />}
+                    {isExcluded && <Ban className="h-3 w-3" />}
+                    {tag}
                   </button>
                 );
               })}
             </div>
-          </div>
+          </section>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 border-t border-void-750 bg-void-950/90 flex items-center justify-between gap-3">
-          <div className="text-xs font-mono text-slate-400">
-            {activeFiltersCount === 0 ? 'No active filters' : `${activeFiltersCount} active filter(s)`}
-          </div>
-
-          <button
-            onClick={onClose}
-            className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-solar-500 to-amber-500 hover:from-amber-400 hover:to-solar-500 text-void-950 font-serif font-bold text-xs tracking-wide shadow-lg shadow-solar-500/25 hover:scale-105 transition-all flex items-center gap-2"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Apply Codex Filter</span>
+        {/* Foot */}
+        <div className="flex items-center justify-between gap-3 border-t border-ink-700 bg-ink-950 px-4 py-3">
+          <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-paper-dim">
+            {totalResultsCount !== undefined ? `${totalResultsCount} loaded` : 'Ready'}
+          </span>
+          <button onClick={onClose} className="btn btn-stamp">
+            Show results
           </button>
         </div>
       </div>

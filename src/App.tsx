@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useStore } from './store/useStore.ts';
-import { Navbar } from './components/Navbar.tsx';
+import { Navbar, MobileTabBar } from './components/Navbar.tsx';
 import { BentoGrid } from './components/BentoGrid.tsx';
 import { MangaDetailsView } from './components/MangaDetailsView.tsx';
 import { ReaderView } from './components/ReaderView.tsx';
@@ -11,27 +11,27 @@ import { IntroSplash } from './components/IntroSplash.tsx';
 import { ScrollProgress } from './components/ScrollProgress.tsx';
 import { BrandLogo, WordMark } from './components/BrandMark.tsx';
 
-const INTRO_KEY = 'kurso:intro-seen:v2';
+const INTRO_KEY = 'kurso:intro-seen:v3';
 
 const GENRES = [
   'Action', 'Fantasy', 'Romance', 'Manhwa', 'Seinen', 'Isekai',
   'Horror', 'Slice of Life', 'Shounen', 'Sci-Fi', 'Historical', 'Martial Arts',
 ];
 
-const MarqueeBand: React.FC = () => {
+/** Slow index ticker — printed matter, not a neon scroll. */
+const IndexStrip: React.FC = () => {
   const row = [...GENRES, ...GENRES];
   return (
-    <div className="relative overflow-hidden border-y border-[#1D1E23] bg-[#0B0C10] py-3">
-      <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#0B0C10] to-transparent z-10 pointer-events-none" />
-      <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#0B0C10] to-transparent z-10 pointer-events-none" />
-      <div className="marquee-track flex w-max items-center gap-8 whitespace-nowrap">
+    <div className="relative overflow-hidden border-y border-ink-700 bg-ink-900">
+      <div className="marquee-track flex w-max items-center whitespace-nowrap py-2.5">
         {row.map((genre, i) => (
           <span
             key={`${genre}-${i}`}
-            className="flex items-center gap-8 font-mono text-[10px] uppercase tracking-[0.3em] text-[#6E6A62]"
+            className="flex items-center font-mono text-[10px] uppercase tracking-[0.18em] text-paper-dim"
           >
-            <span className={i % 4 === 0 ? 'text-[#C69A45]/80' : undefined}>{genre}</span>
-            <span className="w-1 h-1 rounded-full bg-[#C69A45]/25" />
+            <span className="px-4 tabular-nums text-ink-600">{String((i % GENRES.length) + 1).padStart(2, '0')}</span>
+            <span>{genre}</span>
+            <span className="px-4 text-stamp/60">·</span>
           </span>
         ))}
       </div>
@@ -39,50 +39,58 @@ const MarqueeBand: React.FC = () => {
   );
 };
 
-/**
- * App-wide film layer: CRT scanlines, a soft vignette and a gold spotlight
- * that trails the pointer on desktop. Pure transforms, no layout work.
- */
-const AmbientFX: React.FC = () => {
-  const spotRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (!window.matchMedia('(pointer: fine)').matches) return;
-
-    let raf = 0;
-    let x = window.innerWidth / 2;
-    let y = window.innerHeight / 3;
-
-    const paint = () => {
-      raf = 0;
-      if (spotRef.current) {
-        spotRef.current.style.transform = `translate3d(${x - 260}px, ${y - 260}px, 0)`;
-      }
-    };
-    const onMove = (e: PointerEvent) => {
-      x = e.clientX;
-      y = e.clientY;
-      if (!raf) raf = requestAnimationFrame(paint);
-    };
-
-    paint();
-    window.addEventListener('pointermove', onMove, { passive: true });
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-
+/** Fine print footer with the real privacy story, no marketing fog. */
+const Footer: React.FC = () => {
+  const year = useMemo(() => new Date().getFullYear(), []);
   return (
-    <div className="pointer-events-none fixed inset-0 z-[45] overflow-hidden" aria-hidden="true">
-      <div className="absolute inset-0 bg-scanlines opacity-40 mix-blend-soft-light" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_42%,rgba(0,0,0,0.55)_100%)]" />
-      <div
-        ref={spotRef}
-        className="absolute left-0 top-0 w-[520px] h-[520px] rounded-full bg-[radial-gradient(circle,rgba(198,154,69,0.10),rgba(198,154,69,0)_62%)] will-change-transform"
-      />
-    </div>
+    <footer className="border-t border-ink-700 bg-ink-950">
+      <div className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 sm:pb-10 lg:px-8">
+        <div className="grid gap-8 md:grid-cols-[1.4fr_1fr_1fr]">
+          <div className="flex items-start gap-4">
+            <BrandLogo className="h-14 w-14 shrink-0" />
+            <div>
+              <WordMark size="text-[15px]" showEdition />
+              <p className="mt-2 max-w-xs text-[12.5px] leading-relaxed text-paper-dim">
+                An independent index of manga, manhwa and manhua. No account, no feed
+                algorithm — just the archive and your own shelf.
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <p className="eyebrow">The fine print</p>
+            <ul className="mt-3 space-y-2 text-[12.5px] text-paper-dim">
+              <li>Library and history stay on this device.</li>
+              <li>Adult titles are blocked at the source.</li>
+              <li>Continuous, paged RTL and double-page reading.</li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="eyebrow">Sources</p>
+            <ul className="mt-3 space-y-2 font-mono text-[10px] uppercase tracking-[0.12em] text-paper-dim">
+              <li className="flex items-center justify-between border-b border-ink-700 pb-2">
+                <span>WeebCentral</span>
+                <span className="text-teal-400">Live</span>
+              </li>
+              <li className="flex items-center justify-between border-b border-ink-700 pb-2">
+                <span>MangaDex</span>
+                <span className="text-teal-400">Safe</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span>Tokyo · Seoul · Shanghai</span>
+                <span>{year}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-10 flex flex-col gap-2 border-t border-ink-700 pt-4 font-mono text-[9.5px] uppercase tracking-[0.16em] text-paper-dim/70 sm:flex-row sm:items-center sm:justify-between">
+          <span>© {year} Kurso Scroll</span>
+          <span>Press ⌘K to search · Safe archive</span>
+        </div>
+      </div>
+    </footer>
   );
 };
 
@@ -90,7 +98,6 @@ const AppContent: React.FC = () => {
   const { currentView } = useStore();
   const [showIntro, setShowIntro] = useState(() => {
     try {
-      // ?intro=1 replays the boot sequence on demand.
       if (new URLSearchParams(window.location.search).has('intro')) return true;
       return !sessionStorage.getItem(INTRO_KEY);
     } catch {
@@ -107,7 +114,6 @@ const AppContent: React.FC = () => {
     setShowIntro(false);
   };
 
-  // Keep the splash from flashing on internal back/forward navigations.
   useEffect(() => {
     if (!showIntro) return;
     document.documentElement.classList.add('intro-active');
@@ -116,82 +122,42 @@ const AppContent: React.FC = () => {
 
   let content: React.ReactNode;
 
-  // 1. Reading view takes absolute precedence (zen/immersive reader mode)
   if (currentView === 'reader') {
     content = <ReaderView />;
   } else if (currentView === 'details') {
-    // 2. Manga details view takes precedence over main views
     content = (
-      <div className="min-h-screen bg-[#090A0C] text-[#F0E9DC]">
+      <div className="min-h-screen bg-ink-950 text-paper">
         <SearchModal />
         <MangaDetailsView />
       </div>
     );
   } else {
-    // 3. Main Route views
     content = (
-      <div className="relative min-h-screen bg-[#090A0C] text-[#F0E9DC] flex flex-col overflow-x-hidden">
-        {/* Ambient brand light field */}
-        <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-          <div className="aurora-blob aurora-blob--gold w-[520px] h-[520px] -top-40 -left-32 opacity-[0.16]" />
-          <div className="aurora-blob aurora-blob--teal w-[420px] h-[420px] top-1/3 -right-32 opacity-[0.10]" />
-          <div className="absolute inset-0 bg-grid-lines opacity-[0.35] [mask-image:radial-gradient(circle_at_50%_0%,black,transparent_65%)]" />
-        </div>
-
-        {/* Global Search Modal (Ctrl+K or trigger) */}
+      <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-ink-950 text-paper">
         <SearchModal />
 
-        <AmbientFX />
-        <div className="relative z-10 flex flex-col flex-1 view-enter">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:rounded-md focus:bg-paper focus:px-4 focus:py-2 focus:text-[13px] focus:font-semibold focus:text-ink-950"
+        >
+          Skip to content
+        </a>
+
+        <div className="view-enter relative z-10 flex flex-1 flex-col">
           <Routes>
-            {/* Dedicated standalone Search Page */}
             <Route path="/search" element={<SearchPage />} />
 
-            {/* Home / Archive Catalog View */}
             <Route
               path="*"
               element={
                 <>
                   <Navbar />
-                  <main className="flex-1">
+                  <main id="main" className="flex-1">
                     <BentoGrid />
                   </main>
-
-                  <MarqueeBand />
-
-                  {/* Archive Footer */}
-                  <footer className="relative border-t border-[#292A2D] bg-[#090A0C] pt-12 pb-14 px-4 sm:px-6 lg:px-8 overflow-hidden">
-                    <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[560px] h-[240px] bg-[#C69A45]/10 blur-[100px] rounded-full" />
-
-                    <div className="relative max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-                      <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-                        <BrandLogo className="w-16 h-16 sm:w-[68px] sm:h-[68px] shrink-0" glow />
-                        <div className="space-y-1.5">
-                          <WordMark size="text-base" showEdition />
-                          <p className="text-xs text-[#AAA69D] max-w-md leading-relaxed">
-                            Manga, curated for the scroll generation. A digital archive for
-                            graphic storytelling from Japan, Korea, China and beyond.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-[#AAA69D]">
-                        <span className="font-mono text-[11px] text-[#AAA69D]/70">Tokyo • Seoul • Shanghai</span>
-                        <span className="hidden sm:inline text-[#292A2D]">|</span>
-                        <span className="hover:text-[#F0E9DC] cursor-default transition-colors">Continuous &amp; Tankōbon RTL</span>
-                        <span className="hidden sm:inline text-[#292A2D]">|</span>
-                        <span className="hover:text-[#F0E9DC] cursor-default transition-colors">Press ⌘K to Search</span>
-                      </div>
-                    </div>
-
-                    <div className="relative max-w-7xl mx-auto mt-8 pt-6 border-t border-[#1D1E23] flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-[10px] uppercase tracking-[0.22em] text-[#55524C]">
-                      <span>© 2026 Kurso Scroll — Neo-Editorial Archive</span>
-                      <span className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#42B8A8]" />
-                        All engines operational
-                      </span>
-                    </div>
-                  </footer>
+                  <IndexStrip />
+                  <Footer />
+                  <MobileTabBar />
                 </>
               }
             />

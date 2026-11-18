@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Bookmark, Sparkles } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import { MangaItem } from '../types.ts';
 import { useStore } from '../store/useStore.ts';
 import { getProxyImageUrl } from '../services/api.ts';
 import { filterSafeTags } from '../lib/contentSafety.ts';
 
-// Editorial Archival SVG Placeholder for failed images
 const FALLBACK_COVER = '/logo.png';
 
 interface MangaCardProps {
@@ -14,119 +13,115 @@ interface MangaCardProps {
   featured?: boolean;
 }
 
+/** Country marks instead of flag emoji — quieter and always legible. */
+const originCode = (type?: string, country?: string) => {
+  if (type === 'Manhwa' || country === 'KR') return { code: 'KR', label: 'Manhwa' };
+  if (type === 'Manhua' || country === 'CN') return { code: 'CN', label: 'Manhua' };
+  if (type === 'OEL' || country === 'US') return { code: 'EN', label: 'OEL' };
+  return { code: 'JP', label: 'Manga' };
+};
+
 export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
   const { openManga, toggleBookmark, isBookmarked, getMangaHistory } = useStore();
   const bookmarked = isBookmarked(manga.id);
   const history = getMangaHistory(manga.id);
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
-
-  // Origin identification
-  const getOrigin = () => {
-    if (manga.type === 'Manhwa' || manga.country === 'KR') return { flag: '🇰🇷', label: 'Manhwa' };
-    if (manga.type === 'Manhua' || manga.country === 'CN') return { flag: '🇨🇳', label: 'Manhua' };
-    if (manga.type === 'OEL' || manga.country === 'US') return { flag: '🌐', label: 'OEL' };
-    return { flag: '🇯🇵', label: 'Manga' };
-  };
-
-  const origin = getOrigin();
+  const origin = originCode(manga.type, manga.country);
   const imgSrc = imageError ? FALLBACK_COVER : getProxyImageUrl(manga.cover);
+  const genre = filterSafeTags(manga.tags)[0];
 
   return (
     <article
       onClick={() => openManga(manga.id, manga.title, manga.cover)}
-      className="group relative cursor-pointer select-none flex flex-col transition-transform duration-300 hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C69A45]"
+      className="group relative flex cursor-pointer select-none flex-col"
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter') openManga(manga.id, manga.title, manga.cover);
       }}
+      aria-label={manga.title}
     >
-      {/* 1. Portrait Artwork Container */}
-      <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-[#111318] border border-[#292A2D] group-hover:border-[#C69A45]/45 transition-all duration-300 shadow-md group-hover:shadow-[0_20px_45px_-20px_rgba(198,154,69,0.55)]">
-        {/* Shimmer placeholder until the cover decodes */}
+      {/* Plate */}
+      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-md border border-ink-700 bg-ink-900 transition-all duration-300 group-hover:-translate-y-1 group-hover:border-paper/35 group-hover:shadow-[0_14px_0_-8px_rgba(244,239,228,0.12)]">
         {!imageLoaded && !imageError && (
           <div className="absolute inset-0 shimmer-skeleton" aria-hidden="true" />
         )}
         <img
           src={imgSrc}
-          alt={`Cover artwork for ${manga.title}`}
+          alt={`Cover of ${manga.title}`}
           onLoad={() => setImageLoaded(true)}
           onError={() => {
             setImageError(true);
             setImageLoaded(true);
           }}
-          className={`w-full h-full object-cover object-center group-hover:scale-105 transition-all duration-700 will-change-transform ${
-            imageLoaded ? 'opacity-100 blur-0' : 'opacity-0 blur-sm'
-          }`}
+          className={`h-full w-full object-cover object-center transition-all duration-500 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          } group-hover:scale-[1.03]`}
           loading="lazy"
+          decoding="async"
         />
 
-        {/* Soft bottom vignette to give definition to the poster */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#090A0C]/80 via-transparent to-transparent pointer-events-none opacity-80" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-950/70 via-transparent to-transparent" />
 
-        {/* Top Left: Editorial Rank Indicator if applicable */}
+        {/* Rank / progress marker */}
         {rank !== undefined && rank <= 10 && (
-          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded bg-[#090A0C]/90 backdrop-blur-sm border border-[#292A2D] text-[11px] font-mono font-bold text-[#F0E9DC] flex items-center gap-1 shadow-sm z-10">
-            <span className="text-[#C69A45]">#{rank.toString().padStart(2, '0')}</span>
-          </div>
+          <span className="tnum absolute left-0 top-0 z-10 bg-paper px-1.5 py-1 font-mono text-[10px] font-semibold leading-none text-ink-950">
+            {String(rank).padStart(2, '0')}
+          </span>
+        )}
+        {history && rank === undefined && (
+          <span className="tnum absolute left-2 top-2 z-10 bg-ink-950/85 px-1.5 py-1 font-mono text-[9px] uppercase tracking-[0.08em] text-paper backdrop-blur-sm">
+            p.{history.pageIndex || 1}
+          </span>
         )}
 
-        {/* Reading Progress Marker (if user previously read this volume) */}
-        {history && !rank && (
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#090A0C]/90 backdrop-blur-sm border border-[#C69A45]/40 text-[10px] text-[#C69A45] font-mono z-10 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#C69A45]" />
-            <span className="truncate max-w-[85px]">Ch. {history.pageIndex}</span>
-          </div>
-        )}
-
-        {/* Top Right: Bookmark Action */}
+        {/* Save */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             toggleBookmark(manga);
           }}
-          className={`absolute top-2.5 right-2.5 p-1.5 rounded-md backdrop-blur-md transition-all shadow-md z-10 ${
+          className={`absolute right-1.5 top-1.5 z-10 flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${
             bookmarked
-              ? 'bg-[#C69A45] text-[#090A0C] scale-105 shadow-[#C69A45]/20'
-              : 'bg-[#090A0C]/80 text-[#AAA69D] hover:text-[#F0E9DC] hover:bg-[#111318] border border-[#292A2D]'
+              ? 'border-stamp bg-stamp text-ink-950'
+              : 'border-transparent bg-ink-950/45 text-paper-dim backdrop-blur-sm hover:border-ink-600 hover:text-paper'
           }`}
-          title={bookmarked ? 'Remove from Library' : 'Save to Library'}
-          aria-label={bookmarked ? 'Remove from Library' : 'Save to Library'}
+          aria-pressed={bookmarked}
+          aria-label={bookmarked ? `Remove ${manga.title} from library` : `Save ${manga.title} to library`}
         >
-          <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-current' : ''}`} />
+          <Bookmark className={`h-4 w-4 ${bookmarked ? 'fill-current' : ''}`} />
         </button>
 
-        {/* Poster Bottom: Origin & Status Badges */}
-        <div className="absolute bottom-2.5 inset-x-2.5 flex items-center justify-between pointer-events-none z-10">
-          <span className="px-1.5 py-0.5 rounded bg-[#090A0C]/90 backdrop-blur-sm border border-[#292A2D] text-[10px] font-mono text-[#F0E9DC] flex items-center gap-1">
-            <span>{origin.flag}</span>
-            <span>{origin.label}</span>
+        {/* Footer marks */}
+        <div className="pointer-events-none absolute inset-x-2 bottom-2 z-10 flex items-center justify-between">
+          <span className="tag !bg-ink-950/80">
+            {origin.code}
           </span>
-
           {manga.status && (
-            <span className="px-1.5 py-0.5 rounded bg-[#090A0C]/90 backdrop-blur-sm border border-[#292A2D] text-[10px] font-mono text-[#AAA69D] flex items-center gap-1">
-              <span className={`w-1.5 h-1.5 rounded-full ${manga.status.toLowerCase() === 'ongoing' ? 'bg-[#42B8A8]' : 'bg-[#AAA69D]'}`} />
-              <span>{manga.status}</span>
+            <span className="tag !bg-ink-950/80">
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  manga.status.toLowerCase() === 'ongoing' ? 'bg-teal-400' : 'bg-paper-dim'
+                }`}
+              />
+              {manga.status}
             </span>
           )}
         </div>
       </div>
 
-      {/* 2. Editorial Metadata Area Below Artwork (Human Created Typography) */}
-      <div className="pt-2.5 px-0.5 space-y-1">
+      {/* Caption */}
+      <div className="space-y-1 pt-2.5">
         <h3
-          className="font-serif text-sm font-bold text-[#F0E9DC] group-hover:text-[#C69A45] transition-colors line-clamp-2 leading-snug"
+          className="line-clamp-2 font-display text-[13.5px] font-semibold leading-snug tracking-[-0.01em] text-paper transition-colors group-hover:text-stamp"
           title={manga.title}
         >
           {manga.title}
         </h3>
-
-        <div className="flex items-center justify-between text-[11px] text-[#AAA69D] font-sans">
-          <span className="truncate max-w-[130px]">
-            {filterSafeTags(manga.tags)[0] || manga.latestChapter || 'Volume 1'}
-          </span>
-          <span className="text-[#AAA69D] group-hover:text-[#C69A45] group-hover:translate-x-0.5 transition-all text-[11px] font-mono shrink-0">
-            Open →
+        <div className="flex items-center justify-between gap-2 font-mono text-[9.5px] uppercase tracking-[0.08em] text-paper-dim">
+          <span className="truncate">{genre || origin.label}</span>
+          <span className="shrink-0 text-paper-dim/70 transition-colors group-hover:text-paper">
+            Read →
           </span>
         </div>
       </div>

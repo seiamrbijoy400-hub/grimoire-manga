@@ -9,35 +9,17 @@ interface BrandLoaderProps {
 }
 
 const SIZES = {
-  sm: {
-    box: 'w-10 h-10',
-    inner: 'inset-[5px]',
-    core: 'inset-[8px]',
-    mark: 'w-4 h-4',
-    label: 'text-[9px]',
-  },
-  md: {
-    box: 'w-16 h-16',
-    inner: 'inset-[7px]',
-    core: 'inset-[11px]',
-    mark: 'w-7 h-7',
-    label: 'text-[10px]',
-  },
-  lg: {
-    box: 'w-24 h-24',
-    inner: 'inset-[9px]',
-    core: 'inset-[14px]',
-    mark: 'w-10 h-10',
-    label: 'text-[11px]',
-  },
+  sm: { box: 'h-9 w-9', inner: 'inset-[5px]', mark: 'h-4 w-4' },
+  md: { box: 'h-14 w-14', inner: 'inset-[7px]', mark: 'h-6 w-6' },
+  lg: { box: 'h-20 w-20', inner: 'inset-[10px]', mark: 'h-9 w-9' },
 } as const;
 
 /**
- * Branded loading indicator: counter-rotating gold rings, an orbiting spark
- * and a shimmering label. Built from transforms only so it stays cheap.
+ * Quiet loader: one hairline ring, one spinning arc, the emblem at rest.
+ * No orbiting sparks or pulsing halos — the waiting state should feel composed.
  */
 export const BrandLoader: React.FC<BrandLoaderProps> = ({
-  label = 'Loading',
+  label = 'Opening',
   sublabel,
   size = 'md',
   className = '',
@@ -45,38 +27,28 @@ export const BrandLoader: React.FC<BrandLoaderProps> = ({
   const s = SIZES[size];
 
   return (
-    <div className={`flex flex-col items-center justify-center gap-4 ${className}`}>
+    <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
       <div className={`relative ${s.box}`}>
-        {/* halo */}
-        <div className="absolute -inset-2 rounded-full bg-[#C69A45]/10 blur-xl animate-glow-pulse" />
-        {/* track + outer ring */}
-        <div className="absolute inset-0 rounded-full border border-[#292A2D]" />
+        <div className="absolute inset-0 rounded-full border border-ink-700" />
         <div className="absolute inset-0 rounded-full brand-ring" />
-        {/* inner counter-rotation */}
         <div
-          className={`absolute ${s.inner} rounded-full brand-ring opacity-40 [animation-duration:2.4s] [animation-direction:reverse]`}
-        />
-        {/* orbiting spark */}
-        <div className="orbit-dot" aria-hidden="true" />
-        {/* core */}
-        <div
-          className={`absolute ${s.core} rounded-full bg-[#0C0E13] ring-1 ring-[#C69A45]/25 flex items-center justify-center shadow-[inset_0_0_18px_rgba(198,154,69,0.18)]`}
+          className={`absolute ${s.inner} flex items-center justify-center rounded-full bg-ink-950`}
         >
           <BrandMark bare className={s.mark} />
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-1.5 text-center">
-        <p className={`font-mono uppercase tracking-[0.26em] ${s.label} inline-flex items-center`}>
-          <span className="text-shine">{label}</span>
-          <span className="inline-flex w-[1.1em] justify-start text-[#C69A45]">
+      <div className="flex flex-col items-center gap-1 text-center">
+        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-paper-dim">
+          {label}
+          <span className="inline-flex w-[1.2em] justify-start">
             <span className="animate-pulse">.</span>
-            <span className="animate-pulse [animation-delay:180ms]">.</span>
-            <span className="animate-pulse [animation-delay:360ms]">.</span>
+            <span className="animate-pulse [animation-delay:160ms]">.</span>
+            <span className="animate-pulse [animation-delay:320ms]">.</span>
           </span>
         </p>
         {sublabel && (
-          <p className="text-[11px] text-[#AAA69D] font-sans tracking-wide">{sublabel}</p>
+          <p className="font-sans text-[11px] tracking-wide text-paper-dim/70">{sublabel}</p>
         )}
       </div>
     </div>
@@ -85,23 +57,21 @@ export const BrandLoader: React.FC<BrandLoaderProps> = ({
 
 interface SkeletonCardProps {
   className?: string;
-  /** portrait = cover card, wide = hero/banner block */
   variant?: 'portrait' | 'wide' | 'row';
 }
 
-/** Shimmering placeholder that matches the card silhouette. */
 export const SkeletonCard: React.FC<SkeletonCardProps> = ({
   className = '',
   variant = 'portrait',
 }) => {
   if (variant === 'row') {
     return (
-      <div className={`p-2.5 rounded-xl bg-[#111318] border border-[#292A2D] flex gap-3 ${className}`}>
-        <div className="shimmer-skeleton w-16 aspect-[3/4] rounded-lg shrink-0" />
-        <div className="flex-1 py-1 space-y-2">
-          <div className="shimmer-skeleton h-3 w-3/4 rounded" />
-          <div className="shimmer-skeleton h-2.5 w-1/2 rounded" />
-          <div className="shimmer-skeleton h-2.5 w-2/3 rounded" />
+      <div className={`card-flat flex gap-3 p-2.5 ${className}`}>
+        <div className="shimmer-skeleton aspect-[3/4] w-14 shrink-0 rounded-sm" />
+        <div className="flex-1 space-y-2 py-1">
+          <div className="shimmer-skeleton h-3 w-3/4 rounded-sm" />
+          <div className="shimmer-skeleton h-2.5 w-1/2 rounded-sm" />
+          <div className="shimmer-skeleton h-2.5 w-2/3 rounded-sm" />
         </div>
       </div>
     );
@@ -109,19 +79,19 @@ export const SkeletonCard: React.FC<SkeletonCardProps> = ({
 
   if (variant === 'wide') {
     return (
-      <div className={`rounded-2xl bg-[#111318] border border-[#292A2D] p-6 space-y-4 ${className}`}>
-        <div className="shimmer-skeleton h-64 rounded-xl" />
-        <div className="shimmer-skeleton h-4 w-1/3 rounded" />
-        <div className="shimmer-skeleton h-3 w-2/3 rounded" />
+      <div className={`card-flat space-y-3 p-4 ${className}`}>
+        <div className="shimmer-skeleton h-56 rounded-sm" />
+        <div className="shimmer-skeleton h-4 w-1/3 rounded-sm" />
+        <div className="shimmer-skeleton h-3 w-2/3 rounded-sm" />
       </div>
     );
   }
 
   return (
     <div className={`flex flex-col gap-2.5 ${className}`}>
-      <div className="shimmer-skeleton aspect-[3/4] w-full rounded-lg border border-[#292A2D]" />
-      <div className="shimmer-skeleton h-3.5 w-4/5 rounded" />
-      <div className="shimmer-skeleton h-3 w-1/2 rounded" />
+      <div className="shimmer-skeleton aspect-[3/4] w-full rounded-md border border-ink-700" />
+      <div className="shimmer-skeleton h-3.5 w-4/5 rounded-sm" />
+      <div className="shimmer-skeleton h-2.5 w-1/2 rounded-sm" />
     </div>
   );
 };

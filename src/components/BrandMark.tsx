@@ -121,16 +121,16 @@ export const WordMark: React.FC<WordMarkProps> = ({
   showEdition = false,
 }) => {
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-baseline gap-2.5 ${className}`}>
       <span
-        className={`font-display ${size} font-bold tracking-[0.16em] leading-none text-[#F0E9DC]`}
+        className={`font-display ${size} font-bold uppercase tracking-[0.01em] leading-none text-paper`}
       >
-        KURSO
-        <span className="text-gradient-gold"> SCROLL</span>
+        Kurso
+        <span className="text-stamp"> Scroll</span>
       </span>
       {showEdition && (
-        <span className="hidden sm:inline text-[9px] px-1.5 py-0.5 rounded bg-[#191A1F] text-[#AAA69D] border border-[#292A2D] font-mono uppercase tracking-[0.18em]">
-          2026
+        <span className="hidden sm:inline font-mono text-[9px] uppercase tracking-[0.16em] text-paper-dim border-l border-ink-700 pl-2.5 leading-none">
+          Est. 2026
         </span>
       )}
     </div>

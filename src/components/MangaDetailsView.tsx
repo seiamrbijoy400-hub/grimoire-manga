@@ -14,7 +14,8 @@ import {
   Share2,
   Check,
   RotateCcw,
-  Globe
+  Globe,
+  ArrowRight,
 } from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
 import { fetchMangaDetails, fetchChapterList, getProxyImageUrl } from '../services/api.ts';
@@ -186,152 +187,149 @@ export const MangaDetailsView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 animate-fade-in">
-      {/* Sticky Top Bar */}
-      <div className="sticky top-16 z-30 backdrop-blur-md bg-[#090A0C]/90 border-b border-[#292A2D] px-4 sm:px-6 py-2.5 flex items-center justify-between">
-        <button
-          onClick={() => setView('home')}
-          className="flex items-center gap-1.5 text-xs text-[#AAA69D] hover:text-[#C69A45] font-sans transition-colors"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Return to Archive</span>
-        </button>
+    <div className="min-h-screen animate-fade-in pb-24 text-paper">
+      {/* Sticky bar */}
+      <div className="sticky top-0 z-30 border-b border-ink-700 bg-ink-950/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+          <button
+            onClick={() => setView('home')}
+            className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-paper-dim transition-colors hover:text-paper"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Index
+          </button>
 
-        {details && (
-          <div className="flex items-center gap-2 truncate max-w-xs sm:max-w-md">
-            <span className="text-xs text-[#F0E9DC] font-serif font-bold truncate">
-              {details.title}
-            </span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#191A1F] text-[#C69A45] border border-[#292A2D] font-mono shrink-0">
-              {readPercentage}% Read
-            </span>
-          </div>
-        )}
+          {details && (
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="truncate font-display text-[12.5px] font-semibold text-paper">
+                {details.title}
+              </span>
+              <span className="tnum shrink-0 border border-ink-700 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-paper-dim">
+                {readPercentage}% read
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
       {loading ? (
-        <div className="max-w-6xl mx-auto px-4 py-12 space-y-6">
+        <div className="mx-auto max-w-6xl space-y-6 px-4 py-10 sm:px-6">
           <div className="flex justify-center pb-2">
-            <BrandLoader size="sm" label="Opening the chronicle" sublabel="Fetching series metadata" />
+            <BrandLoader size="sm" label="Opening the file" />
           </div>
-          <div className="rounded-2xl bg-[#111318] border border-[#292A2D] p-6 sm:p-8">
-            <div className="flex flex-col md:flex-row gap-6">
-              <div className="shimmer-skeleton w-40 sm:w-56 aspect-[3/4] rounded-lg shrink-0 mx-auto md:mx-0" />
-              <div className="flex-1 space-y-3 pt-2">
-                <div className="shimmer-skeleton h-8 w-2/3 rounded" />
-                <div className="shimmer-skeleton h-3 w-1/3 rounded" />
-                <div className="shimmer-skeleton h-3 w-full rounded" />
-                <div className="shimmer-skeleton h-3 w-11/12 rounded" />
-                <div className="shimmer-skeleton h-3 w-4/5 rounded" />
+          <div className="rounded-lg border border-ink-700 bg-ink-900 p-5 sm:p-8">
+            <div className="flex flex-col gap-6 md:flex-row">
+              <div className="shimmer-skeleton mx-auto aspect-[3/4] w-40 shrink-0 rounded-sm md:mx-0 sm:w-52" />
+              <div className="flex-1 space-y-3 pt-1">
+                <div className="shimmer-skeleton h-7 w-2/3 rounded-sm" />
+                <div className="shimmer-skeleton h-3 w-1/3 rounded-sm" />
+                <div className="shimmer-skeleton h-3 w-full rounded-sm" />
+                <div className="shimmer-skeleton h-3 w-11/12 rounded-sm" />
+                <div className="shimmer-skeleton h-3 w-4/5 rounded-sm" />
                 <div className="flex gap-2 pt-3">
-                  <div className="shimmer-skeleton h-9 w-32 rounded-lg" />
-                  <div className="shimmer-skeleton h-9 w-24 rounded-lg" />
+                  <div className="shimmer-skeleton h-11 w-32 rounded-md" />
+                  <div className="shimmer-skeleton h-11 w-24 rounded-md" />
                 </div>
               </div>
             </div>
           </div>
-          <div className="shimmer-skeleton h-44 rounded-xl" />
+          <div className="shimmer-skeleton h-40 rounded-lg" />
         </div>
       ) : details ? (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-8">
-          {/* Header Hero Card */}
-          <div className="relative rounded-2xl overflow-hidden bg-[#111318] border border-[#292A2D] p-6 sm:p-8 shadow-2xl">
-            {/* Ambient Blurred Backdrop */}
-            <div
-              className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-15 pointer-events-none"
-              style={{ backgroundImage: `url(${getProxyImageUrl(details.cover)})` }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#090A0C] via-[#090A0C]/90 to-transparent pointer-events-none" />
+        <div className="mx-auto max-w-6xl space-y-10 px-4 py-6 sm:px-6">
+          {/* Series plate */}
+          <section className="relative overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
+            <div className="pointer-events-none absolute inset-0 bg-grid-lines opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent_75%)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-stamp" />
 
-            <div className="relative z-10 flex flex-col md:flex-row gap-6 sm:gap-8 items-start">
-              {/* Cover Artwork (Prioritizes top of cover so character faces are preserved) */}
-              <div className="w-40 sm:w-56 aspect-[3/4] rounded-lg overflow-hidden shadow-2xl border border-[#292A2D] shrink-0 mx-auto md:mx-0 bg-[#090A0C]">
-                <img
-                  src={getProxyImageUrl(details.cover)}
-                  alt={details.title}
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = FALLBACK_COVER;
-                  }}
-                  className="w-full h-full object-cover object-[center_top]"
-                />
+            <div className="relative z-10 flex flex-col items-start gap-6 p-5 sm:gap-8 sm:p-8 md:flex-row">
+              <div className="relative mx-auto w-40 shrink-0 sm:w-52 md:mx-0">
+                <div className="absolute inset-0 translate-x-2 translate-y-2 rounded-sm border border-stamp/60" />
+                <div className="relative aspect-[3/4] overflow-hidden rounded-sm border border-ink-600 bg-ink-950">
+                  <img
+                    src={getProxyImageUrl(details.cover)}
+                    alt={details.title}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = FALLBACK_COVER;
+                    }}
+                    className="h-full w-full object-cover object-[center_top]"
+                  />
+                </div>
               </div>
 
-              {/* Information Column */}
-              <div className="flex-1 space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-xs font-mono text-[#C69A45] font-semibold">
-                    {details.type || 'Manga'}
-                  </span>
-                  <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-xs font-mono text-[#AAA69D]">
-                    {details.status || 'Ongoing'}
-                  </span>
+              <div className="min-w-0 flex-1 space-y-4">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.12em] text-paper-dim">
+                  <span className="text-paper">{details.type || 'Manga'}</span>
+                  <span className="text-ink-600">/</span>
+                  <span>{details.status || 'Ongoing'}</span>
+                  <span className="text-ink-600">/</span>
+                  <span className="tnum">{chapters.length} chapters</span>
                   {details.author && (
-                    <span className="text-xs text-[#AAA69D] font-sans">
-                      By <span className="text-[#F0E9DC] font-semibold">{details.author}</span>
-                    </span>
+                    <>
+                      <span className="text-ink-600">/</span>
+                      <span className="normal-case tracking-normal">by {details.author}</span>
+                    </>
                   )}
-                  <span className="text-xs text-[#AAA69D]/70 font-mono">
-                    • {chapters.length} Chapters
-                  </span>
                 </div>
 
-                <h1 className="font-serif text-2xl sm:text-4xl font-bold text-[#F0E9DC] tracking-tight leading-tight">
+                <h1 className="max-w-[22ch] font-display text-[clamp(1.7rem,5vw,2.7rem)] font-bold leading-[0.98] tracking-tightest text-paper">
                   {details.title}
                 </h1>
 
-                {/* Genre Badges */}
                 {filterSafeTags(details.tags).length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
-                    {filterSafeTags(details.tags).map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2.5 py-1 rounded-md bg-[#191A1F] border border-[#292A2D] text-[11px] text-[#AAA69D] font-medium"
-                      >
+                    {filterSafeTags(details.tags).slice(0, 8).map((tag) => (
+                      <span key={tag} className="tag !bg-transparent">
                         {tag}
                       </span>
                     ))}
                   </div>
                 )}
 
-                {/* Synopsis */}
                 {details.synopsis && (
-                  <div className="pt-2 text-xs sm:text-sm text-[#AAA69D] leading-relaxed max-h-48 overflow-y-auto pr-2 border-l-2 border-[#C69A45]/50 pl-3 font-sans">
-                    <p className="whitespace-pre-line">{details.synopsis}</p>
+                  <div className="max-h-40 overflow-y-auto border-l-2 border-stamp/60 pl-3.5 pr-2">
+                    <p className="whitespace-pre-line text-[12.5px] leading-relaxed text-paper-dim sm:text-[13px]">
+                      {details.synopsis}
+                    </p>
                   </div>
                 )}
 
-                {/* Call-to-Action Bar */}
-                <div className="pt-4 flex flex-wrap items-center gap-3">
-                  {/* Start or Resume Reading */}
+                <div className="flex flex-wrap items-center gap-2.5 pt-1">
                   {resumeChapter && (
                     <button
-                      onClick={() => openChapter(activeMangaId, resumeChapter.id, resumeChapter.title, details.title, details.cover)}
-                      className="px-6 py-2.5 rounded-lg bg-[#C69A45] hover:bg-[#D8AA55] text-[#090A0C] font-semibold text-sm shadow-lg shadow-[#C69A45]/15 transition-all flex items-center gap-2"
+                      onClick={() =>
+                        openChapter(
+                          activeMangaId,
+                          resumeChapter.id,
+                          resumeChapter.title,
+                          details.title,
+                          details.cover,
+                        )
+                      }
+                      className="btn btn-stamp"
                     >
-                      <BookOpen className="w-4 h-4" />
-                      <span>{history ? `Resume ${resumeChapter.title}` : `Read Chapter 1`}</span>
+                      <BookOpen className="h-4 w-4" />
+                      {history ? `Resume ${resumeChapter.title}` : 'Read chapter 1'}
                     </button>
                   )}
 
-                  {/* Bookmark & Shelf Dropdown */}
                   <div className="relative">
                     <button
                       onClick={() => setShelfDropdownOpen(!shelfDropdownOpen)}
-                      className={`px-4 py-2.5 rounded-lg border text-xs font-sans font-medium flex items-center gap-2 transition-all shadow-sm ${
+                      className={`btn ${
                         bookmarked
-                          ? 'bg-[#C69A45]/15 text-[#C69A45] border-[#C69A45]/40'
-                          : 'bg-[#191A1F] hover:bg-[#21232A] text-[#F0E9DC] border-[#292A2D]'
+                          ? 'border-stamp/60 bg-stamp/10 text-stamp'
+                          : 'btn-ghost'
                       }`}
+                      aria-expanded={shelfDropdownOpen}
                     >
-                      <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-current' : ''}`} />
-                      <span>
-                        {currentBookmark ? SHELF_LABELS[currentBookmark.category]?.label : 'Add to Shelf'}
-                      </span>
-                      <ChevronDown className="w-3.5 h-3.5 ml-1" />
+                      <Bookmark className={`h-3.5 w-3.5 ${bookmarked ? 'fill-current' : ''}`} />
+                      {currentBookmark ? SHELF_LABELS[currentBookmark.category]?.label : 'Add to shelf'}
+                      <ChevronDown className="ml-0.5 h-3.5 w-3.5" />
                     </button>
 
                     {shelfDropdownOpen && (
-                      <div className="absolute top-full mt-2 left-0 w-48 p-1.5 rounded-xl bg-[#111318] border border-[#292A2D] shadow-2xl z-40 space-y-1 text-xs font-sans animate-fade-in">
+                      <div className="absolute left-0 top-full z-40 mt-1.5 w-48 space-y-0.5 overflow-hidden rounded-md border border-ink-700 bg-ink-900 p-1 text-xs shadow-2xl animate-fade-in">
                         {(Object.keys(SHELF_LABELS) as BookmarkCategory[]).map((cat) => (
                           <button
                             key={cat}
@@ -340,30 +338,30 @@ export const MangaDetailsView: React.FC = () => {
                               else setBookmarkCategory(details.id, cat);
                               setShelfDropdownOpen(false);
                             }}
-                            className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${
+                            className={`flex w-full items-center gap-2 rounded-sm px-2.5 py-2 text-left transition-colors ${
                               currentBookmark?.category === cat
-                                ? 'bg-[#C69A45]/15 text-[#C69A45] font-semibold'
-                                : 'text-[#AAA69D] hover:bg-[#191A1F] hover:text-[#F0E9DC]'
+                                ? 'bg-stamp/10 text-stamp'
+                                : 'text-paper-dim hover:bg-ink-800 hover:text-paper'
                             }`}
                           >
                             <span>{SHELF_LABELS[cat].icon}</span>
                             <span>{SHELF_LABELS[cat].label}</span>
                             {currentBookmark?.category === cat && (
-                              <Check className="w-3 h-3 ml-auto text-[#C69A45]" />
+                              <Check className="ml-auto h-3 w-3" />
                             )}
                           </button>
                         ))}
 
                         {bookmarked && (
-                          <div className="pt-1 border-t border-[#292A2D]">
+                          <div className="border-t border-ink-700 pt-1">
                             <button
                               onClick={() => {
                                 toggleBookmark(details);
                                 setShelfDropdownOpen(false);
                               }}
-                              className="w-full text-left px-3 py-1.5 rounded-lg text-[#E05D5D] hover:bg-[#191A1F] transition-colors text-[11px]"
+                              className="w-full rounded-sm px-2.5 py-1.5 text-left text-[11px] text-stamp transition-colors hover:bg-ink-800"
                             >
-                              Remove from Library
+                              Remove from library
                             </button>
                           </div>
                         )}
@@ -371,124 +369,97 @@ export const MangaDetailsView: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Share Link Button */}
                   <button
                     onClick={handleCopyLink}
-                    className="p-2.5 rounded-lg bg-[#191A1F] hover:bg-[#21232A] border border-[#292A2D] text-[#AAA69D] hover:text-[#F0E9DC] transition-colors"
-                    title="Copy Share Link"
+                    className="btn-icon"
+                    aria-label="Copy link"
+                    title="Copy link"
                   >
-                    {copiedLink ? <Check className="w-4 h-4 text-[#42B8A8]" /> : <Share2 className="w-4 h-4" />}
+                    {copiedLink ? (
+                      <Check className="h-4 w-4 text-teal-400" />
+                    ) : (
+                      <Share2 className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Chapters Codex Header & Tooling */}
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#292A2D] pb-3">
-              <div className="flex items-center gap-3">
-                <h3 className="font-serif text-lg font-bold text-[#F0E9DC] flex items-center gap-2">
-                  <span>Chapter Index</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#191A1F] text-[#AAA69D] border border-[#292A2D] font-mono">
-                    {chapters.length}
-                  </span>
-                </h3>
-                <span className="text-xs font-mono text-[#C69A45]">
-                  {totalReadCount} / {chapters.length} Read ({readPercentage}%)
+          {/* Chapters */}
+          <section className="space-y-4">
+            <div className="flex flex-col justify-between gap-3 border-b border-ink-700 pb-2.5 sm:flex-row sm:items-end">
+              <div className="flex items-baseline gap-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-stamp">01</span>
+                <h2 className="font-display text-lg font-semibold text-paper">Chapters</h2>
+                <span className="tnum font-mono text-[10px] uppercase tracking-[0.12em] text-paper-dim">
+                  {totalReadCount}/{chapters.length} read
                 </span>
               </div>
 
-              {/* Utility buttons: Mark All Read & Reverse sort */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() =>
-                    markMangaAllRead(
-                      details.id,
-                      chapters.map((c) => c.id)
-                    )
-                  }
-                  className="px-2.5 py-1.5 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-[#AAA69D] hover:text-[#42B8A8] text-xs font-sans flex items-center gap-1.5 transition-colors"
-                  title="Mark all chapters as read"
+                  onClick={() => markMangaAllRead(details.id, chapters.map((c) => c.id))}
+                  className="flex h-8 items-center gap-1.5 rounded-sm border border-ink-700 px-2 font-mono text-[9.5px] uppercase tracking-[0.1em] text-paper-dim transition-colors hover:border-teal-500/50 hover:text-teal-400"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Mark All Read</span>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Mark all read
                 </button>
-
                 <button
                   onClick={() => setSortDescending(!sortDescending)}
-                  className="px-2.5 py-1.5 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-[#AAA69D] hover:text-[#C69A45] text-xs font-sans flex items-center gap-1.5 transition-colors"
-                  title="Toggle Sorting"
+                  className="flex h-8 items-center gap-1.5 rounded-sm border border-ink-700 px-2 font-mono text-[9.5px] uppercase tracking-[0.1em] text-paper-dim transition-colors hover:border-ink-600 hover:text-paper"
                 >
-                  <ArrowUpDown className="w-3.5 h-3.5" />
-                  <span>{sortDescending ? 'Newest First' : 'Oldest First'}</span>
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                  {sortDescending ? 'Newest' : 'Oldest'}
                 </button>
               </div>
             </div>
 
-            {/* Language Selector Bar — always shown when chapters are available */}
             {languageKeys.length >= 1 && (
-              <div className="p-3 rounded-xl bg-[#111318] border border-[#292A2D] space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-sans font-semibold text-[#F0E9DC] flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-[#C69A45]" />
-                    <span>Translation Editions</span>
-                    <span className="ml-1 px-1.5 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-[10px] font-mono text-[#AAA69D]">
-                      {languageKeys.length} language{languageKeys.length !== 1 ? 's' : ''}
-                    </span>
+              <div className="rounded-md border border-ink-700 bg-ink-900 px-3 py-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-paper-dim">
+                    <Globe className="h-3.5 w-3.5" />
+                    Editions
+                    <span className="text-paper">{languageKeys.length}</span>
                   </span>
-                  <span className="text-[11px] font-sans text-[#AAA69D]">
-                    Showing: <strong className="text-[#C69A45]">
+                  <span className="font-mono text-[9.5px] uppercase tracking-[0.1em] text-paper-dim">
+                    Showing{' '}
+                    <strong className="font-semibold text-paper">
                       {selectedLanguage === 'all'
-                        ? 'All Editions'
+                        ? 'All'
                         : LANGUAGE_META[selectedLanguage]?.label || selectedLanguage.toUpperCase()}
                     </strong>
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar flex-wrap">
-                  {/* "All" pill only shown when there are multiple languages */}
+                <div className="no-scrollbar mt-2 flex flex-wrap items-center gap-1.5 overflow-x-auto">
                   {languageKeys.length > 1 && (
                     <button
                       onClick={() => setSelectedLanguage('all')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-sans shrink-0 transition-all flex items-center gap-1.5 ${
-                        selectedLanguage === 'all'
-                          ? 'bg-[#C69A45] text-[#090A0C] font-semibold shadow-md'
-                          : 'bg-[#191A1F] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
-                      }`}
+                      className="chip"
+                      data-active={selectedLanguage === 'all'}
                     >
-                      <span>🌐</span>
-                      <span>All</span>
-                      <span className={`text-[10px] font-mono px-1.5 rounded-full ${
-                        selectedLanguage === 'all' ? 'bg-[#090A0C]/30 text-[#090A0C] font-bold' : 'bg-[#111318] text-[#AAA69D]'
-                      }`}>
-                        {chapters.length}
-                      </span>
+                      All
+                      <span className="tnum opacity-60">{chapters.length}</span>
                     </button>
                   )}
 
                   {languageKeys.map((lang) => {
-                    const meta = LANGUAGE_META[lang] || { label: lang.toUpperCase(), flag: '🌐' };
+                    const meta = LANGUAGE_META[lang] || { label: lang.toUpperCase(), flag: '' };
                     const count = availableLanguages[lang];
-                    const isSelected = selectedLanguage === lang || (languageKeys.length === 1 && selectedLanguage === 'all');
-
+                    const isSelected =
+                      selectedLanguage === lang ||
+                      (languageKeys.length === 1 && selectedLanguage === 'all');
                     return (
                       <button
                         key={lang}
                         onClick={() => setSelectedLanguage(lang)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-sans shrink-0 flex items-center gap-1.5 transition-all ${
-                          isSelected
-                            ? 'bg-[#C69A45] text-[#090A0C] font-semibold shadow-md'
-                            : 'bg-[#191A1F] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
-                        }`}
+                        className="chip"
+                        data-active={isSelected}
                       >
-                        <span>{meta.flag}</span>
-                        <span>{meta.label}</span>
-                        <span className={`text-[10px] font-mono px-1.5 rounded-full ${
-                          isSelected ? 'bg-[#090A0C]/30 text-[#090A0C] font-bold' : 'bg-[#111318] text-[#AAA69D]'
-                        }`}>
-                          {count}
-                        </span>
+                        {meta.label}
+                        <span className="tnum opacity-60">{count}</span>
                       </button>
                     );
                   })}
@@ -496,36 +467,30 @@ export const MangaDetailsView: React.FC = () => {
               </div>
             )}
 
-            {/* Chapter Search & Chunk Tabs */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              {/* Search input */}
+            <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
               <div className="relative max-w-sm flex-1">
-                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-paper-dim" />
                 <input
                   type="text"
                   value={chapterFilter}
                   onChange={(e) => setChapterFilter(e.target.value)}
-                  placeholder="Filter chapters (e.g. 15, Extra)..."
-                  className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-[#111318] border border-[#292A2D] text-xs text-[#F0E9DC] placeholder-[#AAA69D]/50 focus:outline-none focus:border-[#C69A45]/60 font-sans"
+                  placeholder="Find a chapter"
+                  aria-label="Filter chapters"
+                  className="h-10 w-full rounded-md border border-ink-700 bg-transparent pl-9 pr-3 text-[12.5px] text-paper placeholder:text-paper-dim/60 focus:border-paper-dim focus:outline-none"
                 />
               </div>
 
-              {/* Chunk Selector Tabs if chapters > CHUNK_SIZE */}
               {chunksCount > 1 && !chapterFilter && (
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
                   {Array.from({ length: chunksCount }).map((_, i) => {
                     const start = i * CHUNK_SIZE + 1;
                     const end = Math.min((i + 1) * CHUNK_SIZE, orderedChapters.length);
-                    const isSelected = selectedChunk === i;
                     return (
                       <button
                         key={i}
                         onClick={() => setSelectedChunk(i)}
-                        className={`px-2.5 py-1 rounded-md text-[11px] font-mono shrink-0 transition-all ${
-                          isSelected
-                            ? 'bg-[#C69A45] text-[#090A0C] font-semibold shadow-sm'
-                            : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
-                        }`}
+                        className="chip"
+                        data-active={selectedChunk === i}
                       >
                         {start}–{end}
                       </button>
@@ -533,91 +498,87 @@ export const MangaDetailsView: React.FC = () => {
                   })}
                   <button
                     onClick={() => setSelectedChunk(-1)}
-                    className={`px-2.5 py-1 rounded-md text-[11px] font-mono shrink-0 transition-all ${
-                      selectedChunk === -1
-                        ? 'bg-[#C69A45] text-[#090A0C] font-semibold shadow-sm'
-                        : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
-                    }`}
+                    className="chip"
+                    data-active={selectedChunk === -1}
                   >
-                    All ({orderedChapters.length})
+                    All
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Chapters Grid / List */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-2">
-              {displayChapters.map((ch) => {
+            <div className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-3">
+              {displayChapters.map((ch, idx) => {
                 const isRead = isChapterRead(ch.id);
                 const isResume = history?.chapterId === ch.id;
 
                 return (
-                  <div
+                  <button
                     key={ch.id}
-                    onClick={() => openChapter(activeMangaId, ch.id, ch.title, details?.title, details?.cover)}
-                    className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between group ${
+                    onClick={() =>
+                      openChapter(activeMangaId, ch.id, ch.title, details?.title, details?.cover)
+                    }
+                    className={`group flex items-center justify-between gap-2 border-b border-ink-700 py-2.5 text-left transition-colors ${
                       isResume
-                        ? 'bg-[#191A1F] border-[#C69A45]/60 shadow-md shadow-[#C69A45]/10'
+                        ? 'bg-stamp/[0.06]'
                         : isRead
-                        ? 'bg-[#090A0C]/70 border-[#292A2D]/60 text-[#AAA69D]/60 hover:bg-[#111318]'
-                        : 'bg-[#111318] border-[#292A2D] hover:border-[#C69A45]/40 hover:bg-[#191A1F]'
+                          ? 'text-paper-dim/60 hover:bg-ink-900'
+                          : 'hover:bg-ink-900'
                     }`}
                   >
-                    <div className="truncate pr-2">
-                      <div className="flex items-center gap-2">
-                        {isRead ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#42B8A8] shrink-0" />
-                        ) : (
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#292A2D] group-hover:bg-[#C69A45] shrink-0 transition-colors" />
-                        )}
-                        <h4
-                          className={`font-serif text-xs font-bold truncate transition-colors ${
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="tnum w-5 shrink-0 px-1 font-mono text-[9.5px] text-paper-dim/70">
+                        {String(idx + 1).padStart(2, '0')}
+                      </span>
+                      {isRead ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-teal-400" />
+                      ) : (
+                        <span
+                          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                            isResume ? 'bg-stamp' : 'bg-ink-600 group-hover:bg-paper-dim'
+                          }`}
+                        />
+                      )}
+                      <span className="min-w-0">
+                        <span
+                          className={`block truncate font-display text-[12.5px] font-semibold transition-colors ${
                             isResume
-                              ? 'text-[#C69A45]'
+                              ? 'text-stamp'
                               : isRead
-                              ? 'text-[#AAA69D]/60 line-through decoration-[#292A2D]'
-                              : 'text-[#F0E9DC] group-hover:text-[#C69A45]'
+                                ? 'text-paper-dim/60'
+                                : 'text-paper group-hover:text-stamp'
                           }`}
                         >
                           {ch.title}
-                        </h4>
-                        {ch.language && selectedLanguage === 'all' && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#090A0C] text-[#AAA69D] border border-[#292A2D] font-mono shrink-0 ml-1">
-                            {LANGUAGE_META[ch.language]?.flag || '🌐'} {ch.language.toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                      {ch.date && (
-                        <p className="text-[10px] text-[#AAA69D]/60 font-mono mt-0.5 ml-3.5">
-                          {ch.date}
-                        </p>
-                      )}
-                    </div>
+                        </span>
+                        <span className="mt-0.5 flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.08em] text-paper-dim/60">
+                          {ch.date || 'Undated'}
+                          {ch.language && selectedLanguage === 'all' && (
+                            <span>· {LANGUAGE_META[ch.language]?.label || ch.language.toUpperCase()}</span>
+                          )}
+                        </span>
+                      </span>
+                    </span>
 
-                    <div className="shrink-0 flex items-center gap-1.5">
+                    <span className="flex shrink-0 items-center gap-2">
                       {isResume && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#C69A45]/20 text-[#C69A45] font-mono font-bold">
+                        <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-stamp">
                           Current
                         </span>
                       )}
-                      <span className="text-[#AAA69D]/50 group-hover:text-[#C69A45] text-xs font-mono transition-transform group-hover:translate-x-0.5">
-                        →
-                      </span>
-                    </div>
-                  </div>
+                      <ArrowRight className="h-3.5 w-3.5 text-paper-dim transition-transform group-hover:translate-x-0.5 group-hover:text-paper" />
+                    </span>
+                  </button>
                 );
               })}
             </div>
-          </div>
+          </section>
         </div>
       ) : (
-        <div className="max-w-md mx-auto py-20 text-center space-y-4">
-          <p className="text-sm font-serif text-[#AAA69D]">Unable to load archive chronicle metadata.</p>
-          <button
-            onClick={() => setView('home')}
-            className="px-4 py-2 rounded-lg bg-[#111318] border border-[#292A2D] text-xs font-sans text-[#C69A45] hover:bg-[#191A1F]"
-          >
-            Return to Archive
+        <div className="mx-auto max-w-sm space-y-4 px-4 py-20 text-center">
+          <p className="text-[13px] text-paper-dim">This series could not be loaded.</p>
+          <button onClick={() => setView('home')} className="btn btn-ghost">
+            Back to the index
           </button>
         </div>
       )}

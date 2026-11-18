@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
 /**
- * Thin gold reading-progress rail pinned to the very top of the page.
- * Sits above the sticky navbar and disappears at the top of the document.
+ * Hairline reading-progress rule pinned to the very top of the page.
+ * Vermilion, 1px, no glow — it behaves like a printed register mark.
  */
 export const ScrollProgress: React.FC = () => {
   const [progress, setProgress] = useState(0);
@@ -26,11 +26,9 @@ export const ScrollProgress: React.FC = () => {
   return (
     <div className="fixed top-0 inset-x-0 z-[60] h-[2px] pointer-events-none" aria-hidden="true">
       <div
-        className="relative h-full origin-left bg-gradient-to-r from-[#8A6428] via-[#C69A45] to-[#F9EDD2] shadow-[0_0_10px_rgba(198,154,69,0.75)] transition-[width] duration-100 ease-out"
+        className="h-full origin-left bg-stamp transition-[width] duration-100 ease-out"
         style={{ width: `${progress}%`, opacity: progress > 0.5 ? 1 : 0 }}
-      >
-        <span className="absolute right-0 top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-[#F9EDD2] shadow-[0_0_12px_rgba(249,237,210,0.95)]" />
-      </div>
+      />
     </div>
   );
 };

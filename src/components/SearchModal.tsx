@@ -117,20 +117,22 @@ export const SearchModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 px-4 bg-[#090A0C]/80 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[75] flex items-start justify-center bg-ink-950/85 px-4 pt-16 backdrop-blur-sm animate-fade-in sm:pt-24"
       onClick={() => setSearchOpen(false)}
     >
       <div
-        className="w-full max-w-2xl bg-[#111318] border border-[#292A2D] rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] transition-all"
+        className="flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-ink-700 bg-ink-950 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search"
       >
-        {/* Header Form Input */}
         <form
           onSubmit={handleFormSubmit}
-          className="flex items-center px-4 py-3.5 border-b border-[#292A2D] gap-3 bg-[#090A0C]/90"
+          className="flex items-center gap-3 border-b border-ink-700 px-4 py-3"
         >
-          <BrandLogo compact decorative className="w-6 h-6 shrink-0" />
-          <Search className="w-4 h-4 text-[#C69A45] shrink-0" />
+          <BrandLogo compact decorative className="h-6 w-6 shrink-0" />
+          <Search className="h-4 w-4 shrink-0 text-stamp" />
           <input
             ref={inputRef}
             type="text"
@@ -142,29 +144,29 @@ export const SearchModal: React.FC = () => {
                 handleFormSubmit(e);
               }
             }}
-            placeholder="Search manga, manhwa, authors, genres... (Press Enter to open Search Page)"
-            className="flex-1 bg-transparent text-[#F0E9DC] placeholder-[#AAA69D]/60 text-sm focus:outline-none font-sans"
+            placeholder="Search the index…"
+            aria-label="Search the index"
+            className="min-w-0 flex-1 bg-transparent text-[13.5px] text-paper placeholder:text-paper-dim/60 focus:outline-none"
           />
-          {loading && <Loader2 className="w-4 h-4 text-[#C69A45] animate-spin shrink-0" />}
+          {loading && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-stamp" />}
+          <kbd className="hidden shrink-0 border border-ink-700 px-1.5 py-0.5 font-mono text-[9px] text-paper-dim sm:block">
+            ESC
+          </kbd>
           <button
             type="button"
             onClick={() => setSearchOpen(false)}
-            className="p-1 rounded text-[#AAA69D] hover:text-[#F0E9DC] hover:bg-[#191A1F] transition-colors"
+            className="shrink-0 p-1 text-paper-dim transition-colors hover:text-paper"
             aria-label="Close search"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </button>
         </form>
 
-        {/* Popular Tags when query is empty */}
         {!query && (
-          <div className="p-4 border-b border-[#292A2D] bg-[#090A0C]/40">
-            <div className="flex items-center gap-2 mb-2 text-xs font-mono text-[#AAA69D] uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-[#C69A45]" />
-              <span>Recommended Discoveries</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {POPULAR_SEARCHES.map((title) => (
+          <div className="border-b border-ink-700 px-4 py-3">
+            <p className="eyebrow mb-2.5">Start here</p>
+            <div className="flex flex-wrap gap-1.5">
+              {POPULAR_SEARCHES.map((title, i) => (
                 <button
                   key={title}
                   type="button"
@@ -172,8 +174,9 @@ export const SearchModal: React.FC = () => {
                     setSearchOpen(false);
                     navigate(`/search?q=${encodeURIComponent(title)}`);
                   }}
-                  className="px-3 py-1 rounded-lg bg-[#191A1F] hover:bg-[#21232A] border border-[#292A2D] text-xs text-[#AAA69D] hover:text-[#C69A45] font-sans transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-ink-700 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.08em] text-paper-dim transition-colors hover:border-ink-600 hover:text-paper"
                 >
+                  <span className="tnum text-stamp/80">{String(i + 1).padStart(2, '0')}</span>
                   {title}
                 </button>
               ))}
@@ -181,8 +184,7 @@ export const SearchModal: React.FC = () => {
           </div>
         )}
 
-        {/* Results Container */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 space-y-0.5 overflow-y-auto p-2">
           {results.length > 0 ? (
             results.map((item, idx) => {
               const isSelected = selectedIndex === idx;
@@ -194,58 +196,55 @@ export const SearchModal: React.FC = () => {
                     openManga(item.id, item.title, item.cover);
                   }}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`flex items-center gap-3.5 p-2.5 rounded-lg cursor-pointer transition-all ${
-                    isSelected
-                      ? 'bg-[#191A1F] border border-[#C69A45]/40 shadow-sm'
-                      : 'hover:bg-[#191A1F]/60 border border-transparent'
+                  className={`flex cursor-pointer items-center gap-3 rounded-md border px-2 py-2 transition-colors ${
+                    isSelected ? 'border-ink-600 bg-ink-900' : 'border-transparent hover:bg-ink-900/70'
                   }`}
+                  role="option"
+                  aria-selected={isSelected}
                 >
-                  <div className="w-11 h-15 rounded overflow-hidden bg-[#090A0C] shrink-0 border border-[#292A2D]">
+                  <div className="h-14 w-10 shrink-0 overflow-hidden rounded-sm border border-ink-700 bg-ink-950">
                     <img
                       src={getProxyImageUrl(item.cover)}
-                      alt={item.title}
+                      alt=""
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = FALLBACK_COVER;
                       }}
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
                       loading="lazy"
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h4
-                      className={`font-serif text-sm font-bold truncate transition-colors ${
-                        isSelected ? 'text-[#C69A45]' : 'text-[#F0E9DC]'
+                      className={`truncate font-display text-[13px] font-semibold ${
+                        isSelected ? 'text-stamp' : 'text-paper'
                       }`}
                     >
                       {item.title}
                     </h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      {item.type && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#090A0C] text-[#C69A45] border border-[#292A2D] font-mono">
-                          {item.type}
-                        </span>
-                      )}
+                    <div className="mt-1 flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.1em] text-paper-dim">
+                      {item.type && <span>{item.type}</span>}
                       {item.status && (
-                        <span className="text-[10px] text-[#AAA69D] font-mono">
-                          {item.status}
-                        </span>
+                        <>
+                          <span className="text-ink-600">/</span>
+                          <span>{item.status}</span>
+                        </>
                       )}
                     </div>
                   </div>
                   <ArrowRight
-                    className={`w-4 h-4 transition-all shrink-0 ${
-                      isSelected
-                        ? 'text-[#C69A45] translate-x-1 opacity-100'
-                        : 'text-[#AAA69D] opacity-0'
+                    className={`h-4 w-4 shrink-0 transition-all ${
+                      isSelected ? 'translate-x-0 text-stamp opacity-100' : 'text-paper-dim opacity-0'
                     }`}
                   />
                 </div>
               );
             })
           ) : query && !loading ? (
-            <div className="py-12 text-center text-[#AAA69D] space-y-1 font-sans">
-              <p className="text-xs">No manuscripts found matching "{query}".</p>
-              <p className="text-[11px] text-[#AAA69D]/60 font-mono">Try searching with alternative romanized spellings or keywords.</p>
+            <div className="space-y-1 py-12 text-center">
+              <p className="text-[12.5px] text-paper-dim">Nothing in the index for “{query}”.</p>
+              <p className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-paper-dim/60">
+                Try a romanised spelling or a shorter query
+              </p>
             </div>
           ) : null}
         </div>

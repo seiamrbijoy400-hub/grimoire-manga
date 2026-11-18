@@ -5,26 +5,27 @@ interface IntroSplashProps {
   onDone: () => void;
 }
 
-const WORD = ['K', 'U', 'R', 'S', 'O'];
-const SEGMENTS = 28;
+const FIRST = 'KURSO'.split('');
+const SECOND = 'SCROLL'.split('');
 
-const PHASES = [
-  { until: 30, label: 'Mounting the archive' },
-  { until: 58, label: 'Streaming cover plates' },
-  { until: 82, label: 'Binding the scroll' },
-  { until: 99, label: 'Calibrating the reader' },
-  { until: 100, label: 'Ready — enter the archive' },
-];
+/** Registration marks — the small print-shop detail that sells the concept. */
+const RegMark: React.FC<{ className: string }> = ({ className }) => (
+  <span className={`pointer-events-none absolute ${className}`} aria-hidden="true">
+    <span className="absolute left-1/2 top-0 h-3 w-px -translate-x-1/2 bg-paper/25" />
+    <span className="absolute left-0 top-1/2 h-px w-3 -translate-y-1/2 bg-paper/25" />
+  </span>
+);
 
 /**
- * First-load intro. Shows once per browser session, is skippable
- * (tap or any key), and collapses to a quick fade for reduced motion.
+ * First-load splash: a two-panel ink curtain, a stamped emblem and the
+ * wordmark setting into place. ~1.9s, once per session, tap/any-key skippable.
  */
 export const IntroSplash: React.FC<IntroSplashProps> = ({ onDone }) => {
   const [progress, setProgress] = useState(0);
   const [leaving, setLeaving] = useState(false);
   const [canSkip, setCanSkip] = useState(false);
   const doneRef = useRef(false);
+  const issueNumber = String(new Date().getMonth() + 1).padStart(2, '0');
 
   const reduceMotion = useMemo(
     () =>
@@ -37,25 +38,9 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onDone }) => {
     if (doneRef.current) return;
     doneRef.current = true;
     setLeaving(true);
-    window.setTimeout(onDone, reduceMotion ? 100 : 780);
+    window.setTimeout(onDone, reduceMotion ? 80 : 520);
   }, [onDone, reduceMotion]);
 
-  // Ambient embers — generated once so they don't jump between renders.
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 26 }, (_, i) => ({
-        id: i,
-        left: `${Math.random() * 100}%`,
-        top: `${52 + Math.random() * 48}%`,
-        size: 2 + Math.random() * 5,
-        delay: Math.random() * 9,
-        duration: 9 + Math.random() * 10,
-        opacity: 0.18 + Math.random() * 0.55,
-      })),
-    [],
-  );
-
-  // Lock page scroll while the curtain is up.
   useEffect(() => {
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -64,24 +49,22 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onDone }) => {
     };
   }, []);
 
-  // Progress simulation — eased so it accelerates then settles.
   useEffect(() => {
     if (reduceMotion) {
       setProgress(100);
-      const t = window.setTimeout(finish, 450);
+      const t = window.setTimeout(finish, 380);
       return () => window.clearTimeout(t);
     }
 
     let value = 0;
     const tick = window.setInterval(() => {
-      value = Math.min(100, value + (100 - value) * 0.055 + 0.45);
-      if (value > 99.4) value = 100;
+      value = Math.min(100, value + (100 - value) * 0.11 + 2.2);
       setProgress(Math.round(value));
       if (value >= 100) window.clearInterval(tick);
-    }, 30);
+    }, 26);
 
-    const skipTimer = window.setTimeout(() => setCanSkip(true), 650);
-    const autoLeave = window.setTimeout(finish, 3100);
+    const skipTimer = window.setTimeout(() => setCanSkip(true), 320);
+    const autoLeave = window.setTimeout(finish, 1980);
 
     return () => {
       window.clearInterval(tick);
@@ -90,170 +73,143 @@ export const IntroSplash: React.FC<IntroSplashProps> = ({ onDone }) => {
     };
   }, [reduceMotion, finish]);
 
-  // Leave once the rail fills, after a beat to read "Ready".
-  useEffect(() => {
-    if (progress < 100 || reduceMotion) return;
-    const t = window.setTimeout(finish, 620);
-    return () => window.clearTimeout(t);
-  }, [progress, reduceMotion, finish]);
-
-  // Any key skips too (keyboard users never get stuck).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!canSkip) return;
-      if (e.key === 'Tab') return;
+      if (!canSkip || e.key === 'Tab') return;
       finish();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [canSkip, finish]);
 
-  const phase = PHASES.find((p) => progress <= p.until) ?? PHASES[PHASES.length - 1];
-  const litSegments = Math.round((progress / 100) * SEGMENTS);
-
   return (
     <div
-      className="fixed inset-0 z-[200] overflow-hidden"
+      className="fixed inset-0 z-[200] overflow-hidden bg-[#070708]"
       role="dialog"
       aria-modal="true"
-      aria-label="Kurso Scroll intro"
+      aria-label="Kurso Scroll is opening"
       onClick={() => canSkip && finish()}
     >
-      {/* Curtain panels — split apart on exit to reveal the app */}
+      {/* Ink curtain panels */}
       <div
-        className={`absolute inset-x-0 top-0 h-1/2 bg-[#050608] transition-transform duration-700 [transition-timing-function:cubic-bezier(0.76,0,0.24,1)] ${
-          leaving ? '-translate-y-full' : 'translate-y-0'
+        className={`absolute inset-y-0 left-0 z-0 w-1/2 border-r border-ink-700 bg-[#070708] transition-transform duration-[520ms] [transition-timing-function:cubic-bezier(0.76,0,0.24,1)] ${
+          leaving ? '-translate-x-full' : 'translate-x-0'
         }`}
       />
       <div
-        className={`absolute inset-x-0 bottom-0 h-1/2 bg-[#050608] transition-transform duration-700 [transition-timing-function:cubic-bezier(0.76,0,0.24,1)] ${
-          leaving ? 'translate-y-full' : 'translate-y-0'
+        className={`absolute inset-y-0 right-0 z-0 w-1/2 bg-[#070708] transition-transform duration-[520ms] [transition-timing-function:cubic-bezier(0.76,0,0.24,1)] ${
+          leaving ? 'translate-x-full' : 'translate-x-0'
         }`}
       />
 
-      {/* Stage */}
       <div
-        className={`absolute inset-0 bg-grain transition-all duration-300 ${
-          leaving ? 'opacity-0 scale-[1.03]' : 'opacity-100'
+        className={`relative z-10 flex h-full flex-col justify-between p-5 transition-opacity duration-200 sm:p-9 ${
+          leaving ? 'opacity-0' : 'opacity-100'
         }`}
       >
-        {/* Ambient aurora field */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="aurora-blob aurora-blob--gold w-[74vw] h-[74vw] max-w-[600px] max-h-[600px] -top-[20%] left-1/2 -translate-x-1/2" />
-          <div className="aurora-blob aurora-blob--teal w-[58vw] h-[58vw] max-w-[440px] max-h-[440px] bottom-[-14%] left-[-12%] opacity-20" />
-          <div className="aurora-blob aurora-blob--violet w-[54vw] h-[54vw] max-w-[420px] max-h-[420px] bottom-[-10%] right-[-14%] opacity-20" />
-          <div className="absolute inset-0 bg-grid-lines opacity-40 [mask-image:radial-gradient(circle_at_50%_45%,black,transparent_72%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,transparent_8%,#050608_78%)]" />
-          <div className="scan-line top-0" />
+        {/* Masthead row */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center border border-ink-700">
+              <BrandLogo compact className="h-8 w-8" />
+            </div>
+            <div>
+              <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-paper">
+                Kurso Scroll
+              </p>
+              <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.16em] text-paper-dim">
+                Independent manga index
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-paper-dim">Issue {issueNumber}</p>
+            <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.16em] text-paper-dim">
+              Est. 2026
+            </p>
+          </div>
         </div>
 
-        {/* Embers */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          {particles.map((p) => (
-            <span
-              key={p.id}
-              className="intro-particle"
-              style={{
-                left: p.left,
-                top: p.top,
-                width: p.size,
-                height: p.size,
-                opacity: p.opacity,
-                animationDelay: `${p.delay}s`,
-                animationDuration: `${p.duration}s`,
-              }}
-            />
-          ))}
-        </div>
+        {/* Wordmark + plate */}
+        <div className="relative mx-auto w-full max-w-5xl">
+          <RegMark className="left-0 top-0 h-4 w-4" />
+          <RegMark className="right-0 top-0 h-4 w-4" />
 
-        {/* Corner meta */}
-        <div className="absolute top-5 inset-x-5 z-20 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.28em] text-[#6E6A62]">
-          <span>Est. 2026</span>
-          <span className="hidden sm:inline">Neo-Editorial Archive</span>
-        </div>
+          <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div>
+              <div className="intro-seal stamp-mark !text-[9px]">
+                Manga · Manhwa · Manhua
+              </div>
 
-        <div className="relative z-10 h-full w-full flex flex-col items-center justify-center px-6">
-          {/* Emblem stage */}
-          <div className="relative animate-pop" style={{ animationDelay: '60ms' }}>
-            <div className="relative w-[148px] h-[148px] sm:w-[186px] sm:h-[186px]">
-              <div className="absolute -inset-4 rounded-full bg-[#C62828]/25 blur-3xl animate-glow-pulse" />
-              <div className="absolute -inset-9 rounded-full brand-ring animate-spin-slow opacity-45" />
-              <div className="shockwave" />
-              <div className="shockwave shockwave--2" />
-              <div className="shockwave shockwave--3" />
-              <div className="absolute inset-0 rounded-full overflow-hidden">
-                <BrandLogo className="w-full h-full" glow />
-                <span className="logo-sweep" aria-hidden="true" />
+              <h1 className="mt-6 flex flex-wrap items-baseline font-display text-[clamp(2.7rem,11vw,6rem)] font-bold uppercase leading-[0.86] tracking-tightest">
+                {FIRST.map((letter, i) => (
+                  <span
+                    key={`a-${i}`}
+                    className="intro-word text-paper"
+                    style={{ animationDelay: `${120 + i * 30}ms` }}
+                  >
+                    {letter}
+                  </span>
+                ))}
+                <span className="w-[0.28em]" aria-hidden="true" />
+                {SECOND.map((letter, i) => (
+                  <span
+                    key={`b-${i}`}
+                    className="intro-word text-stamp"
+                    style={{ animationDelay: `${120 + (FIRST.length + i) * 30}ms` }}
+                  >
+                    {letter}
+                  </span>
+                ))}
+              </h1>
+
+              <div className="intro-rule mt-7 h-px bg-ink-600" />
+
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-[0.16em] text-paper-dim">
+                <span>Read continuous or page by page</span>
+                <span className="hidden sm:inline">Adult titles blocked at source</span>
               </div>
             </div>
-          </div>
 
-          {/* Wordmark */}
-          <div className="mt-6 flex items-baseline gap-[0.08em] sm:gap-[0.14em]">
-            {WORD.map((letter, i) => (
-              <span
-                key={letter + i}
-                className="letter-flip font-display text-[34px] sm:text-6xl font-bold tracking-[0.06em] text-[#F5F0E6]"
-                style={{ animationDelay: `${300 + i * 72}ms` }}
-              >
-                {letter}
-              </span>
-            ))}
-            <span
-              className="letter-flip font-display text-[34px] sm:text-6xl font-bold tracking-[0.06em] text-gradient-gold pl-[0.12em] sm:pl-[0.2em]"
-              style={{ animationDelay: `${300 + WORD.length * 72}ms` }}
-            >
-              SCROLL
-            </span>
-          </div>
-
-          <p
-            className="letter-flip mt-3 font-mono text-[10px] sm:text-[11px] uppercase tracking-[0.34em] text-[#AAA69D] text-center"
-            style={{ animationDelay: `${760 + WORD.length * 72}ms` }}
-          >
-            Manga, curated for the scroll generation
-          </p>
-
-          {/* Segmented progress rail */}
-          <div
-            className="letter-flip mt-9 w-[262px] sm:w-[330px]"
-            style={{ animationDelay: `${900 + WORD.length * 72}ms` }}
-          >
-            <div className="segment-rail h-[6px]">
-              {Array.from({ length: SEGMENTS }).map((_, i) => (
-                <i key={i} data-on={i < litSegments} />
-              ))}
-            </div>
-            <div className="mt-3 flex items-center justify-between font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.2em]">
-              <span className="text-[#C69A45] inline-flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-[#C69A45] animate-pulse" />
-                {phase.label}
-                <span className="inline-block w-[6px] h-[9px] bg-[#C69A45]/70 animate-pulse" aria-hidden="true" />
-              </span>
-              <span className="tabular-nums text-[#AAA69D]">{progress}%</span>
+            <div className="relative hidden w-[186px] shrink-0 lg:block">
+              <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 border border-stamp/70" />
+              <div className="relative aspect-[3/4] overflow-hidden border border-ink-600 bg-ink-900">
+                <BrandLogo decorative className="h-full w-full p-4" />
+              </div>
+              <p className="mt-2 text-center font-mono text-[9px] uppercase tracking-[0.18em] text-paper-dim">
+                Plate 01 · Emblem
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Footer hint */}
-        <div className="absolute bottom-6 inset-x-0 z-20 flex flex-col items-center gap-2">
-          <div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.3em] text-[#55524C]">
-            <span className="w-1 h-1 rounded-full bg-[#C69A45] animate-pulse" />
-            <span>Boot sequence · Kurso Scroll OS</span>
-          </div>
-          {canSkip && (
+        {/* Progress rail */}
+        <div>
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex-1">
+              <div className="segment-rail h-[3px]">
+                {Array.from({ length: 40 }).map((_, i) => (
+                  <i key={i} data-on={i < Math.round((progress / 100) * 40)} />
+                ))}
+              </div>
+              <div className="mt-2 flex items-center justify-between font-mono text-[9px] uppercase tracking-[0.16em] text-paper-dim">
+                <span>{reduceMotion ? 'Ready' : 'Mounting the index'}</span>
+                <span className="tnum text-paper">{String(progress).padStart(3, '0')}%</span>
+              </div>
+            </div>
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 finish();
               }}
-              className="group inline-flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.24em] text-[#AAA69D] hover:text-[#F0E9DC] transition-colors animate-fade-in"
+              className={`shrink-0 font-mono text-[9px] uppercase tracking-[0.16em] transition-opacity ${
+                canSkip ? 'text-paper-dim hover:text-paper' : 'pointer-events-none opacity-0'
+              }`}
             >
-              Tap or press any key
-              <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
+              Tap to skip →
             </button>
-          )}
+          </div>
         </div>
       </div>
     </div>

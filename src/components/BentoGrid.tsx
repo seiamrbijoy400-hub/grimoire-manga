@@ -1,24 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-  Flame,
-  Clock,
-  Bookmark,
-  BookOpen,
-  Compass,
-  ChevronRight,
-  Loader2,
+  ArrowRight,
   ArrowUp,
-  Filter,
-  Search,
-  RotateCcw,
+  BookOpen,
+  ChevronRight,
   Download,
-  Upload,
+  Filter,
+  Loader2,
   Trash2,
-  Check,
+  Upload,
   X,
-  Globe,
-  SlidersHorizontal,
-  Sparkles
 } from 'lucide-react';
 import { MangaItem, FilterState, BookmarkCategory } from '../types.ts';
 import { fetchAdvancedSearch, getProxyImageUrl } from '../services/api.ts';
@@ -44,10 +35,60 @@ const DEFAULT_FILTERS: FilterState = {
 
 const SORT_OPTIONS = [
   { id: 'Popularity', label: 'Popularity' },
-  { id: 'Latest Updates', label: 'Latest Updates' },
-  { id: 'Alphabet', label: 'Alphabetical' },
+  { id: 'Latest Updates', label: 'Latest updates' },
+  { id: 'Alphabet', label: 'A–Z' },
   { id: 'Subscribers', label: 'Subscribers' },
 ];
+
+const originOf = (type?: string, country?: string) => {
+  if (type === 'Manhwa' || country === 'KR') return { code: 'KR', label: 'Manhwa', place: 'Korea' };
+  if (type === 'Manhua' || country === 'CN') return { code: 'CN', label: 'Manhua', place: 'China' };
+  if (type === 'OEL' || country === 'US') return { code: 'EN', label: 'OEL', place: 'Western' };
+  return { code: 'JP', label: 'Manga', place: 'Japan' };
+};
+
+/** Numbered section header — the spine of the whole page. */
+const SectionHead: React.FC<{
+  index: string;
+  title: string;
+  note?: string;
+  right?: React.ReactNode;
+}> = ({ index, title, note, right }) => (
+  <div className="mb-4 flex items-end justify-between gap-4 border-b border-ink-700 pb-2.5">
+    <div className="flex items-baseline gap-3">
+      <span className="tnum font-mono text-[10px] uppercase tracking-[0.16em] text-stamp">{index}</span>
+      <h2 className="font-display text-[17px] font-semibold tracking-tight text-paper sm:text-xl">
+        {title}
+      </h2>
+    </div>
+    <div className="flex items-center gap-3">
+      {note && (
+        <span className="hidden font-mono text-[10px] uppercase tracking-[0.14em] text-paper-dim sm:block">
+          {note}
+        </span>
+      )}
+      {right}
+    </div>
+  </div>
+);
+
+const EmptyState: React.FC<{
+  index: string;
+  title: string;
+  body: string;
+  action?: React.ReactNode;
+}> = ({ index, title, body, action }) => (
+  <div className="relative overflow-hidden rounded-lg border border-ink-700 bg-ink-900 px-6 py-14 text-center">
+    <span className="num-ghost pointer-events-none absolute -right-3 -top-6 select-none text-[104px]">
+      {index}
+    </span>
+    <div className="relative mx-auto max-w-sm space-y-3">
+      <h3 className="font-display text-base font-semibold text-paper">{title}</h3>
+      <p className="text-[13px] leading-relaxed text-paper-dim">{body}</p>
+      {action && <div className="pt-1">{action}</div>}
+    </div>
+  </div>
+);
 
 export const BentoGrid: React.FC = () => {
   const {
@@ -58,16 +99,13 @@ export const BentoGrid: React.FC = () => {
     clearHistory,
     openManga,
     openChapter,
-    setSearchOpen,
     exportUserData,
     importUserData,
   } = useStore();
 
-  // Advanced Filter state
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Items & pagination state for catalog
   const [items, setItems] = useState<MangaItem[]>([]);
   const [offset, setOffset] = useState<number>(0);
   const [loadingInitial, setLoadingInitial] = useState(true);
@@ -76,7 +114,6 @@ export const BentoGrid: React.FC = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [heroImageError, setHeroImageError] = useState(false);
 
-  // Shelves state
   const [selectedShelf, setSelectedShelf] = useState<BookmarkCategory | 'all'>('all');
   const [shelfSearch, setShelfSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -84,7 +121,6 @@ export const BentoGrid: React.FC = () => {
   const observerTarget = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
 
-  // Load initial batch when filters change
   const loadInitialData = useCallback(async () => {
     setLoadingInitial(true);
     setOffset(0);
@@ -109,7 +145,6 @@ export const BentoGrid: React.FC = () => {
     }
   }, [activeTab, loadInitialData]);
 
-  // Load more for infinite scroll
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMore || loadingInitial || activeTab !== 'catalog') return;
 
@@ -138,7 +173,6 @@ export const BentoGrid: React.FC = () => {
     }
   }, [offset, hasMore, loadingInitial, activeTab, filters]);
 
-  // Infinite Scroll IntersectionObserver
   useEffect(() => {
     const target = observerTarget.current;
     if (!target) return;
@@ -149,25 +183,23 @@ export const BentoGrid: React.FC = () => {
           loadMore();
         }
       },
-      { rootMargin: '400px' }
+      { rootMargin: '400px' },
     );
 
     observer.observe(target);
     return () => observer.disconnect();
   }, [loadMore, hasMore]);
 
-  // Back to top scroll listener
   useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 400);
-    };
+    const handleScroll = () => setShowBackToTop(window.scrollY > 400);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const historyList = useMemo(() => {
-    return Object.values(history).sort((a, b) => b.updatedAt - a.updatedAt);
-  }, [history]);
+  const historyList = useMemo(
+    () => Object.values(history).sort((a, b) => b.updatedAt - a.updatedAt),
+    [history],
+  );
 
   const featured = items[0];
   const trendingList = useMemo(() => items.slice(1, 5), [items]);
@@ -182,16 +214,15 @@ export const BentoGrid: React.FC = () => {
     filters.includedTags.length +
     filters.excludedTags.length;
 
-  // Filtered bookmarks by shelf & search
   const filteredBookmarks = useMemo(() => {
     return bookmarks.filter((b) => {
       const matchesShelf = selectedShelf === 'all' || b.category === selectedShelf;
-      const matchesSearch = !shelfSearch || b.title.toLowerCase().includes(shelfSearch.toLowerCase());
+      const matchesSearch =
+        !shelfSearch || b.title.toLowerCase().includes(shelfSearch.toLowerCase());
       return matchesShelf && matchesSearch;
     });
   }, [bookmarks, selectedShelf, shelfSearch]);
 
-  // Handle export JSON
   const handleExport = () => {
     const jsonStr = exportUserData();
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -203,7 +234,6 @@ export const BentoGrid: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Handle import JSON
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -213,11 +243,7 @@ export const BentoGrid: React.FC = () => {
       const content = evt.target?.result as string;
       if (content) {
         const success = importUserData(content);
-        if (success) {
-          alert('Library & reading history restored successfully.');
-        } else {
-          alert('Invalid backup JSON file.');
-        }
+        alert(success ? 'Library restored.' : 'That file is not a Kurso Scroll backup.');
       }
     };
     reader.readAsText(file);
@@ -226,25 +252,20 @@ export const BentoGrid: React.FC = () => {
 
   const formatRelativeTime = (timestamp: number) => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
-    if (seconds < 60) return 'Just now';
+    if (seconds < 60) return 'just now';
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) return `${minutes}m ago`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+    return `${Math.floor(hours / 24)}d ago`;
   };
 
-  const getOriginLabel = (type?: string, country?: string) => {
-    if (type === 'Manhwa' || country === 'KR') return { flag: '🇰🇷', label: 'Manhwa', origin: 'Korea' };
-    if (type === 'Manhua' || country === 'CN') return { flag: '🇨🇳', label: 'Manhua', origin: 'China' };
-    if (type === 'OEL' || country === 'US') return { flag: '🌐', label: 'Global', origin: 'Western' };
-    return { flag: '🇯🇵', label: 'Manga', origin: 'Japan' };
-  };
+  const now = new Date();
+  const issueLabel = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const issueNumber = String(now.getMonth() + 1).padStart(2, '0');
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16 pb-28">
-      {/* Filter Drawer Component */}
+    <div className="mx-auto max-w-7xl px-4 pb-32 pt-5 sm:px-6 sm:pt-8 lg:px-8">
       <FilterDrawer
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -263,148 +284,108 @@ export const BentoGrid: React.FC = () => {
       />
 
       {/* ======================================================== */}
-      {/* PRIMARY TAB: DISCOVER / ARCHIVE (3-SECTION EXPERIENCE)   */}
+      {/* INDEX                                                   */}
       {/* ======================================================== */}
       {activeTab === 'catalog' && (
-        <>
-          {/* ==================================================== */}
-          {/* SECTION 01 — DISCOVER                                */}
-          {/* ==================================================== */}
-          <section className="space-y-8" aria-label="Discover Section">
-            {/* Featured Editorial Hero */}
-            {featured && !filters.query && (
-              <div className="relative rounded-2xl overflow-hidden bg-[#111318] border border-[#C69A45]/20 shadow-[0_30px_90px_-45px_rgba(198,154,69,0.55)] animate-fade-in">
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#C69A45]/70 to-transparent pointer-events-none z-20" />
-                {/* Ambient artistic backdrop */}
-                <div
-                  className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-20 pointer-events-none"
-                  style={{
-                    backgroundImage: `url(${heroImageError ? FALLBACK_COVER : getProxyImageUrl(featured.cover)})`,
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#090A0C] via-[#090A0C]/90 to-transparent pointer-events-none" />
+        <div className="space-y-10 sm:space-y-12">
+          {/* Issue strip */}
+          <div className="flex items-center justify-between border-b border-ink-700 pb-2.5">
+            <p className="eyebrow">
+              Issue {issueNumber} <span className="px-1.5 text-ink-600">/</span> {issueLabel}
+            </p>
+            <p className="eyebrow hidden sm:block">Safe archive · No sign-in</p>
+          </div>
 
-                <div className="relative z-10 p-6 sm:p-10 lg:p-12 flex flex-col-reverse md:flex-row items-center justify-between gap-8 lg:gap-12">
-                  {/* Left Editorial Copy */}
-                  <div className="w-full md:w-3/5 space-y-4 text-left">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#C69A45]/30 text-[10px] font-mono uppercase tracking-widest text-[#C69A45] font-semibold flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#C69A45] animate-pulse" />
-                        Editorial Feature • Vol. 2026
+          {/* Featured plate */}
+          {featured && !filters.query && (
+            <section aria-label="Editor's pick" className="relative">
+              <div className="relative overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
+                <div className="pointer-events-none absolute inset-0 bg-grid-lines opacity-60 [mask-image:linear-gradient(to_right,black,transparent_72%)]" />
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-stamp" />
+
+                <div className="relative grid gap-8 p-5 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-start lg:p-10">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="stamp-mark">Feature</span>
+                      <span className="eyebrow">
+                        {String(items.length).padStart(3, '0')} titles loaded
                       </span>
-                      {(() => {
-                        const origin = getOriginLabel(featured.type, featured.country);
-                        return (
-                          <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-[10px] font-mono text-[#AAA69D] flex items-center gap-1.5">
-                            <span>{origin.flag}</span>
-                            <span>{origin.origin} • {origin.label}</span>
-                          </span>
-                        );
-                      })()}
-                      {featured.status && (
-                        <span className="px-2.5 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-[10px] font-mono text-[#AAA69D] flex items-center gap-1.5">
-                          <span className={`w-1.5 h-1.5 rounded-full ${featured.status.toLowerCase() === 'ongoing' ? 'bg-[#42B8A8]' : 'bg-[#AAA69D]'}`} />
-                          <span>{featured.status}</span>
-                        </span>
-                      )}
                     </div>
 
-                    <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold text-[#F0E9DC] tracking-tight leading-tight">
+                    <h1 className="mt-5 max-w-[18ch] font-display text-[clamp(2rem,7vw,3.4rem)] font-bold leading-[0.94] tracking-tightest text-paper">
                       {featured.title}
                     </h1>
 
                     {featured.description && (
-                      <p className="text-sm sm:text-base text-[#AAA69D] leading-relaxed line-clamp-3 max-w-2xl font-sans">
+                      <p className="mt-4 line-clamp-3 max-w-[54ch] text-[13.5px] leading-relaxed text-paper-dim sm:text-sm">
                         {featured.description}
                       </p>
                     )}
 
-                    {/* Action Buttons */}
-                    <div className="pt-2 flex flex-wrap items-center gap-3">
-                      <button
-                        onClick={() => openManga(featured.id, featured.title, featured.cover)}
-                        className="px-6 py-3 rounded-lg bg-[#C69A45] hover:bg-[#D8AA55] text-[#090A0C] font-semibold text-sm transition-all shadow-lg shadow-[#C69A45]/15 flex items-center gap-2"
-                      >
-                        <BookOpen className="w-4 h-4" />
-                        <span>Start Reading</span>
-                      </button>
+                    <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 font-mono text-[10px] uppercase tracking-[0.1em] text-paper-dim">
+                      <span>{originOf(featured.type, featured.country).code} · {originOf(featured.type, featured.country).label}</span>
+                      {featured.status && (
+                        <>
+                          <span className="text-ink-600">/</span>
+                          <span>{featured.status}</span>
+                        </>
+                      )}
+                      {featured.latestChapter && (
+                        <>
+                          <span className="text-ink-600">/</span>
+                          <span>{featured.latestChapter}</span>
+                        </>
+                      )}
+                    </div>
 
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
                       <button
                         onClick={() => openManga(featured.id, featured.title, featured.cover)}
-                        className="px-5 py-3 rounded-lg bg-[#191A1F] hover:bg-[#21232A] border border-[#292A2D] text-xs font-medium text-[#F0E9DC] transition-all"
+                        className="btn btn-stamp"
                       >
-                        View Chronicle Details
+                        <BookOpen className="h-4 w-4" />
+                        Read now
+                      </button>
+                      <button
+                        onClick={() => openManga(featured.id, featured.title, featured.cover)}
+                        className="btn btn-ghost"
+                      >
+                        Details
+                        <ArrowRight className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
 
-                  {/* Right Artwork Showcase */}
-                  <div
-                    onClick={() => openManga(featured.id, featured.title, featured.cover)}
-                    className="w-44 sm:w-56 md:w-64 aspect-[3/4] rounded-lg overflow-hidden shadow-2xl border border-[#C69A45]/25 shrink-0 cursor-pointer hover:scale-[1.03] transition-transform duration-500 bg-[#111318] animate-float-slow glow-gold"
-                  >
-                    <img
-                      src={heroImageError ? FALLBACK_COVER : getProxyImageUrl(featured.cover)}
-                      alt={featured.title}
-                      onError={() => setHeroImageError(true)}
-                      className="w-full h-full object-cover object-center"
-                      loading="eager"
-                    />
+                  {/* Plate */}
+                  <div className="justify-self-center lg:justify-self-end">
+                    <div className="relative w-[180px] sm:w-[210px] lg:w-[232px]">
+                      <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rounded-sm border border-stamp/70" />
+                      <div
+                        onClick={() => openManga(featured.id, featured.title, featured.cover)}
+                        className="relative aspect-[3/4] cursor-pointer overflow-hidden rounded-sm border border-ink-600 bg-ink-950"
+                      >
+                        <img
+                          src={heroImageError ? FALLBACK_COVER : getProxyImageUrl(featured.cover)}
+                          alt={featured.title}
+                          onError={() => setHeroImageError(true)}
+                          className="h-full w-full object-cover object-center"
+                          loading="eager"
+                        />
+                      </div>
+                      <p className="mt-3 text-center font-mono text-[9px] uppercase tracking-[0.18em] text-paper-dim">
+                        Cover plate · Vol. 01
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            )}
+            </section>
+          )}
 
-            {/* Trending This Week (Compact recommendations below hero) */}
-            {trendingList.length > 0 && !filters.query && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-[#292A2D] pb-3">
-                  <div>
-                    <h2 className="font-serif text-lg sm:text-xl font-bold text-[#F0E9DC]">
-                      Trending This Week
-                    </h2>
-                    <p className="text-xs text-[#AAA69D] font-sans">
-                      Top curated works experiencing high community readership
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {trendingList.map((manga, idx) => (
-                    <MangaCard key={manga.id} manga={manga} rank={idx + 2} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* ==================================================== */}
-          {/* SECTION 02 — THE READER'S DESK                       */}
-          {/* ==================================================== */}
-          <section className="space-y-6 pt-2" aria-label="Reader's Desk Section">
-            <div className="flex items-center justify-between border-b border-[#292A2D] pb-3">
-              <div>
-                <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#F0E9DC]">
-                  The Reader's Desk
-                </h2>
-                <p className="text-xs text-[#AAA69D] font-sans">
-                  Reading continuity, saved bookmarks & latest updates
-                </p>
-              </div>
-
-              {historyList.length > 0 && (
-                <button
-                  onClick={() => setActiveTab('history')}
-                  className="text-xs text-[#C69A45] hover:underline font-sans flex items-center gap-1"
-                >
-                  <span>View All Chronicles</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Primary Continue Reading Panel */}
-            {lastRead ? (
+          {/* Continue reading */}
+          {lastRead && (
+            <section aria-label="Continue reading">
+              <SectionHead index="01" title="Pick up where you left off" note={formatRelativeTime(lastRead.updatedAt)} />
               <div
                 onClick={() =>
                   openChapter(
@@ -412,451 +393,334 @@ export const BentoGrid: React.FC = () => {
                     lastRead.chapterId,
                     lastRead.chapterTitle,
                     lastRead.mangaTitle,
-                    lastRead.mangaCover
+                    lastRead.mangaCover,
                   )
                 }
-                className="p-4 sm:p-6 rounded-xl bg-[#111318] border border-[#292A2D] hover:border-[#C69A45]/40 transition-all duration-300 cursor-pointer group shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+                className="card-flat group flex cursor-pointer flex-col gap-4 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4"
               >
-                <div className="flex items-center gap-4 sm:gap-6 min-w-0 w-full sm:w-auto">
-                  <div className="w-16 sm:w-20 aspect-[3/4] rounded-lg overflow-hidden bg-[#090A0C] shrink-0 border border-[#292A2D]">
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="h-[86px] w-16 shrink-0 overflow-hidden rounded-sm border border-ink-700 bg-ink-950">
                     <img
                       src={lastRead.mangaCover || FALLBACK_COVER}
-                      alt={lastRead.mangaTitle}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      alt=""
+                      className="h-full w-full object-cover"
                     />
                   </div>
-
-                  <div className="space-y-1.5 truncate">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#C69A45]" />
-                      <span className="text-[10px] uppercase font-mono tracking-wider text-[#C69A45] font-semibold">
-                        Continue Reading
-                      </span>
-                      <span className="text-[10px] text-[#AAA69D] font-mono">
-                        • {formatRelativeTime(lastRead.updatedAt)}
-                      </span>
-                    </div>
-
-                    <h3 className="font-serif text-base sm:text-lg font-bold text-[#F0E9DC] truncate group-hover:text-[#C69A45] transition-colors">
+                  <div className="min-w-0 space-y-1.5">
+                    <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-stamp">
+                      In progress
+                    </span>
+                    <h3 className="truncate font-display text-[15px] font-semibold text-paper">
                       {lastRead.mangaTitle}
                     </h3>
-
-                    <p className="text-xs text-[#AAA69D] font-mono">
-                      {lastRead.chapterTitle} • Page {lastRead.pageIndex || 1}
-                      {lastRead.totalImages ? ` of ${lastRead.totalImages}` : ''}
+                    <p className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-paper-dim">
+                      {lastRead.chapterTitle}
+                      {lastRead.totalImages
+                        ? ` · ${lastRead.pageIndex || 1}/${lastRead.totalImages}`
+                        : ''}
                     </p>
-
-                    {/* Progress Bar */}
-                    {lastRead.totalImages && lastRead.totalImages > 0 && (
-                      <div className="w-48 h-1 bg-[#191A1F] rounded-full overflow-hidden mt-2">
+                    {lastRead.totalImages ? (
+                      <div className="h-[3px] w-40 overflow-hidden bg-ink-750">
                         <div
-                          className="h-full bg-[#C69A45] rounded-full"
+                          className="h-full bg-stamp"
                           style={{
                             width: `${Math.min(
                               100,
-                              Math.round(((lastRead.pageIndex || 1) / lastRead.totalImages) * 100)
+                              Math.round(((lastRead.pageIndex || 1) / lastRead.totalImages) * 100),
                             )}%`,
                           }}
                         />
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#C69A45] text-[#090A0C] text-xs font-semibold group-hover:bg-[#D8AA55] transition-all shrink-0 self-end sm:self-center shadow-md">
-                  <span>Resume Reading</span>
-                  <ChevronRight className="w-4 h-4" />
-                </div>
-              </div>
-            ) : (
-              <div className="p-8 rounded-xl bg-[#111318] border border-[#292A2D] text-center space-y-3">
-                <div className="w-10 h-10 rounded-lg bg-[#191A1F] border border-[#292A2D] flex items-center justify-center mx-auto text-[#C69A45]">
-                  <BookOpen className="w-5 h-5" />
-                </div>
-                <h3 className="font-serif text-base font-bold text-[#F0E9DC]">
-                  Your Reading Desk is Clear
-                </h3>
-                <p className="text-xs text-[#AAA69D] max-w-md mx-auto leading-relaxed">
-                  Select any volume from the archive below or begin with this week's editorial feature to start tracking your reading journey.
-                </p>
-              </div>
-            )}
-
-            {/* Recently Visited Shelves (if multiple history items exist) */}
-            {historyList.length > 1 && (
-              <div className="space-y-3">
-                <span className="text-xs font-mono uppercase tracking-wider text-[#AAA69D]">
-                  Recently Read Volumes
+                <span className="btn btn-stamp self-stretch sm:self-auto">
+                  Resume
+                  <ChevronRight className="h-4 w-4" />
                 </span>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                  {historyList.slice(1, 6).map((hist) => (
-                    <div
-                      key={hist.mangaId}
-                      onClick={() =>
-                        openChapter(
-                          hist.mangaId,
-                          hist.chapterId,
-                          hist.chapterTitle,
-                          hist.mangaTitle,
-                          hist.mangaCover
-                        )
-                      }
-                      className="p-2.5 rounded-lg bg-[#111318] border border-[#292A2D] hover:border-[#C69A45]/40 transition-colors cursor-pointer group flex items-center gap-3"
-                    >
-                      <img
-                        src={hist.mangaCover || FALLBACK_COVER}
-                        alt=""
-                        className="w-10 h-13 rounded object-cover shrink-0 bg-[#090A0C] border border-[#292A2D]"
-                      />
-                      <div className="min-w-0">
-                        <h4 className="font-serif text-xs font-bold text-[#F0E9DC] truncate group-hover:text-[#C69A45] transition-colors">
-                          {hist.mangaTitle}
-                        </h4>
-                        <p className="text-[10px] text-[#AAA69D] font-mono truncate">
-                          {hist.chapterTitle}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
-            )}
-          </section>
+            </section>
+          )}
 
-          {/* ==================================================== */}
-          {/* SECTION 03 — THE ARCHIVE                             */}
-          {/* ==================================================== */}
-          <section className="space-y-6 pt-4" aria-label="Explore the Archive Section">
-            {/* Header & Controls Bar */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#292A2D] pb-4">
-              <div>
-                <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#F0E9DC]">
-                  Explore the Archive
-                </h2>
-                <p className="text-xs text-[#AAA69D] font-sans">
-                  The curated catalog of international graphic literature
-                </p>
+          {/* Trending */}
+          {trendingList.length > 0 && !filters.query && (
+            <section aria-label="Trending">
+              <SectionHead
+                index={lastRead ? '02' : '01'}
+                title="Trending this week"
+                note="Most opened titles"
+              />
+              <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-4">
+                {trendingList.map((manga, idx) => (
+                  <MangaCard key={manga.id} manga={manga} rank={idx + 1} />
+                ))}
               </div>
+            </section>
+          )}
 
-              {/* Filter Controls & Origin Selector */}
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Origin Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                  <button
-                    onClick={() => setFilters({ ...filters, selectedType: null })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-sans transition-all shrink-0 ${
-                      filters.selectedType === null
-                        ? 'bg-[#191A1F] text-[#C69A45] border border-[#C69A45]/40 font-semibold'
-                        : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
-                    }`}
-                  >
-                    All Origins
-                  </button>
+          {/* Archive */}
+          <section aria-label="The archive" className="space-y-4">
+            <SectionHead
+              index={lastRead ? '03' : '02'}
+              title="The archive"
+              note={`${items.length} titles loaded`}
+            />
 
-                  {TYPE_OPTIONS.map((t) => {
-                    const isSelected = filters.selectedType === t.id;
-                    return (
-                      <button
-                        key={t.id}
-                        onClick={() => setFilters({ ...filters, selectedType: isSelected ? null : t.id })}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-sans flex items-center gap-1.5 transition-all shrink-0 ${
-                          isSelected
-                            ? 'bg-[#191A1F] text-[#C69A45] border border-[#C69A45]/40 font-semibold'
-                            : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
-                        }`}
-                      >
-                        <span>{t.flag}</span>
-                        <span>{t.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="h-4 w-px bg-[#292A2D] hidden md:block" />
-
-                {/* Sort Dropdown */}
-                <select
-                  value={filters.sort}
-                  onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
-                  className="px-3 py-1.5 rounded-lg bg-[#111318] border border-[#292A2D] text-xs text-[#AAA69D] focus:outline-none focus:border-[#C69A45]/60 cursor-pointer font-sans"
+            {/* Controls */}
+            <div className="flex flex-col gap-3">
+              <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
+                <button
+                  onClick={() => setFilters({ ...filters, selectedType: null })}
+                  className="chip"
+                  data-active={filters.selectedType === null}
                 >
-                  {SORT_OPTIONS.map((s) => (
-                    <option key={s.id} value={s.id} className="bg-[#111318] text-[#F0E9DC]">
-                      Sort: {s.label}
-                    </option>
-                  ))}
-                </select>
+                  All
+                </button>
+                {TYPE_OPTIONS.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() =>
+                      setFilters({
+                        ...filters,
+                        selectedType: filters.selectedType === t.id ? null : t.id,
+                      })
+                    }
+                    className="chip"
+                    data-active={filters.selectedType === t.id}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
 
-                {/* Filter Drawer Trigger */}
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="relative">
+                  <span className="sr-only">Sort titles</span>
+                  <select
+                    value={filters.sort}
+                    onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
+                    className="h-9 appearance-none rounded-md border border-ink-700 bg-transparent pl-3 pr-8 font-mono text-[10px] uppercase tracking-[0.12em] text-paper-dim transition-colors hover:border-ink-600 focus:border-paper focus:outline-none"
+                  >
+                    {SORT_OPTIONS.map((s) => (
+                      <option key={s.id} value={s.id} className="bg-ink-900 text-paper">
+                        Sort: {s.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronRight className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 rotate-90 text-paper-dim" />
+                </label>
+
                 <button
                   onClick={() => setDrawerOpen(true)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-sans flex items-center gap-1.5 transition-all border ${
-                    activeFiltersCount > 0
-                      ? 'bg-[#191A1F] border-[#C69A45] text-[#C69A45] font-semibold'
-                      : 'bg-[#111318] border-[#292A2D] text-[#AAA69D] hover:text-[#F0E9DC]'
-                  }`}
+                  className="flex h-9 items-center gap-2 rounded-md border border-ink-700 px-3 font-mono text-[10px] uppercase tracking-[0.12em] text-paper-dim transition-colors hover:border-ink-600 hover:text-paper"
                 >
-                  <Filter className="w-3.5 h-3.5" />
-                  <span>Filters</span>
+                  <Filter className="h-3.5 w-3.5" />
+                  Filters
                   {activeFiltersCount > 0 && (
-                    <span className="w-4 h-4 rounded-full bg-[#C69A45] text-[#090A0C] text-[10px] flex items-center justify-center font-mono font-bold">
+                    <span className="tnum flex h-4 min-w-4 items-center justify-center rounded-sm bg-stamp px-1 text-[9px] font-semibold text-ink-950">
                       {activeFiltersCount}
                     </span>
                   )}
                 </button>
+
+                {activeFiltersCount > 0 && (
+                  <button
+                    onClick={() => setFilters(DEFAULT_FILTERS)}
+                    className="h-9 px-2 font-mono text-[10px] uppercase tracking-[0.12em] text-paper-dim underline underline-offset-4 hover:text-paper"
+                  >
+                    Clear all
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Active Filter Badges */}
+            {/* Active filter ledger */}
             {activeFiltersCount > 0 && (
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-[11px] font-mono text-[#AAA69D]">Active Filters:</span>
-
+              <div className="flex flex-wrap items-center gap-1.5">
                 {filters.selectedCountry && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#C69A45]">
-                    <span>Country: {filters.selectedCountry}</span>
-                    <button
-                      onClick={() => setFilters({ ...filters, selectedCountry: null })}
-                      className="hover:text-[#F0E9DC]"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
+                  <FilterTag
+                    label={`Country: ${filters.selectedCountry}`}
+                    onRemove={() => setFilters({ ...filters, selectedCountry: null })}
+                  />
                 )}
-
                 {filters.selectedLanguage && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#C69A45]">
-                    <span>Lang: {filters.selectedLanguage.toUpperCase()}</span>
-                    <button
-                      onClick={() => setFilters({ ...filters, selectedLanguage: null })}
-                      className="hover:text-[#F0E9DC]"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
+                  <FilterTag
+                    label={`Lang: ${filters.selectedLanguage.toUpperCase()}`}
+                    onRemove={() => setFilters({ ...filters, selectedLanguage: null })}
+                  />
                 )}
-
                 {filters.selectedType && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#C69A45]">
-                    <span>Origin: {filters.selectedType}</span>
-                    <button
-                      onClick={() => setFilters({ ...filters, selectedType: null })}
-                      className="hover:text-[#F0E9DC]"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
+                  <FilterTag
+                    label={`Format: ${filters.selectedType}`}
+                    onRemove={() => setFilters({ ...filters, selectedType: null })}
+                  />
                 )}
-
                 {filters.selectedStatus && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#C69A45]">
-                    <span>Status: {filters.selectedStatus}</span>
-                    <button
-                      onClick={() => setFilters({ ...filters, selectedStatus: null })}
-                      className="hover:text-[#F0E9DC]"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
+                  <FilterTag
+                    label={`Status: ${filters.selectedStatus}`}
+                    onRemove={() => setFilters({ ...filters, selectedStatus: null })}
+                  />
                 )}
-
                 {filters.includedTags.map((tag) => (
-                  <span
+                  <FilterTag
                     key={tag}
-                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#F0E9DC]"
-                  >
-                    <span>+{tag}</span>
-                    <button
-                      onClick={() =>
-                        setFilters({
-                          ...filters,
-                          includedTags: filters.includedTags.filter((t) => t !== tag),
-                        })
-                      }
-                      className="hover:text-[#C69A45]"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
+                    label={`+ ${tag}`}
+                    onRemove={() =>
+                      setFilters({
+                        ...filters,
+                        includedTags: filters.includedTags.filter((t) => t !== tag),
+                      })
+                    }
+                  />
                 ))}
-
-                <button
-                  onClick={() => setFilters(DEFAULT_FILTERS)}
-                  className="text-xs text-[#AAA69D] hover:text-[#C69A45] underline ml-2 font-mono"
-                >
-                  Clear all
-                </button>
+                {filters.excludedTags.map((tag) => (
+                  <FilterTag
+                    key={`x-${tag}`}
+                    label={`− ${tag}`}
+                    onRemove={() =>
+                      setFilters({
+                        ...filters,
+                        excludedTags: filters.excludedTags.filter((t) => t !== tag),
+                      })
+                    }
+                  />
+                ))}
               </div>
             )}
 
-            {/* Archive Catalogue Grid */}
+            {/* Grid */}
             {loadingInitial ? (
               <div className="space-y-8">
                 <div className="flex justify-center pt-2">
-                  <BrandLoader size="sm" label="Unrolling the archive" sublabel="Fetching the newest folios" />
+                  <BrandLoader size="sm" label="Opening the index" />
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {Array.from({ length: 15 }).map((_, i) => (
                     <SkeletonCard key={i} />
                   ))}
                 </div>
               </div>
             ) : items.length === 0 ? (
-              <div className="text-center py-16 space-y-4 rounded-xl bg-[#111318] border border-[#292A2D]">
-                <div className="w-12 h-12 rounded-lg bg-[#191A1F] border border-[#292A2D] flex items-center justify-center mx-auto text-[#AAA69D]">
-                  <Compass className="w-6 h-6" />
-                </div>
-                <h3 className="font-serif text-lg font-bold text-[#F0E9DC]">
-                  No Archive Records Found
-                </h3>
-                <p className="text-xs text-[#AAA69D] max-w-md mx-auto">
-                  No works match your current filter parameters. Try broadening your criteria or reset the search filters.
-                </p>
-                <button
-                  onClick={() => setFilters(DEFAULT_FILTERS)}
-                  className="px-4 py-2 rounded-lg bg-[#C69A45] text-[#090A0C] font-semibold text-xs hover:bg-[#D8AA55] transition-colors"
-                >
-                  Reset All Filters
-                </button>
-              </div>
+              <EmptyState
+                index="00"
+                title="Nothing matches those filters"
+                body="The index returned no titles for this combination. Clear a filter or two and try again."
+                action={
+                  <button onClick={() => setFilters(DEFAULT_FILTERS)} className="btn btn-stamp">
+                    Reset filters
+                  </button>
+                }
+              />
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                 {items.map((manga) => (
                   <MangaCard key={manga.id} manga={manga} />
                 ))}
               </div>
             )}
 
-            {/* Pagination & Infinite Scroll Indicator */}
             {items.length > 0 && (
-              <div className="pt-8 text-center space-y-4">
+              <div className="space-y-4 pt-4 text-center">
                 <div ref={observerTarget} className="h-4" />
-
                 {loadingMore ? (
-                  <div className="flex items-center justify-center gap-2 text-xs text-[#AAA69D] font-mono">
-                    <Loader2 className="w-4 h-4 text-[#C69A45] animate-spin" />
-                    <span>Loading next archive folio...</span>
+                  <div className="flex items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-paper-dim">
+                    <Loader2 className="h-4 w-4 animate-spin text-stamp" />
+                    Pulling the next sheet
                   </div>
                 ) : hasMore ? (
-                  <button
-                    onClick={loadMore}
-                    className="px-6 py-2.5 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] hover:border-[#C69A45]/40 text-xs font-medium text-[#F0E9DC] transition-all"
-                  >
-                    Load More Titles ({items.length} loaded)
+                  <button onClick={loadMore} className="btn btn-ghost">
+                    Load more
                   </button>
                 ) : (
-                  <p className="text-xs text-[#AAA69D]/60 font-mono">
-                    End of current archive folio • {items.length} titles
+                  <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-paper-dim/70">
+                    End of the index · {items.length} titles
                   </p>
                 )}
               </div>
             )}
           </section>
-        </>
+        </div>
       )}
 
       {/* ======================================================== */}
-      {/* TAB 2: MY LIBRARY (PERSONAL SHELVES)                     */}
+      {/* LIBRARY                                                 */}
       {/* ======================================================== */}
       {activeTab === 'bookmarks' && (
-        <section className="space-y-6" aria-label="My Library Section">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#292A2D] pb-4">
-            <div>
-              <h2 className="font-serif text-2xl font-bold text-[#F0E9DC]">
-                My Personal Library
-              </h2>
-              <p className="text-xs text-[#AAA69D] font-sans">
-                Organized reading shelves, bookmarks & personal archives
-              </p>
-            </div>
+        <section className="space-y-6" aria-label="Library">
+          <SectionHead
+            index="01"
+            title="Library"
+            note={`${bookmarks.length} saved`}
+            right={
+              <div className="flex items-center gap-1">
+                <button onClick={handleExport} className="btn-icon !h-9 !w-9" aria-label="Export library">
+                  <Download className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="btn-icon !h-9 !w-9"
+                  aria-label="Import library"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            }
+          />
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleExport}
-                className="px-3 py-1.5 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-xs text-[#AAA69D] hover:text-[#F0E9DC] flex items-center gap-1.5 transition-colors"
-                title="Export Library JSON"
-              >
-                <Download className="w-3.5 h-3.5 text-[#C69A45]" />
-                <span>Backup</span>
-              </button>
-
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-xs text-[#AAA69D] hover:text-[#F0E9DC] flex items-center gap-1.5 transition-colors"
-                title="Restore Library JSON"
-              >
-                <Upload className="w-3.5 h-3.5 text-[#C69A45]" />
-                <span>Restore</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Shelves Selector & Search */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
               {(['all', 'reading', 'plan', 'completed', 'favorites'] as const).map((cat) => {
                 const count =
+                  cat === 'all' ? bookmarks.length : bookmarks.filter((b) => b.category === cat).length;
+                const label =
                   cat === 'all'
-                    ? bookmarks.length
-                    : bookmarks.filter((b) => b.category === cat).length;
-                const isSelected = selectedShelf === cat;
-                const label = cat === 'all' ? 'All' : cat === 'plan' ? 'Plan to Read' : cat;
+                    ? 'All'
+                    : cat === 'plan'
+                      ? 'Plan to read'
+                      : cat.charAt(0).toUpperCase() + cat.slice(1);
                 return (
                   <button
                     key={cat}
                     onClick={() => setSelectedShelf(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-sans capitalize transition-all shrink-0 flex items-center gap-1.5 ${
-                      isSelected
-                        ? 'bg-[#191A1F] text-[#C69A45] border border-[#C69A45]/40 font-semibold'
-                        : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
-                    }`}
+                    className="chip"
+                    data-active={selectedShelf === cat}
                   >
-                    <span>{label}</span>
-                    <span className="text-[10px] font-mono opacity-70">({count})</span>
+                    {label}
+                    <span className="tnum opacity-60">{count}</span>
                   </button>
                 );
               })}
             </div>
 
-            <div className="w-full sm:w-64">
+            <div className="w-full sm:w-60">
               <input
-                type="text"
-                placeholder="Search saved volumes..."
+                type="search"
+                placeholder="Search saved titles"
                 value={shelfSearch}
                 onChange={(e) => setShelfSearch(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-[#111318] border border-[#292A2D] text-xs text-[#F0E9DC] placeholder-[#AAA69D]/50 focus:outline-none focus:border-[#C69A45]/60"
+                className="h-9 w-full rounded-md border border-ink-700 bg-transparent px-3 text-[12px] text-paper placeholder:text-paper-dim/60 focus:border-paper-dim focus:outline-none"
               />
             </div>
           </div>
 
-          {/* Bookmarks Grid */}
           {filteredBookmarks.length === 0 ? (
-            <div className="text-center py-16 space-y-3 rounded-xl bg-[#111318] border border-[#292A2D]">
-              <Bookmark className="w-8 h-8 text-[#AAA69D] mx-auto" />
-              <h3 className="font-serif text-base font-bold text-[#F0E9DC]">
-                No Volumes on this Shelf
-              </h3>
-              <p className="text-xs text-[#AAA69D] max-w-sm mx-auto">
-                Explore the archive catalogue and use the bookmark icon on any manga card to organize your personal reading library.
-              </p>
-              <button
-                onClick={() => setActiveTab('catalog')}
-                className="px-4 py-2 rounded-lg bg-[#C69A45] text-[#090A0C] font-semibold text-xs hover:bg-[#D8AA55] transition-colors"
-              >
-                Browse Archive
-              </button>
-            </div>
+            <EmptyState
+              index="00"
+              title="No titles on this shelf"
+              body="Save a cover from the index and it lands here. Your library is stored on this device only."
+              action={
+                <button onClick={() => setActiveTab('catalog')} className="btn btn-stamp">
+                  Browse the index
+                </button>
+              }
+            />
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               {filteredBookmarks.map((b) => (
                 <MangaCard
                   key={b.id}
-                  manga={{
-                    id: b.id,
-                    title: b.title,
-                    cover: b.cover,
-                    source: b.source,
-                  }}
+                  manga={{ id: b.id, title: b.title, cover: b.cover, source: b.source }}
                 />
               ))}
             </div>
@@ -865,106 +729,108 @@ export const BentoGrid: React.FC = () => {
       )}
 
       {/* ======================================================== */}
-      {/* TAB 3: READING HISTORY (CHRONICLES)                      */}
+      {/* HISTORY                                                 */}
       {/* ======================================================== */}
       {activeTab === 'history' && (
-        <section className="space-y-6" aria-label="Reading History Section">
-          <div className="flex items-center justify-between border-b border-[#292A2D] pb-4">
-            <div>
-              <h2 className="font-serif text-2xl font-bold text-[#F0E9DC]">
-                Reading History
-              </h2>
-              <p className="text-xs text-[#AAA69D] font-sans">
-                Timeline of all read chapters and current page continuity
-              </p>
-            </div>
-
-            {historyList.length > 0 && (
-              <button
-                onClick={() => {
-                  if (confirm('Clear all reading history records?')) clearHistory();
-                }}
-                className="px-3 py-1.5 rounded-lg bg-[#111318] hover:bg-rose-950/40 border border-[#292A2D] hover:border-rose-800 text-xs text-[#AAA69D] hover:text-rose-400 flex items-center gap-1.5 transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Clear History</span>
-              </button>
-            )}
-          </div>
+        <section className="space-y-6" aria-label="Reading history">
+          <SectionHead
+            index="01"
+            title="Reading history"
+            note={`${historyList.length} entries`}
+            right={
+              historyList.length > 0 ? (
+                <button
+                  onClick={() => {
+                    if (confirm('Clear all reading history?')) clearHistory();
+                  }}
+                  className="flex h-9 items-center gap-1.5 rounded-md border border-ink-700 px-2.5 font-mono text-[10px] uppercase tracking-[0.12em] text-paper-dim transition-colors hover:border-stamp/60 hover:text-stamp"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Clear
+                </button>
+              ) : undefined
+            }
+          />
 
           {historyList.length === 0 ? (
-            <div className="text-center py-16 space-y-3 rounded-xl bg-[#111318] border border-[#292A2D]">
-              <Clock className="w-8 h-8 text-[#AAA69D] mx-auto" />
-              <h3 className="font-serif text-base font-bold text-[#F0E9DC]">
-                No History Recorded
-              </h3>
-              <p className="text-xs text-[#AAA69D] max-w-sm mx-auto">
-                As you read chapters, your progress and last-viewed pages will be systematically logged here for effortless continuity.
-              </p>
-            </div>
+            <EmptyState
+              index="00"
+              title="Nothing read yet"
+              body="Chapters you open are logged here with your exact page, so you can pick the thread back up on any device with the same browser."
+              action={
+                <button onClick={() => setActiveTab('catalog')} className="btn btn-stamp">
+                  Find something to read
+                </button>
+              }
+            />
           ) : (
-            <div className="space-y-3">
-              {historyList.map((hist) => (
-                <div
-                  key={`${hist.mangaId}-${hist.chapterId}`}
-                  onClick={() =>
-                    openChapter(
-                      hist.mangaId,
-                      hist.chapterId,
-                      hist.chapterTitle,
-                      hist.mangaTitle,
-                      hist.mangaCover
-                    )
-                  }
-                  className="p-4 rounded-xl bg-[#111318] border border-[#292A2D] hover:border-[#C69A45]/40 transition-all cursor-pointer group flex items-center justify-between gap-4"
-                >
-                  <div className="flex items-center gap-4 min-w-0">
+            <ol className="divide-y divide-ink-700 border-y border-ink-700">
+              {historyList.map((hist, i) => (
+                <li key={`${hist.mangaId}-${hist.chapterId}`}>
+                  <button
+                    onClick={() =>
+                      openChapter(
+                        hist.mangaId,
+                        hist.chapterId,
+                        hist.chapterTitle,
+                        hist.mangaTitle,
+                        hist.mangaCover,
+                      )
+                    }
+                    className="group flex w-full items-center gap-4 py-3 text-left transition-colors hover:bg-ink-900/60"
+                  >
+                    <span className="tnum hidden w-6 shrink-0 font-mono text-[10px] text-paper-dim sm:block">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
                     <img
                       src={hist.mangaCover || FALLBACK_COVER}
                       alt=""
-                      className="w-12 h-16 rounded object-cover shrink-0 bg-[#090A0C] border border-[#292A2D]"
+                      className="h-16 w-12 shrink-0 rounded-sm border border-ink-700 object-cover"
                     />
-                    <div className="min-w-0 space-y-1">
-                      <h4 className="font-serif text-sm font-bold text-[#F0E9DC] truncate group-hover:text-[#C69A45] transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate font-display text-[13.5px] font-semibold text-paper group-hover:text-stamp">
                         {hist.mangaTitle}
-                      </h4>
-                      <p className="text-xs text-[#C69A45] font-mono">
-                        {hist.chapterTitle} • Page {hist.pageIndex || 1}
+                      </h3>
+                      <p className="mt-0.5 truncate font-mono text-[10px] uppercase tracking-[0.08em] text-paper-dim">
+                        {hist.chapterTitle} · page {hist.pageIndex || 1}
                       </p>
-                      <p className="text-[10px] text-[#AAA69D] font-mono">
+                      <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-paper-dim/70">
                         {new Date(hist.updatedAt).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
-                          year: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
                       </p>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#191A1F] border border-[#292A2D] text-xs font-sans text-[#F0E9DC] group-hover:bg-[#C69A45] group-hover:text-[#090A0C] transition-all shrink-0">
-                    <span>Continue</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </div>
-                </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-paper-dim transition-transform group-hover:translate-x-0.5 group-hover:text-paper" />
+                  </button>
+                </li>
               ))}
-            </div>
+            </ol>
           )}
         </section>
       )}
 
-      {/* Floating Back to Top Button */}
-      {showBackToTop && (
+      {/* Back to top */}
+      {showBackToTop && !filters.query && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 p-3 rounded-full bg-[#111318] border border-[#292A2D] text-[#C69A45] shadow-2xl hover:border-[#C69A45] transition-all z-30"
-          title="Scroll to top"
-          aria-label="Scroll to top"
+          className="fixed bottom-20 right-4 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-ink-600 bg-ink-900/95 text-paper shadow-lg backdrop-blur sm:bottom-6 sm:right-6"
+          aria-label="Back to top"
         >
-          <ArrowUp className="w-5 h-5" />
+          <ArrowUp className="h-4 w-4" />
         </button>
       )}
     </div>
   );
 };
+
+const FilterTag: React.FC<{ label: string; onRemove: () => void }> = ({ label, onRemove }) => (
+  <span className="inline-flex items-center gap-1.5 rounded-sm border border-ink-700 px-2 py-1 font-mono text-[9.5px] uppercase tracking-[0.08em] text-paper-dim">
+    {label}
+    <button onClick={onRemove} className="text-paper-dim hover:text-stamp" aria-label={`Remove ${label}`}>
+      <X className="h-3 w-3" />
+    </button>
+  </span>
+);

@@ -52,8 +52,8 @@ const DockButton: React.FC<{
     aria-pressed={active}
     className={`shrink-0 flex flex-col items-center justify-center gap-0.5 min-w-[46px] px-2 py-1.5 rounded-xl border transition-all ${
       active
-        ? 'bg-[#C69A45] text-[#090A0C] border-[#C69A45] shadow-[0_0_16px_-4px_rgba(198,154,69,0.7)]'
-        : 'bg-[#111318] border-[#292A2D] text-[#AAA69D] hover:text-[#F0E9DC] hover:border-[#C69A45]/45'
+        ? 'bg-[#E8472F] text-[#0A0A0B] border-[#E8472F] shadow-[2px_2px_0_0_rgba(244,239,228,0.18)]'
+        : 'bg-[#101012] border-[#26262A] text-[#ABA599] hover:text-[#F4EFE4] hover:border-[#E8472F]/45'
     }`}
   >
     {icon}
@@ -123,7 +123,7 @@ const HoloPanel3D: React.FC<{
       ref={panelRef}
       className={`relative w-full overflow-hidden group transition-all ${
         scroll3D
-          ? 'shadow-2xl rounded-xl border border-[#292A2D] my-2 duration-100'
+          ? 'shadow-2xl rounded-xl border border-[#26262A] my-2 duration-100'
           : 'duration-300'
       }`}
       style={{
@@ -133,14 +133,14 @@ const HoloPanel3D: React.FC<{
       }}
     >
       {loadError ? (
-        <div className="min-h-[300px] flex flex-col items-center justify-center p-6 bg-[#111318] border border-[#292A2D] text-center space-y-2">
-          <p className="text-xs text-[#AAA69D] font-mono">Panel {pageIdx + 1} temporarily unavailable</p>
+        <div className="min-h-[300px] flex flex-col items-center justify-center p-6 bg-[#101012] border border-[#26262A] text-center space-y-2">
+          <p className="text-xs text-[#ABA599] font-mono">Panel {pageIdx + 1} temporarily unavailable</p>
           <button
             onClick={() => {
               setLoadError(false);
               setRetryKey((k) => k + 1);
             }}
-            className="px-3 py-1 rounded bg-[#191A1F] border border-[#292A2D] text-xs text-[#C69A45] hover:bg-[#C69A45] hover:text-[#090A0C] transition-colors"
+            className="px-3 py-1 rounded bg-[#17171A] border border-[#26262A] text-xs text-[#E8472F] hover:bg-[#E8472F] hover:text-[#0A0A0B] transition-colors"
           >
             Reload Panel
           </button>
@@ -164,12 +164,12 @@ const HoloPanel3D: React.FC<{
         </>
       )}
       {/* Subtle Micro Page Counter */}
-      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-[#090A0C]/85 backdrop-blur-sm text-[9px] font-mono text-[#AAA69D] border border-[#292A2D] opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-[#0A0A0B]/85 backdrop-blur-sm text-[9px] font-mono text-[#ABA599] border border-[#26262A] opacity-0 group-hover:opacity-100 transition-opacity">
         p.{pageIdx + 1} / {total}
       </div>
       {/* 3D Holo Rim Glare */}
       {scroll3D && (
-        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#C69A45]/[0.05] via-transparent to-[#C69A45]/[0.05] opacity-60" />
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#E8472F]/[0.05] via-transparent to-[#E8472F]/[0.05] opacity-60" />
       )}
     </div>
   );
@@ -247,7 +247,7 @@ export const ReaderView: React.FC = () => {
       const initialTitle = activeChapterTitle || 'Chapter';
       updateHistory({
         mangaId: activeMangaId!,
-        mangaTitle: activeMangaTitle || 'Unknown Chronicle',
+        mangaTitle: activeMangaTitle || 'Untitled series',
         mangaCover: activeMangaCover || '',
         chapterId: activeChapterId!,
         chapterTitle: initialTitle,
@@ -286,7 +286,7 @@ export const ReaderView: React.FC = () => {
       // Refine history now that we have real image count / title.
       updateHistory({
         mangaId: activeMangaId!,
-        mangaTitle: activeMangaTitle || 'Unknown Chronicle',
+        mangaTitle: activeMangaTitle || 'Untitled series',
         mangaCover: activeMangaCover || imgList[0] || '',
         chapterId: activeChapterId!,
         chapterTitle: resolvedTitle,
@@ -386,7 +386,7 @@ export const ReaderView: React.FC = () => {
               if (activeMangaId) {
                 updateHistory({
                   mangaId: activeMangaId,
-                  mangaTitle: activeMangaTitle || 'Unknown Chronicle',
+                  mangaTitle: activeMangaTitle || 'Untitled series',
                   mangaCover: activeMangaCover || block.images[0] || '',
                   chapterId: block.chapterId,
                   chapterTitle: block.chapterTitle,
@@ -461,7 +461,7 @@ export const ReaderView: React.FC = () => {
       if (activeMangaId && activeChapterId) {
         updateHistory({
           mangaId: activeMangaId,
-          mangaTitle: activeMangaTitle || 'Unknown Chronicle',
+          mangaTitle: activeMangaTitle || 'Untitled series',
           mangaCover: activeMangaCover || currentImages[0] || '',
           chapterId: activeChapterId,
           chapterTitle: currentDisplayTitle,
@@ -842,7 +842,7 @@ export const ReaderView: React.FC = () => {
                       : 'bg-void-900 border-void-750 text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  {mode === 'off' ? 'Off' : mode === 'rain' ? '🌧️ Rain' : mode === 'lofi' ? '☕ Lo-Fi' : '🌌 Void'}
+                  {mode === 'off' ? 'Off' : mode === 'rain' ? 'Rain' : mode === 'lofi' ? 'Lo-Fi' : 'Void'}
                 </button>
               ))}
             </div>
@@ -973,7 +973,7 @@ export const ReaderView: React.FC = () => {
               : 'bottom-[calc(env(safe-area-inset-bottom,0px)+5.25rem)]'
           }`}
         >
-          <div className="flex items-center gap-1 p-1.5 rounded-2xl bg-[#0B0C10]/95 backdrop-blur-2xl border border-[#C69A45]/25 shadow-[0_22px_60px_-24px_rgba(0,0,0,0.95)] max-w-[calc(100vw-1.5rem)] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-1 p-1.5 rounded-lg bg-[#0A0A0B]/95 backdrop-blur-2xl border border-[#26262A] shadow-[0_18px_48px_-24px_rgba(0,0,0,0.95)] max-w-[calc(100vw-1.5rem)] overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {readerSettings.readingMode === 'vertical' && (
               <>
                 <DockButton
@@ -1001,7 +1001,7 @@ export const ReaderView: React.FC = () => {
                     })
                   }
                 />
-                <span className="w-px h-6 bg-[#292A2D] mx-0.5 shrink-0" />
+                <span className="w-px h-6 bg-[#26262A] mx-0.5 shrink-0" />
               </>
             )}
 
@@ -1030,9 +1030,9 @@ export const ReaderView: React.FC = () => {
             {readerSettings.audioAmbience !== 'off' && (
               <>
                 <span className="flex items-end gap-[2px] h-4 px-1 shrink-0" aria-hidden="true">
-                  <i className="w-[2px] h-2 bg-[#C69A45] animate-pulse rounded-full" />
-                  <i className="w-[2px] h-3.5 bg-[#C69A45] animate-pulse [animation-delay:120ms] rounded-full" />
-                  <i className="w-[2px] h-1.5 bg-[#C69A45] animate-pulse [animation-delay:240ms] rounded-full" />
+                  <i className="w-[2px] h-2 bg-[#E8472F] animate-pulse rounded-full" />
+                  <i className="w-[2px] h-3.5 bg-[#E8472F] animate-pulse [animation-delay:120ms] rounded-full" />
+                  <i className="w-[2px] h-1.5 bg-[#E8472F] animate-pulse [animation-delay:240ms] rounded-full" />
                 </span>
                 <DockButton
                   active={false}
@@ -1044,7 +1044,7 @@ export const ReaderView: React.FC = () => {
               </>
             )}
 
-            <span className="w-px h-6 bg-[#292A2D] mx-0.5 shrink-0" />
+            <span className="w-px h-6 bg-[#26262A] mx-0.5 shrink-0" />
             <DockButton
               active={showSettings}
               icon={<Sliders className="w-4 h-4" />}
@@ -1080,7 +1080,6 @@ export const ReaderView: React.FC = () => {
         {loadingInitial ? (
           <div className="min-h-[70vh] flex flex-col items-center justify-center">
             <div className="relative">
-              <div className="absolute -inset-10 rounded-full bg-[#C69A45]/10 blur-3xl animate-glow-pulse" />
               <BrandLoader
                 size="lg"
                 label="Deciphering panels"
@@ -1109,18 +1108,18 @@ export const ReaderView: React.FC = () => {
                   >
                     {/* Chapter Header Card (Editorial Folio Header) */}
                     <div className="w-full py-8 sm:py-12 px-4 flex flex-col items-center justify-center text-center space-y-3">
-                      <div className="w-9 h-9 rounded-lg bg-[#111318] border border-[#292A2D] flex items-center justify-center text-[#C69A45] font-mono text-xs font-bold shadow-md">
+                      <div className="w-9 h-9 rounded-lg bg-[#101012] border border-[#26262A] flex items-center justify-center text-[#E8472F] font-mono text-xs font-bold shadow-md">
                         {chIdx + 1}
                       </div>
                       <div className="space-y-1">
-                        <span className="text-[10px] font-mono uppercase tracking-widest text-[#C69A45]">
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-[#E8472F]">
                           Edition Folio
                         </span>
-                        <h2 className="font-serif text-lg sm:text-2xl font-bold text-[#F0E9DC]">
+                        <h2 className="font-serif text-lg sm:text-2xl font-bold text-[#F4EFE4]">
                           {block.chapterTitle}
                         </h2>
                       </div>
-                      <div className="w-20 h-px bg-gradient-to-r from-transparent via-[#C69A45]/40 to-transparent" />
+                      <div className="w-20 h-px bg-gradient-to-r from-transparent via-[#E8472F]/40 to-transparent" />
                     </div>
 
                     {/* Image Stream (with 3D cylinder curve if enabled) */}
@@ -1136,14 +1135,14 @@ export const ReaderView: React.FC = () => {
                     ))}
 
                     {/* Chapter Conclusion Milestone Divider */}
-                    <div className="w-full py-10 px-4 flex flex-col items-center justify-center text-center space-y-2.5 bg-[#090A0C]/80 border-y border-[#292A2D] my-4">
-                      <div className="w-7 h-7 rounded-full bg-[#111318] border border-[#292A2D] flex items-center justify-center text-[#42B8A8]">
+                    <div className="w-full py-10 px-4 flex flex-col items-center justify-center text-center space-y-2.5 bg-[#0A0A0B]/80 border-y border-[#26262A] my-4">
+                      <div className="w-7 h-7 rounded-full bg-[#101012] border border-[#26262A] flex items-center justify-center text-[#4FB3A2]">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                       </div>
-                      <h4 className="font-serif text-sm font-bold text-[#F0E9DC]">
+                      <h4 className="font-serif text-sm font-bold text-[#F4EFE4]">
                         Concluded: {block.chapterTitle}
                       </h4>
-                      <p className="text-[11px] text-[#AAA69D] font-sans">
+                      <p className="text-[11px] text-[#ABA599] font-sans">
                         Continue scrolling to progress to subsequent folio...
                       </p>
                     </div>
@@ -1156,28 +1155,28 @@ export const ReaderView: React.FC = () => {
                   chapters.findIndex(
                     (c) => c.id === loadedChapters[loadedChapters.length - 1].chapterId
                   ) === 0 && (
-                    <div className="w-full my-12 p-8 rounded-2xl bg-[#111318] border border-[#292A2D] text-center space-y-4 max-w-xl mx-auto shadow-2xl">
-                      <div className="w-10 h-10 rounded-full bg-[#191A1F] border border-[#C69A45]/40 text-[#C69A45] flex items-center justify-center mx-auto">
+                    <div className="w-full my-12 p-8 rounded-2xl bg-[#101012] border border-[#26262A] text-center space-y-4 max-w-xl mx-auto shadow-2xl">
+                      <div className="w-10 h-10 rounded-full bg-[#17171A] border border-[#E8472F]/40 text-[#E8472F] flex items-center justify-center mx-auto">
                         <CheckCircle2 className="w-5 h-5" />
                       </div>
                       <div className="space-y-1">
-                        <h3 className="font-serif text-lg font-bold text-[#F0E9DC]">
+                        <h3 className="font-serif text-lg font-bold text-[#F4EFE4]">
                           You are Caught Up
                         </h3>
-                        <p className="text-xs text-[#AAA69D] max-w-md mx-auto leading-relaxed font-sans">
+                        <p className="text-xs text-[#ABA599] max-w-md mx-auto leading-relaxed font-sans">
                           You have concluded the latest published chapter for this edition. Return to the chronicle folio index or explore more works in the archive.
                         </p>
                       </div>
                       <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                         <button
                           onClick={() => setView('details')}
-                          className="px-4 py-2 rounded-lg bg-[#191A1F] hover:bg-[#21232A] border border-[#292A2D] text-xs font-sans text-[#F0E9DC] transition-all"
+                          className="px-4 py-2 rounded-lg bg-[#17171A] hover:bg-[#1E1E22] border border-[#26262A] text-xs font-sans text-[#F4EFE4] transition-all"
                         >
                           Return to Folio Index
                         </button>
                         <button
                           onClick={() => setView('home')}
-                          className="px-4 py-2 rounded-lg bg-[#C69A45] hover:bg-[#D8AA55] text-[#090A0C] text-xs font-semibold transition-all shadow-md"
+                          className="px-4 py-2 rounded-lg bg-[#E8472F] hover:bg-[#F3694F] text-[#0A0A0B] text-xs font-semibold transition-all shadow-md"
                         >
                           Explore Archive
                         </button>
@@ -1188,8 +1187,8 @@ export const ReaderView: React.FC = () => {
                 {/* Infinite Next Chapter Loading Skeleton */}
                 {loadingNext && (
                   <div className="w-full py-16 flex flex-col items-center justify-center space-y-3">
-                    <Loader2 className="w-6 h-6 text-[#C69A45] animate-spin" />
-                    <span className="text-xs font-serif font-bold text-[#F0E9DC]">
+                    <Loader2 className="w-6 h-6 text-[#E8472F] animate-spin" />
+                    <span className="text-xs font-serif font-bold text-[#F4EFE4]">
                       Loading Next Chapter...
                     </span>
                   </div>
