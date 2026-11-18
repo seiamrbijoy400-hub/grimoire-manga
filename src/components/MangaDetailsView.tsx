@@ -218,12 +218,15 @@ export const MangaDetailsView: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-[#090A0C] via-[#090A0C]/90 to-transparent pointer-events-none" />
 
             <div className="relative z-10 flex flex-col md:flex-row gap-6 sm:gap-8 items-start">
-              {/* Cover Artwork */}
+              {/* Cover Artwork (Prioritizes top of cover so character faces are preserved) */}
               <div className="w-40 sm:w-56 aspect-[3/4] rounded-lg overflow-hidden shadow-2xl border border-[#292A2D] shrink-0 mx-auto md:mx-0 bg-[#090A0C]">
                 <img
                   src={getProxyImageUrl(details.cover)}
                   alt={details.title}
-                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = FALLBACK_COVER;
+                  }}
+                  className="w-full h-full object-cover object-[center_top]"
                 />
               </div>
 
@@ -256,7 +259,7 @@ export const MangaDetailsView: React.FC = () => {
                     {details.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-2.5 py-1 rounded-lg bg-void-850 border border-void-700/60 text-[11px] text-slate-300 font-medium"
+                        className="px-2.5 py-1 rounded-md bg-[#191A1F] border border-[#292A2D] text-[11px] text-[#AAA69D] font-medium"
                       >
                         {tag}
                       </span>
@@ -266,7 +269,7 @@ export const MangaDetailsView: React.FC = () => {
 
                 {/* Synopsis */}
                 {details.synopsis && (
-                  <div className="pt-2 text-xs sm:text-sm text-slate-300 leading-relaxed max-h-48 overflow-y-auto pr-2 border-l-2 border-solar-500/50 pl-3">
+                  <div className="pt-2 text-xs sm:text-sm text-[#AAA69D] leading-relaxed max-h-48 overflow-y-auto pr-2 border-l-2 border-[#C69A45]/50 pl-3 font-sans">
                     <p className="whitespace-pre-line">{details.synopsis}</p>
                   </div>
                 )}
@@ -288,10 +291,10 @@ export const MangaDetailsView: React.FC = () => {
                   <div className="relative">
                     <button
                       onClick={() => setShelfDropdownOpen(!shelfDropdownOpen)}
-                      className={`px-4 py-2.5 rounded-xl border text-xs font-mono font-medium flex items-center gap-2 transition-all shadow-sm ${
+                      className={`px-4 py-2.5 rounded-lg border text-xs font-sans font-medium flex items-center gap-2 transition-all shadow-sm ${
                         bookmarked
-                          ? 'bg-solar-500/20 text-solar-400 border-solar-500/60'
-                          : 'bg-void-850 hover:bg-void-800 text-slate-300 border-void-700/70 hover:text-solar-400'
+                          ? 'bg-[#C69A45]/15 text-[#C69A45] border-[#C69A45]/40'
+                          : 'bg-[#191A1F] hover:bg-[#21232A] text-[#F0E9DC] border-[#292A2D]'
                       }`}
                     >
                       <Bookmark className={`w-3.5 h-3.5 ${bookmarked ? 'fill-current' : ''}`} />
@@ -302,7 +305,7 @@ export const MangaDetailsView: React.FC = () => {
                     </button>
 
                     {shelfDropdownOpen && (
-                      <div className="absolute top-full mt-2 left-0 w-48 p-1.5 rounded-2xl bg-void-900 border border-void-700 shadow-2xl z-40 space-y-1 text-xs font-mono animate-fade-in">
+                      <div className="absolute top-full mt-2 left-0 w-48 p-1.5 rounded-xl bg-[#111318] border border-[#292A2D] shadow-2xl z-40 space-y-1 text-xs font-sans animate-fade-in">
                         {(Object.keys(SHELF_LABELS) as BookmarkCategory[]).map((cat) => (
                           <button
                             key={cat}
@@ -311,28 +314,28 @@ export const MangaDetailsView: React.FC = () => {
                               else setBookmarkCategory(details.id, cat);
                               setShelfDropdownOpen(false);
                             }}
-                            className={`w-full text-left px-3 py-2 rounded-xl flex items-center gap-2 hover:bg-void-800 transition-colors ${
+                            className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${
                               currentBookmark?.category === cat
-                                ? 'bg-solar-500/15 text-solar-400 font-bold'
-                                : 'text-slate-300'
+                                ? 'bg-[#C69A45]/15 text-[#C69A45] font-semibold'
+                                : 'text-[#AAA69D] hover:bg-[#191A1F] hover:text-[#F0E9DC]'
                             }`}
                           >
                             <span>{SHELF_LABELS[cat].icon}</span>
                             <span>{SHELF_LABELS[cat].label}</span>
                             {currentBookmark?.category === cat && (
-                              <Check className="w-3 h-3 ml-auto text-solar-400" />
+                              <Check className="w-3 h-3 ml-auto text-[#C69A45]" />
                             )}
                           </button>
                         ))}
 
                         {bookmarked && (
-                          <div className="pt-1 border-t border-void-750">
+                          <div className="pt-1 border-t border-[#292A2D]">
                             <button
                               onClick={() => {
                                 toggleBookmark(details);
                                 setShelfDropdownOpen(false);
                               }}
-                              className="w-full text-left px-3 py-1.5 rounded-xl text-telemetry-crimson hover:bg-void-800 transition-colors text-[11px]"
+                              className="w-full text-left px-3 py-1.5 rounded-lg text-[#E05D5D] hover:bg-[#191A1F] transition-colors text-[11px]"
                             >
                               Remove from Library
                             </button>
@@ -345,10 +348,10 @@ export const MangaDetailsView: React.FC = () => {
                   {/* Share Link Button */}
                   <button
                     onClick={handleCopyLink}
-                    className="p-2.5 rounded-xl bg-void-850 hover:bg-void-800 border border-void-700/70 text-slate-400 hover:text-slate-200 transition-colors"
+                    className="p-2.5 rounded-lg bg-[#191A1F] hover:bg-[#21232A] border border-[#292A2D] text-[#AAA69D] hover:text-[#F0E9DC] transition-colors"
                     title="Copy Share Link"
                   >
-                    {copiedLink ? <Check className="w-4 h-4 text-telemetry-emerald" /> : <Share2 className="w-4 h-4" />}
+                    {copiedLink ? <Check className="w-4 h-4 text-[#42B8A8]" /> : <Share2 className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -357,15 +360,15 @@ export const MangaDetailsView: React.FC = () => {
 
           {/* Chapters Codex Header & Tooling */}
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-void-700/60 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#292A2D] pb-3">
               <div className="flex items-center gap-3">
-                <h3 className="font-serif text-lg font-bold text-slate-100 flex items-center gap-2">
-                  <span>Scroll Chapters</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-void-800 text-slate-400 font-mono">
+                <h3 className="font-serif text-lg font-bold text-[#F0E9DC] flex items-center gap-2">
+                  <span>Chapter Index</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#191A1F] text-[#AAA69D] border border-[#292A2D] font-mono">
                     {chapters.length}
                   </span>
                 </h3>
-                <span className="text-xs font-mono text-solar-400">
+                <span className="text-xs font-mono text-[#C69A45]">
                   {totalReadCount} / {chapters.length} Read ({readPercentage}%)
                 </span>
               </div>
@@ -379,7 +382,7 @@ export const MangaDetailsView: React.FC = () => {
                       chapters.map((c) => c.id)
                     )
                   }
-                  className="px-2.5 py-1.5 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-400 hover:text-telemetry-emerald text-[11px] font-mono flex items-center gap-1.5 transition-colors"
+                  className="px-2.5 py-1.5 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-[#AAA69D] hover:text-[#42B8A8] text-xs font-sans flex items-center gap-1.5 transition-colors"
                   title="Mark all chapters as read"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -388,7 +391,7 @@ export const MangaDetailsView: React.FC = () => {
 
                 <button
                   onClick={() => setSortDescending(!sortDescending)}
-                  className="px-2.5 py-1.5 rounded-xl bg-void-900 hover:bg-void-850 border border-void-750 text-slate-400 hover:text-solar-400 text-[11px] font-mono flex items-center gap-1.5 transition-colors"
+                  className="px-2.5 py-1.5 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-[#AAA69D] hover:text-[#C69A45] text-xs font-sans flex items-center gap-1.5 transition-colors"
                   title="Toggle Sorting"
                 >
                   <ArrowUpDown className="w-3.5 h-3.5" />
@@ -477,7 +480,7 @@ export const MangaDetailsView: React.FC = () => {
                   value={chapterFilter}
                   onChange={(e) => setChapterFilter(e.target.value)}
                   placeholder="Filter chapters (e.g. 15, Extra)..."
-                  className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-void-900 border border-void-750 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-solar-500/60 font-mono"
+                  className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-[#111318] border border-[#292A2D] text-xs text-[#F0E9DC] placeholder-[#AAA69D]/50 focus:outline-none focus:border-[#C69A45]/60 font-sans"
                 />
               </div>
 
@@ -492,10 +495,10 @@ export const MangaDetailsView: React.FC = () => {
                       <button
                         key={i}
                         onClick={() => setSelectedChunk(i)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-mono shrink-0 transition-all ${
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-mono shrink-0 transition-all ${
                           isSelected
-                            ? 'bg-solar-500 text-void-950 font-bold shadow-sm'
-                            : 'bg-void-900 text-slate-400 hover:text-slate-200 border border-void-750'
+                            ? 'bg-[#C69A45] text-[#090A0C] font-semibold shadow-sm'
+                            : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
                         }`}
                       >
                         {start}–{end}
@@ -504,10 +507,10 @@ export const MangaDetailsView: React.FC = () => {
                   })}
                   <button
                     onClick={() => setSelectedChunk(-1)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-mono shrink-0 transition-all ${
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-mono shrink-0 transition-all ${
                       selectedChunk === -1
-                        ? 'bg-solar-500 text-void-950 font-bold shadow-sm'
-                        : 'bg-void-900 text-slate-400 hover:text-slate-200 border border-void-750'
+                        ? 'bg-[#C69A45] text-[#090A0C] font-semibold shadow-sm'
+                        : 'bg-[#111318] text-[#AAA69D] hover:text-[#F0E9DC] border border-[#292A2D]'
                     }`}
                   >
                     All ({orderedChapters.length})
@@ -526,52 +529,52 @@ export const MangaDetailsView: React.FC = () => {
                   <div
                     key={ch.id}
                     onClick={() => openChapter(activeMangaId, ch.id, ch.title, details?.title, details?.coverImage)}
-                    className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between group ${
+                    className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between group ${
                       isResume
-                        ? 'bg-void-850 border-solar-500/70 shadow-md shadow-solar-500/10'
+                        ? 'bg-[#191A1F] border-[#C69A45]/60 shadow-md shadow-[#C69A45]/10'
                         : isRead
-                        ? 'bg-void-950/60 border-void-800 text-slate-400 hover:bg-void-900 hover:border-void-700'
-                        : 'bg-void-900/90 border-void-750 hover:border-solar-500/50 hover:bg-void-850'
+                        ? 'bg-[#090A0C]/70 border-[#292A2D]/60 text-[#AAA69D]/60 hover:bg-[#111318]'
+                        : 'bg-[#111318] border-[#292A2D] hover:border-[#C69A45]/40 hover:bg-[#191A1F]'
                     }`}
                   >
                     <div className="truncate pr-2">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-2">
                         {isRead ? (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-telemetry-emerald shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#42B8A8] shrink-0" />
                         ) : (
-                          <div className="w-1.5 h-1.5 rounded-full bg-slate-600 group-hover:bg-solar-400 shrink-0 transition-colors" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#292A2D] group-hover:bg-[#C69A45] shrink-0 transition-colors" />
                         )}
                         <h4
                           className={`font-serif text-xs font-bold truncate transition-colors ${
                             isResume
-                              ? 'text-solar-400'
+                              ? 'text-[#C69A45]'
                               : isRead
-                              ? 'text-slate-400 line-through decoration-slate-600'
-                              : 'text-slate-200 group-hover:text-solar-400'
+                              ? 'text-[#AAA69D]/60 line-through decoration-[#292A2D]'
+                              : 'text-[#F0E9DC] group-hover:text-[#C69A45]'
                           }`}
                         >
                           {ch.title}
                         </h4>
                         {ch.language && selectedLanguage === 'all' && (
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-void-950 text-slate-400 border border-void-750 font-mono shrink-0 ml-1">
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#090A0C] text-[#AAA69D] border border-[#292A2D] font-mono shrink-0 ml-1">
                             {LANGUAGE_META[ch.language]?.flag || '🌐'} {ch.language.toUpperCase()}
                           </span>
                         )}
                       </div>
                       {ch.date && (
-                        <p className="text-[10px] text-slate-500 font-mono mt-0.5 ml-3.5">
+                        <p className="text-[10px] text-[#AAA69D]/60 font-mono mt-0.5 ml-3.5">
                           {ch.date}
                         </p>
                       )}
                     </div>
 
-                    <div className="shrink-0 flex items-center gap-1">
+                    <div className="shrink-0 flex items-center gap-1.5">
                       {isResume && (
-                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-solar-500/20 text-solar-400 font-mono font-bold">
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#C69A45]/20 text-[#C69A45] font-mono font-bold">
                           Current
                         </span>
                       )}
-                      <span className="text-slate-500 group-hover:text-solar-400 text-xs font-mono transition-transform group-hover:translate-x-0.5">
+                      <span className="text-[#AAA69D]/50 group-hover:text-[#C69A45] text-xs font-mono transition-transform group-hover:translate-x-0.5">
                         →
                       </span>
                     </div>
@@ -583,12 +586,12 @@ export const MangaDetailsView: React.FC = () => {
         </div>
       ) : (
         <div className="max-w-md mx-auto py-20 text-center space-y-4">
-          <p className="text-sm font-serif text-slate-400">Failed to decipher grimoire metadata.</p>
+          <p className="text-sm font-serif text-[#AAA69D]">Unable to load archive chronicle metadata.</p>
           <button
             onClick={() => setView('home')}
-            className="px-4 py-2 rounded-xl bg-void-900 border border-void-750 text-xs font-mono text-solar-400 hover:bg-void-850"
+            className="px-4 py-2 rounded-lg bg-[#111318] border border-[#292A2D] text-xs font-sans text-[#C69A45] hover:bg-[#191A1F]"
           >
-            Return to Library
+            Return to Archive
           </button>
         </div>
       )}

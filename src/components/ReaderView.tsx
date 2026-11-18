@@ -997,20 +997,20 @@ export const ReaderView: React.FC = () => {
                     id={`chapter-block-${block.chapterId}`}
                     className="w-full flex flex-col items-center"
                   >
-                    {/* Chapter Header Card with Wax Seal */}
+                    {/* Chapter Header Card (Editorial Folio Header) */}
                     <div className="w-full py-8 sm:py-12 px-4 flex flex-col items-center justify-center text-center space-y-3">
-                      <div className="wax-seal w-12 h-12 rounded-full flex items-center justify-center text-amber-100 font-serif font-black text-sm shadow-xl">
+                      <div className="w-9 h-9 rounded-lg bg-[#111318] border border-[#292A2D] flex items-center justify-center text-[#C69A45] font-mono text-xs font-bold shadow-md">
                         {chIdx + 1}
                       </div>
                       <div className="space-y-1">
-                        <span className="text-[10px] font-mono uppercase tracking-widest text-solar-400">
-                          {isMangaDex ? 'MangaDex Safe Chapter' : 'Chronicle Chapter'}
+                        <span className="text-[10px] font-mono uppercase tracking-widest text-[#C69A45]">
+                          Edition Folio
                         </span>
-                        <h2 className="font-serif text-lg sm:text-2xl font-bold text-slate-100">
+                        <h2 className="font-serif text-lg sm:text-2xl font-bold text-[#F0E9DC]">
                           {block.chapterTitle}
                         </h2>
                       </div>
-                      <div className="w-24 h-[1px] bg-gradient-to-r from-transparent via-solar-500/50 to-transparent" />
+                      <div className="w-20 h-px bg-gradient-to-r from-transparent via-[#C69A45]/40 to-transparent" />
                     </div>
 
                     {/* Image Stream (with 3D cylinder curve if enabled) */}
@@ -1026,26 +1026,61 @@ export const ReaderView: React.FC = () => {
                     ))}
 
                     {/* Chapter Conclusion Milestone Divider */}
-                    <div className="w-full py-12 px-4 flex flex-col items-center justify-center text-center space-y-3 bg-void-950/60 border-y border-void-800/80 my-4">
-                      <div className="w-8 h-8 rounded-full bg-void-900 border border-solar-500/40 flex items-center justify-center text-solar-400">
-                        <CheckCircle2 className="w-4 h-4" />
+                    <div className="w-full py-10 px-4 flex flex-col items-center justify-center text-center space-y-2.5 bg-[#090A0C]/80 border-y border-[#292A2D] my-4">
+                      <div className="w-7 h-7 rounded-full bg-[#111318] border border-[#292A2D] flex items-center justify-center text-[#42B8A8]">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
                       </div>
-                      <h4 className="font-serif text-sm font-bold text-slate-200">
-                        End of {block.chapterTitle}
+                      <h4 className="font-serif text-sm font-bold text-[#F0E9DC]">
+                        Concluded: {block.chapterTitle}
                       </h4>
-                      <p className="text-[11px] text-slate-400 font-mono">
-                        Scroll further to decipher subsequent chronicle...
+                      <p className="text-[11px] text-[#AAA69D] font-sans">
+                        Continue scrolling to progress to subsequent folio...
                       </p>
                     </div>
                   </div>
                 ))}
 
+                {/* Terminal Release Milestone (Caught Up Card) */}
+                {loadedChapters.length > 0 &&
+                  chapters.length > 0 &&
+                  chapters.findIndex(
+                    (c) => c.id === loadedChapters[loadedChapters.length - 1].chapterId
+                  ) === 0 && (
+                    <div className="w-full my-12 p-8 rounded-2xl bg-[#111318] border border-[#292A2D] text-center space-y-4 max-w-xl mx-auto shadow-2xl">
+                      <div className="w-10 h-10 rounded-full bg-[#191A1F] border border-[#C69A45]/40 text-[#C69A45] flex items-center justify-center mx-auto">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="font-serif text-lg font-bold text-[#F0E9DC]">
+                          You are Caught Up
+                        </h3>
+                        <p className="text-xs text-[#AAA69D] max-w-md mx-auto leading-relaxed font-sans">
+                          You have concluded the latest published chapter for this edition. Return to the chronicle folio index or explore more works in the archive.
+                        </p>
+                      </div>
+                      <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                        <button
+                          onClick={() => setView('details')}
+                          className="px-4 py-2 rounded-lg bg-[#191A1F] hover:bg-[#21232A] border border-[#292A2D] text-xs font-sans text-[#F0E9DC] transition-all"
+                        >
+                          Return to Folio Index
+                        </button>
+                        <button
+                          onClick={() => setView('home')}
+                          className="px-4 py-2 rounded-lg bg-[#C69A45] hover:bg-[#D8AA55] text-[#090A0C] text-xs font-semibold transition-all shadow-md"
+                        >
+                          Explore Archive
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                 {/* Infinite Next Chapter Loading Skeleton */}
                 {loadingNext && (
                   <div className="w-full py-16 flex flex-col items-center justify-center space-y-3">
-                    <Loader2 className="w-6 h-6 text-solar-400 animate-spin" />
-                    <span className="text-xs font-serif font-bold text-slate-300">
-                      Deciphering Next Chronicle...
+                    <Loader2 className="w-6 h-6 text-[#C69A45] animate-spin" />
+                    <span className="text-xs font-serif font-bold text-[#F0E9DC]">
+                      Loading Next Chapter...
                     </span>
                   </div>
                 )}

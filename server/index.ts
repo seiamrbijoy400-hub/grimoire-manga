@@ -274,15 +274,20 @@ app.get('/api/proxy/image', async (c) => {
     }
 
     const contentType = upstreamRes.headers.get('content-type') || 'image/jpeg';
-    const cacheControl = 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400';
+    const cacheControl = 'public, max-age=604800, immutable';
 
     c.header('Content-Type', contentType);
     c.header('Cache-Control', cacheControl);
 
+    // Unbuffered Direct Stream: pipe upstream ReadableStream directly to socket
+    if (upstreamRes.body) {
+      return c.body(upstreamRes.body as any);
+    }
+
     const buffer = await upstreamRes.arrayBuffer();
     return c.body(buffer);
   } catch (err) {
-    console.error('Image proxy error:', err);
+    console.error('Image proxy stream error:', err);
     return c.text('Image proxy failed', 500);
   }
 });
