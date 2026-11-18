@@ -1,9 +1,10 @@
 import React from 'react';
 import { BookOpen, Search, Bookmark, History, ChevronLeft, Compass, SlidersHorizontal } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore.ts';
 
 export const Navbar: React.FC = () => {
+  const navigate = useNavigate();
   const { currentView, activeTab, setView, setActiveTab, setSearchOpen, bookmarks, history } = useStore();
   const bookmarkCount = bookmarks.length;
   const historyCount = Object.keys(history).length;
@@ -15,7 +16,10 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-3">
           {currentView !== 'home' && (
             <button
-              onClick={() => setView('home')}
+              onClick={() => {
+                navigate('/');
+                setView('home');
+              }}
               className="p-2 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-[#AAA69D] hover:text-[#C69A45] transition-colors"
               title="Return to Archive"
             >
@@ -25,6 +29,7 @@ export const Navbar: React.FC = () => {
 
           <div
             onClick={() => {
+              navigate('/');
               setView('home');
               setActiveTab('catalog');
             }}
@@ -54,10 +59,10 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Center Search Input (Editorial Search Bar) */}
+        {/* Center Search Input (Editorial Search Bar) -> Direct navigation to /search */}
         <div className="flex-1 max-w-md hidden md:block">
           <button
-            onClick={() => setSearchOpen(true)}
+            onClick={() => navigate('/search')}
             className="w-full flex items-center justify-between px-3.5 py-2 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] hover:border-[#C69A45]/40 text-[#AAA69D] hover:text-[#F0E9DC] text-xs transition-all group"
           >
             <div className="flex items-center gap-2.5">
@@ -65,16 +70,16 @@ export const Navbar: React.FC = () => {
               <span className="font-sans">Search titles, authors, genres...</span>
             </div>
             <kbd className="px-1.5 py-0.5 text-[10px] rounded bg-[#191A1F] text-[#AAA69D] border border-[#292A2D] font-mono">
-              ⌘K
+              Search
             </kbd>
           </button>
         </div>
 
         {/* Right Navigation */}
         <nav className="flex items-center gap-1 sm:gap-2">
-          {/* Mobile Search Button */}
+          {/* Mobile Search Button -> Direct navigation to /search */}
           <button
-            onClick={() => setSearchOpen(true)}
+            onClick={() => navigate('/search')}
             className="md:hidden p-2 rounded-lg bg-[#111318] hover:bg-[#191A1F] border border-[#292A2D] text-[#AAA69D] hover:text-[#C69A45] transition-colors"
             title="Search Archive"
           >
@@ -83,7 +88,10 @@ export const Navbar: React.FC = () => {
 
           {/* Discover Tab */}
           <button
-            onClick={() => setActiveTab('catalog')}
+            onClick={() => {
+              navigate('/');
+              setActiveTab('catalog');
+            }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-medium transition-all ${
               currentView === 'home' && activeTab === 'catalog'
                 ? 'bg-[#191A1F] text-[#C69A45] border border-[#C69A45]/40 font-semibold'
