@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">grimoire-manga</string>
+    <string name="title_activity_main">grimoire-manga</string>
+    <string name="package_name">com.seiamrbijoy.grimoiremanga</string>
+    <string name="custom_url_scheme">com.seiamrbijoy.grimoiremanga</string>
+</resources>
