@@ -38,9 +38,9 @@ export async function getMangaDexTrending(offset: number = 0, limit: number = 32
       limit: String(limit),
       offset: String(offset),
       'order[followedCount]': 'desc',
-      'includes[]': 'cover_art',
-      'includes[]': 'author',
     });
+    params.append('includes[]', 'cover_art');
+    params.append('includes[]', 'author');
     params.append('contentRating[]', 'safe');
     params.append('hasAvailableChapters', 'true');
 
@@ -71,8 +71,8 @@ export async function getMangaDexLatest(offset: number = 0, limit: number = 32):
       limit: String(limit),
       offset: String(offset),
       'order[latestUploadedChapter]': 'desc',
-      'includes[]': 'cover_art',
     });
+    params.append('includes[]', 'cover_art');
     params.append('contentRating[]', 'safe');
     params.append('hasAvailableChapters', 'true');
 
@@ -98,10 +98,14 @@ export async function searchMangaDex(query: string, offset: number = 0, limit: n
     const params = new URLSearchParams({
       limit: String(limit),
       offset: String(offset),
-      'order[relevance]': 'desc',
-      'includes[]': 'cover_art',
     });
-    if (query) params.append('title', query);
+    if (query) {
+      params.append('title', query);
+      params.append('order[relevance]', 'desc');
+    } else {
+      params.append('order[followedCount]', 'desc');
+    }
+    params.append('includes[]', 'cover_art');
     params.append('contentRating[]', 'safe');
 
     const res = await fetch(`${MANGADEX_BASE}/manga?${params.toString()}`, {

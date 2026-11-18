@@ -71,7 +71,9 @@ app.get('/api/search', async (c) => {
 
   // 1. If explicit MangaDex source requested
   if (source === 'mangadex') {
-    const mdResults = await searchMangaDex(query, offset, limit);
+    const mdResults = !query
+      ? (sort === 'Latest Updates' ? await getMangaDexLatest(offset, limit) : await getMangaDexTrending(offset, limit))
+      : await searchMangaDex(query, offset, limit);
     return c.json({ data: mdResults, count: mdResults.length, offset, source: 'mangadex' });
   }
 
@@ -92,15 +94,19 @@ app.get('/api/search', async (c) => {
     const results = quick ? await quickSearch(query) : await searchMangaAdvanced(filter);
     
     // If WeebCentral returns empty and source is 'all', supplement with MangaDex Safe results
-    if (results.length === 0 && source === 'all' && query) {
-      const mdFallback = await searchMangaDex(query, offset, limit);
+    if (results.length === 0 && source === 'all') {
+      const mdFallback = !query
+        ? (sort === 'Latest Updates' ? await getMangaDexLatest(offset, limit) : await getMangaDexTrending(offset, limit))
+        : await searchMangaDex(query, offset, limit);
       return c.json({ data: mdFallback, count: mdFallback.length, offset, source: 'mangadex-fallback' });
     }
 
     return c.json({ data: results, count: results.length, offset, source: 'weebcentral' });
   } catch (err) {
     console.warn('WeebCentral search failed, falling back to MangaDex:', err);
-    const mdFallback = await searchMangaDex(query, offset, limit);
+    const mdFallback = !query
+      ? (sort === 'Latest Updates' ? await getMangaDexLatest(offset, limit) : await getMangaDexTrending(offset, limit))
+      : await searchMangaDex(query, offset, limit);
     return c.json({ data: mdFallback, count: mdFallback.length, offset, source: 'mangadex-fallback' });
   }
 });
