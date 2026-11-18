@@ -56,6 +56,14 @@ pnpm run dev
 - Frontend: `http://localhost:5173`
 - Backend API Proxy: `http://localhost:3001`
 
+### Brand assets
+The app icon / favicon / `logo.png` set is generated from code (no external
+tooling required):
+
+```bash
+node scripts/generate-icons.mjs
+```
+
 ---
 
 ## 🛡️ WeebCentral Connectivity (Cloudflare)
