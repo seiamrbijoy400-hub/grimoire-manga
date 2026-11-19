@@ -69,6 +69,10 @@ export const MD_TAG_IDS: Record<string, string> = {
   supernatural: 'eabc5b4c-6aff-42f3-b657-3e90cbd00b75',
   thriller: '07251805-a27e-4d59-b488-f0bfbec15168',
   tragedy: 'f8f62932-27da-4fe4-8ee1-6779a8c5edba',
+  // MangaDex uses different names for a few WeebCentral tags.
+  'gender bender': '2bd2e8d0-f146-434a-9b51-fc9ff2c5fe6b', // Genderswap
+  yaoi: '5920b825-4181-4a17-beeb-9918b0ff7a30', // Boys' Love
+  yuri: 'a3c67850-4684-404e-9b7f-c69850ee5da6', // Girls' Love
 };
 
 const mdTagId = (name: string) => MD_TAG_IDS[name.trim().toLowerCase()];

@@ -268,7 +268,8 @@ export const SearchPage: React.FC = () => {
     [genreFilter, typeFilter, statusFilter, sortKey, sourceFilter]
   );
 
-  // Debounced auto-search when query changes
+  // Debounced auto-search for query AND filters. Depending on `query` alone
+  // let a pending keystroke debounce overwrite a genre selection.
   useEffect(() => {
     if (!query.trim() && !genreFilter && !typeFilter && !statusFilter) {
       setResults([]);
@@ -281,7 +282,7 @@ export const SearchPage: React.FC = () => {
       runSearch(query, 0);
     }, DEBOUNCE_MS);
     return () => clearTimeout(id);
-  }, [query]);
+  }, [query, genreFilter, typeFilter, statusFilter, sourceFilter, sortKey]);
 
   // Load More Pagination
   const loadMore = useCallback(() => {
@@ -335,7 +336,6 @@ export const SearchPage: React.FC = () => {
     setGenreFilter('');
     setSourceFilter('all');
     setSortKey('relevance');
-    runSearch(query, 0, '', '', '', 'relevance', 'all');
   };
 
   const hasActiveFilters = Boolean(typeFilter || statusFilter || genreFilter || sourceFilter !== 'all' || sortKey !== 'relevance');
@@ -486,9 +486,7 @@ export const SearchPage: React.FC = () => {
                   <select
                     value={sourceFilter}
                     onChange={(e) => {
-                      const src = e.target.value as MangaSource;
-                      setSourceFilter(src);
-                      runSearch(query, 0, undefined, undefined, undefined, undefined, src);
+                      setSourceFilter(e.target.value as MangaSource);
                     }}
                     className="h-9 w-full appearance-none rounded-md border border-ink-700 bg-ink-950 pl-2.5 pr-7 text-[11px] text-paper focus:border-paper-dim focus:outline-none"
                   >
@@ -506,9 +504,7 @@ export const SearchPage: React.FC = () => {
                   <select
                     value={typeFilter}
                     onChange={(e) => {
-                      const t = e.target.value;
-                      setTypeFilter(t);
-                      runSearch(query, 0, undefined, t);
+                      setTypeFilter(e.target.value);
                     }}
                     className="h-9 w-full appearance-none rounded-md border border-ink-700 bg-ink-950 pl-2.5 pr-7 text-[11px] text-paper focus:border-paper-dim focus:outline-none"
                   >
@@ -528,9 +524,7 @@ export const SearchPage: React.FC = () => {
                   <select
                     value={statusFilter}
                     onChange={(e) => {
-                      const s = e.target.value;
-                      setStatusFilter(s);
-                      runSearch(query, 0, undefined, undefined, s);
+                      setStatusFilter(e.target.value);
                     }}
                     className="h-9 w-full appearance-none rounded-md border border-ink-700 bg-ink-950 pl-2.5 pr-7 text-[11px] text-paper focus:border-paper-dim focus:outline-none"
                   >
@@ -548,9 +542,7 @@ export const SearchPage: React.FC = () => {
                   <select
                     value={sortKey}
                     onChange={(e) => {
-                      const s = e.target.value as SortKey;
-                      setSortKey(s);
-                      runSearch(query, 0, undefined, undefined, undefined, s);
+                      setSortKey(e.target.value as SortKey);
                     }}
                     className="h-9 w-full appearance-none rounded-md border border-ink-700 bg-ink-950 pl-2.5 pr-7 text-[11px] text-paper focus:border-paper-dim focus:outline-none"
                   >
