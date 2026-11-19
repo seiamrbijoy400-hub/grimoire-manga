@@ -27,6 +27,7 @@ import { MobileTabBar } from '../components/Navbar.tsx';
 import { fetchAdvancedSearch, getProxyImageUrl } from '../services/api.ts';
 import { MangaItem, FilterState, MangaSource } from '../types.ts';
 import { ambienceSynthesizer } from '../services/audioAmbience.ts';
+import { GENRE_CHIPS as SEARCH_GENRE_CHIPS } from '../lib/genres.ts';
 import {
   FALLBACK_COVER,
   POPULAR_SEARCHES,
@@ -38,31 +39,8 @@ const MAX_HISTORY = 10;
 const DEBOUNCE_MS = 350;
 const PAGE_SIZE = 32;
 
-const GENRE_CHIPS = [
-  'All',
-  'Action',
-  'Adventure',
-  'Comedy',
-  'Drama',
-  'Fantasy',
-  'Horror',
-  'Isekai',
-  'Mystery',
-  'Psychological',
-  'Romance',
-  'Sci-fi',
-  'Seinen',
-  'Shounen',
-  'Slice of Life',
-  'Supernatural',
-  'Thriller',
-  'Sports',
-  'Historical',
-  'Martial Arts',
-  'School Life',
-  'Harem',
-  'Tragedy',
-];
+// Genre chips come from the shared list so the drawer and search agree.
+const GENRE_CHIPS = SEARCH_GENRE_CHIPS;
 
 const SORT_OPTIONS = [
   { value: 'relevance', label: 'Popularity' },
@@ -278,6 +256,9 @@ export const SearchPage: React.FC = () => {
       setError(null);
       return;
     }
+    // Stop infinite scroll from appending a page of the previous filter while
+    // the new one is still debouncing.
+    setHasMore(false);
     const id = setTimeout(() => {
       runSearch(query, 0);
     }, DEBOUNCE_MS);
@@ -326,7 +307,8 @@ export const SearchPage: React.FC = () => {
     ambienceSynthesizer.playHapticClick();
     const nextGenre = genre === 'All' || genreFilter.toLowerCase() === genre.toLowerCase() ? '' : genre;
     setGenreFilter(nextGenre);
-    runSearch(query, 0, nextGenre);
+    // The debounced effect owns the request; calling runSearch here too sent a
+    // duplicate search for every tap and let the two responses race.
   };
 
   // Clear all filters
@@ -700,13 +682,14 @@ export const SearchPage: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
                 {displayedResults.map((item) => (
-                  <div
+                  <button
+                    type="button"
                     key={item.id}
                     onClick={() => {
                       ambienceSynthesizer.playHapticClick();
                       openManga(item.id, item.title, item.cover);
                     }}
-                    className="group cursor-pointer text-left"
+                    className="group block cursor-pointer text-left"
                   >
                     <div className="card-spatial gold-edge-gleam relative aspect-[2/3] overflow-hidden rounded-md border border-ink-700 bg-ink-900 transition-all duration-300 group-hover:border-paper/35">
                       <img
@@ -729,14 +712,16 @@ export const SearchPage: React.FC = () => {
                     </h3>
 
                     <div className="mt-1 flex items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-[0.08em] text-paper-dim">
-                      <span className="truncate">{item.type || 'Series'}</span>
+                      <span className={`truncate ${genreFilter ? 'text-stamp' : ''}`}>
+                        {genreFilter || item.type || 'Series'}
+                      </span>
                       {item.status && (
                         <span className="shrink-0 opacity-80">
                           {item.status.toLowerCase().includes('ongoing') ? 'Ongoing' : 'Complete'}
                         </span>
                       )}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
 

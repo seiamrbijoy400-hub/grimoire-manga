@@ -10,6 +10,9 @@ import { ambienceSynthesizer } from '../services/audioAmbience.ts';
 interface MangaCardProps {
   manga: MangaItem;
   rank?: number;
+  /** When the reader has filtered by a genre, show that genre instead of the
+   *  title's first tag — otherwise every card contradicts the active filter. */
+  accentTag?: string;
 }
 
 /** Country marks instead of flag emoji — quieter and always legible. */
@@ -20,7 +23,7 @@ const originCode = (type?: string, country?: string) => {
   return { code: 'JP', label: 'Manga' };
 };
 
-export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
+export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank, accentTag }) => {
   const { openManga, toggleBookmark, isBookmarked, getMangaHistory } = useStore();
   const bookmarked = isBookmarked(manga.id);
   const history = getMangaHistory(manga.id);
@@ -29,7 +32,7 @@ export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
   const [stamp, setStamp] = useState(false);
   const origin = originCode(manga.type, manga.country);
   const imgSrc = imageError ? FALLBACK_COVER : getProxyImageUrl(manga.cover);
-  const genre = filterSafeTags(manga.tags)[0];
+  const genre = accentTag || filterSafeTags(manga.tags)[0];
   const open = () => {
     ambienceSynthesizer.playHapticClick();
     openManga(manga.id, manga.title, manga.cover);

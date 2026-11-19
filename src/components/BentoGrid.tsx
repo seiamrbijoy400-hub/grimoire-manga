@@ -17,6 +17,7 @@ import { MangaItem, FilterState, BookmarkCategory } from '../types.ts';
 import { fetchAdvancedSearch, getProxyImageUrl } from '../services/api.ts';
 import { MangaCard } from './MangaCard.tsx';
 import { FilterDrawer, TYPE_OPTIONS } from './FilterDrawer.tsx';
+import { GENRE_CHIPS } from '../lib/genres.ts';
 import { BrandLoader, SkeletonCard } from './BrandLoader.tsx';
 import { useStore } from '../store/useStore.ts';
 import { FALLBACK_COVER } from '../lib/placeholder.ts';
@@ -113,6 +114,7 @@ export const BentoGrid: React.FC = () => {
   const [items, setItems] = useState<MangaItem[]>([]);
   const [offset, setOffset] = useState<number>(0);
   const [loadingInitial, setLoadingInitial] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -127,33 +129,51 @@ export const BentoGrid: React.FC = () => {
 
   const observerTarget = useRef<HTMLDivElement>(null);
   const loadingMoreRef = useRef(false);
+  // Bumped whenever the filter set changes, so a slow earlier request can never
+  // paint results for a genre the reader has already moved away from.
+  const queryGenerationRef = useRef(0);
+  const hasLoadedOnceRef = useRef(false);
 
   const loadInitialData = useCallback(async () => {
-    setLoadingInitial(true);
+    const generation = ++queryGenerationRef.current;
+    const firstLoad = !hasLoadedOnceRef.current;
+    // Re-querying after a filter change should dim the existing grid, not
+    // replace it with a skeleton wall on every tap.
+    if (firstLoad) setLoadingInitial(true);
+    else setRefreshing(true);
     setOffset(0);
     setHasMore(true);
+    setHeroImageError(false);
 
     try {
       setError(null);
       const data = await fetchAdvancedSearch(filters, 0);
+      if (generation !== queryGenerationRef.current) return;
       setItems(data);
       setHasMore(data.length >= 10);
       setOffset(data.length);
     } catch (err) {
+      if (generation !== queryGenerationRef.current) return;
       setError(err instanceof Error ? err.message : 'Could not load the archive.');
       setItems([]);
       setHasMore(false);
     } finally {
-      setLoadingInitial(false);
+      if (generation === queryGenerationRef.current) {
+        setLoadingInitial(false);
+        setRefreshing(false);
+        hasLoadedOnceRef.current = true;
+      }
     }
   }, [filters]);
 
   useEffect(() => {
-    if (activeTab === 'catalog') {
-      loadInitialData();
-    } else {
+    if (activeTab !== 'catalog') {
       setLoadingInitial(false);
+      return;
     }
+    // Coalesce a burst of genre taps into one request.
+    const id = window.setTimeout(() => loadInitialData(), 120);
+    return () => window.clearTimeout(id);
   }, [activeTab, loadInitialData]);
 
   const loadMore = useCallback(async () => {
@@ -162,9 +182,11 @@ export const BentoGrid: React.FC = () => {
     loadingMoreRef.current = true;
     setLoadingMore(true);
     const nextOffset = offset;
+    const generation = queryGenerationRef.current;
 
     try {
       const nextBatch = await fetchAdvancedSearch(filters, nextOffset);
+      if (generation !== queryGenerationRef.current) return;
 
       if (nextBatch.length === 0) {
         setHasMore(false);
@@ -178,6 +200,7 @@ export const BentoGrid: React.FC = () => {
         setHasMore(nextBatch.length >= 10);
       }
     } catch (err) {
+      if (generation !== queryGenerationRef.current) return;
       setError(err instanceof Error ? err.message : 'Could not load more titles.');
     } finally {
       loadingMoreRef.current = false;
@@ -232,6 +255,25 @@ export const BentoGrid: React.FC = () => {
     filters.includedTags.length +
     filters.excludedTags.length;
 
+  // The default index keeps the hero + trending plates out of the grid. Once the
+  // reader narrows the archive, every result belongs in the grid — otherwise a
+  // small genre (5 or fewer titles) would look like it returned nothing.
+  const narrowsArchive =
+    Boolean(filters.query.trim()) ||
+    Boolean(filters.selectedType) ||
+    Boolean(filters.selectedCountry) ||
+    Boolean(filters.selectedLanguage) ||
+    Boolean(filters.selectedStatus) ||
+    filters.includedTags.length > 0 ||
+    filters.excludedTags.length > 0;
+
+  const genreLabel = filters.includedTags.join(' + ');
+  const excludeLabel = filters.excludedTags.join(' + ');
+  const filterSummary = [
+    genreLabel,
+    excludeLabel ? `without ${excludeLabel}` : '',
+  ].filter(Boolean).join(' · ');
+
   const filteredBookmarks = useMemo(() => {
     return bookmarks.filter((b) => {
       const matchesShelf = selectedShelf === 'all' || b.category === selectedShelf;
@@ -282,14 +324,20 @@ export const BentoGrid: React.FC = () => {
   const issueLabel = now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   const issueNumber = String(now.getMonth() + 1).padStart(2, '0');
 
+  // Stable handlers: the sheet keeps a ref to onClose, but this also stops
+  // needless effect churn while the reader is tapping genres.
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+  const handleFilterChange = useCallback((next: FilterState) => setFilters(next), []);
+  const resetFilters = useCallback(() => setFilters(DEFAULT_FILTERS), []);
+
   return (
     <div className="mx-auto max-w-7xl px-4 pb-32 pt-5 sm:px-6 sm:pt-8 lg:px-8">
       <FilterDrawer
         isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        onClose={closeDrawer}
         filters={filters}
-        onChange={(newFilters) => setFilters(newFilters)}
-        onReset={() => setFilters(DEFAULT_FILTERS)}
+        onChange={handleFilterChange}
+        onReset={resetFilters}
         totalResultsCount={items.length}
       />
 
@@ -324,9 +372,9 @@ export const BentoGrid: React.FC = () => {
                 <div className="relative grid gap-8 p-5 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-start lg:p-10">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className="stamp-mark">Feature</span>
+                      <span className="stamp-mark">{genreLabel || 'Feature'}</span>
                       <span className="eyebrow">
-                        {String(items.length).padStart(3, '0')} titles loaded
+                        {String(items.length).padStart(3, '0')} titles{genreLabel ? ` · ${genreLabel}` : ' loaded'}
                       </span>
                     </div>
 
@@ -467,7 +515,7 @@ export const BentoGrid: React.FC = () => {
               <SectionHead
                 index={lastRead ? '02' : '01'}
                 title="Trending this week"
-                note="Most opened titles"
+                note={genreLabel ? `Filtered · ${genreLabel}` : 'Most opened titles'}
               />
               <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-4">
                 {trendingList.map((manga, idx) => (
@@ -477,14 +525,67 @@ export const BentoGrid: React.FC = () => {
             </section>
           )}
 
+          {/* Genre rail — makes the archive's main filter visible before the fold */}
+          <section aria-label="Browse by genre" className="rounded-lg border border-ink-700 bg-ink-900 px-3.5 py-3.5 sm:px-4">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <p className="eyebrow">Browse by genre</p>
+              <p className="shrink-0 font-mono text-[8.5px] uppercase tracking-[0.1em] text-paper-dim/60">
+                {genreLabel ? `Showing ${genreLabel}` : 'Tap to set the index'}
+              </p>
+            </div>
+            <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setFilters({
+                    ...filters,
+                    includedTags: [],
+                    excludedTags: [],
+                  })
+                }
+                className="chip !min-h-11"
+                data-active={filters.includedTags.length === 0 && filters.excludedTags.length === 0}
+              >
+                All genres
+              </button>
+              {GENRE_CHIPS.filter((g) => g !== 'All').map((genre) => {
+                const active = filters.includedTags.includes(genre);
+                return (
+                  <button
+                    key={genre}
+                    type="button"
+                    onClick={() =>
+                      setFilters({
+                        ...filters,
+                        includedTags: active
+                          ? filters.includedTags.filter((t) => t !== genre)
+                          : [...filters.includedTags, genre],
+                        excludedTags: filters.excludedTags.filter((t) => t !== genre),
+                      })
+                    }
+                    aria-pressed={active}
+                    className="chip !min-h-11"
+                    data-active={active}
+                  >
+                    {genre}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
           {/* Archive */}
-          <section aria-label="The archive" className="space-y-4">
+          <section
+            aria-label="The archive"
+            aria-busy={loadingInitial || refreshing}
+            className="space-y-4"
+          >
             <SectionHead
               index={lastRead ? '03' : '02'}
               title="The archive"
               note={
-                filters.includedTags.length > 0
-                  ? `${items.length} titles · ${filters.includedTags.join(', ')}`
+                filterSummary
+                  ? `${items.length} titles · ${filterSummary}`
                   : `${items.length} titles loaded`
               }
             />
@@ -551,6 +652,16 @@ export const BentoGrid: React.FC = () => {
                     </span>
                   )}
                 </button>
+
+                {refreshing && (
+                  <span
+                    className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.12em] text-paper-dim"
+                    role="status"
+                  >
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-stamp" />
+                    Filtering
+                  </span>
+                )}
 
                 {activeFiltersCount > 0 && (
                   <button
@@ -632,40 +743,65 @@ export const BentoGrid: React.FC = () => {
             ) : error ? (
               <EmptyState
                 index="00"
-                title="Could not reach the archive"
+                title={activeFiltersCount > 0 ? 'That filter could not run' : 'Could not reach the archive'}
                 body={error}
                 action={
-                  <button
-                    onClick={() => {
-                      setError(null);
-                      if (activeTab === 'catalog') loadInitialData();
-                    }}
-                    className="btn btn-stamp"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    Retry
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      onClick={() => {
+                        setError(null);
+                        if (activeTab === 'catalog') loadInitialData();
+                      }}
+                      className="btn btn-stamp"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Retry
+                    </button>
+                    {activeFiltersCount > 0 && (
+                      <button onClick={() => setFilters(DEFAULT_FILTERS)} className="btn btn-ghost">
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
                 }
               />
             ) : items.length === 0 ? (
               <EmptyState
                 index="00"
-                title="Nothing matches those filters"
-                body="The index returned no titles for this combination. Clear a filter or two and try again."
+                title={filterSummary ? `No titles for ${filterSummary}` : 'Nothing matches those filters'}
+                body="Try a single genre instead of several, or clear the filter to see the whole index."
                 action={
-                  <button onClick={() => setFilters(DEFAULT_FILTERS)} className="btn btn-stamp">
-                    Reset filters
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {(filters.includedTags.length > 0 || filters.excludedTags.length > 0) && (
+                      <button
+                        onClick={() => setFilters({ ...filters, includedTags: [], excludedTags: [] })}
+                        className="btn btn-stamp"
+                      >
+                        Clear genres
+                      </button>
+                    )}
+                    <button onClick={() => setFilters(DEFAULT_FILTERS)} className="btn btn-ghost">
+                      Reset filters
+                    </button>
+                  </div>
                 }
               />
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {(filters.query ? items : items.slice(5)).map((manga) => (
-                    <MangaCard key={manga.id} manga={manga} />
+                <div
+                  className={`grid grid-cols-2 gap-x-4 gap-y-7 transition-opacity duration-150 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ${
+                    refreshing ? 'opacity-45' : 'opacity-100'
+                  }`}
+                >
+                  {(narrowsArchive ? items : items.slice(5)).map((manga) => (
+                    <MangaCard
+                      key={manga.id}
+                      manga={manga}
+                      accentTag={filters.includedTags[0]}
+                    />
                   ))}
                 </div>
-                {!filters.query && items.length > 0 && items.length <= 5 && (
+                {!narrowsArchive && items.length > 0 && items.length <= 5 && (
                   <p className="text-center font-mono text-[10px] uppercase tracking-[0.16em] text-paper-dim/70">
                     End of the index · {items.length} titles
                   </p>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   X,
   Filter,
@@ -18,25 +18,11 @@ interface FilterDrawerProps {
   totalResultsCount?: number;
 }
 
-import { isAdultTag } from '../lib/contentSafety.ts';
 import { lockBodyScroll } from '../lib/ui.ts';
+import { ALL_GENRES, GENRE_GROUPS } from '../lib/genres.ts';
 
-/** Adult genres never reach the UI (policy mirrored on the server). */
-export const ALL_TAGS = [
-  "Action", "Adventure", "Comedy", "Drama",
-  "Fantasy", "Gender Bender", "Harem", "Historical", "Horror",
-  "Isekai", "Josei", "Martial Arts", "Mecha",
-  "Mystery", "Psychological", "Romance", "School Life", "Sci-fi",
-  "Seinen", "Shoujo", "Shounen", "Slice of Life", "Sports",
-  "Supernatural", "Tragedy", "Yaoi", "Yuri"
-].filter((tag) => !isAdultTag(tag));
-
-export const GENRE_GROUPS: { title: string; tags: string[] }[] = [
-  { title: 'Action & adventure', tags: ['Action', 'Adventure', 'Martial Arts', 'Sports', 'Historical'] },
-  { title: 'Story & mood', tags: ['Drama', 'Mystery', 'Thriller', 'Tragedy', 'Psychological', 'Horror', 'Supernatural'] },
-  { title: 'Life & world', tags: ['Slice of Life', 'School Life', 'Isekai', 'Mecha', 'Sci-fi', 'Fantasy'] },
-  { title: 'Romance & people', tags: ['Romance', 'Harem', 'Gender Bender', 'Yaoi', 'Yuri', 'Josei', 'Shoujo', 'Shounen', 'Seinen'] },
-];
+/** Re-exported for legacy imports; single source of truth lives in lib/genres. */
+export const ALL_TAGS = ALL_GENRES;
 
 export const TYPE_OPTIONS: TypeOption[] = [
   { id: 'Manga', label: 'Manga', desc: 'Japanese' },
@@ -118,20 +104,32 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
   const [tagSearch, setTagSearch] = useState('');
   const [tagMode, setTagMode] = useState<'include' | 'exclude'>('include');
 
+  // Keep the latest onClose without letting a parent re-render re-run the
+  // open/close effect. Previously every genre tap re-created `onClose`, which
+  // re-ran this effect and silently reset the Include/Exclude mode and the
+  // genre search box.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // Reset the genre tools only when the sheet actually opens.
   useEffect(() => {
     if (!isOpen) return;
     setTagSearch('');
     setTagMode('include');
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
     const cleanup = lockBodyScroll(true);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     window.addEventListener('keydown', onKey);
     return () => {
       if (cleanup) cleanup();
       window.removeEventListener('keydown', onKey);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -159,8 +157,9 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
     }
   };
 
-  const filteredTags = ALL_TAGS.filter(t =>
-    t.toLowerCase().includes(tagSearch.toLowerCase())
+  const normalise = (value: string) => value.toLowerCase().replace(/[^a-z]/g, '');
+  const filteredTags = ALL_GENRES.filter((t) =>
+    normalise(t).includes(normalise(tagSearch)),
   );
 
   const activeFiltersCount =
@@ -396,24 +395,35 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
             />
 
             {tagSearch ? (
-              <div className="grid grid-cols-2 gap-1.5">
-                {filteredTags.map((tag) => (
-                  <GenreTile
-                    key={tag}
-                    tag={tag}
-                    included={filters.includedTags.includes(tag)}
-                    excluded={filters.excludedTags.includes(tag)}
-                    onClick={() => toggleTag(tag)}
-                  />
-                ))}
-              </div>
+              filteredTags.length > 0 ? (
+                <div className="grid grid-cols-2 gap-1.5">
+                  {filteredTags.map((tag) => (
+                    <GenreTile
+                      key={tag}
+                      tag={tag}
+                      included={filters.includedTags.includes(tag)}
+                      excluded={filters.excludedTags.includes(tag)}
+                      onClick={() => toggleTag(tag)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-md border border-ink-700 bg-ink-900 px-3 py-6 text-center font-mono text-[10px] uppercase tracking-[0.1em] text-paper-dim">
+                  No genre called “{tagSearch.trim()}”
+                </p>
+              )
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {GENRE_GROUPS.map((group) => (
                   <div key={group.title}>
-                    <p className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-paper-dim/70">
-                      {group.title}
-                    </p>
+                    <div className="mb-1.5 flex items-baseline justify-between gap-2">
+                      <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-paper-dim/70">
+                        {group.title}
+                      </p>
+                      <p className="truncate font-mono text-[8.5px] uppercase tracking-[0.08em] text-paper-dim/40">
+                        {group.blurb}
+                      </p>
+                    </div>
                     <div className="grid grid-cols-2 gap-1.5">
                       {group.tags.map((tag) => (
                         <GenreTile

@@ -90,19 +90,30 @@ export async function fetchAdvancedSearch(filter: Partial<FilterState>, offset: 
     }
 
     const res = await fetch(`${API_BASE}/search?${params.toString()}`);
-    if (!res.ok) {
-      let detail = '';
-      try { detail = (await res.json())?.error || ''; } catch { detail = ''; }
-      throw new Error(detail || `Search failed (${res.status})`);
+
+    // The API reports filter problems as `error` on a 200 body (for example a
+    // tag MangaDex does not have). Both must surface, otherwise a failed genre
+    // looks exactly like a genre with no titles.
+    let json: { data?: MangaItem[]; error?: string } | null = null;
+    try {
+      json = await res.json();
+    } catch {
+      json = null;
     }
-    const json = await res.json();
+
+    if (!res.ok) {
+      throw new Error(json?.error || `Search failed (${res.status})`);
+    }
+    if (json?.error) {
+      throw new Error(json.error);
+    }
     if (!json || !Array.isArray(json.data)) {
       throw new Error('Unexpected search response');
     }
     return json.data;
   } catch (err) {
     console.error('Failed advanced search:', err);
-    return [];
+    throw err instanceof Error ? err : new Error('Search failed. Please try again.');
   }
 }
 
