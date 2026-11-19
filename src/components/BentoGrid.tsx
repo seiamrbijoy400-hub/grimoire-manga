@@ -363,7 +363,7 @@ export const BentoGrid: React.FC = () => {
           </div>
 
           {/* Featured plate */}
-          {featured && !filters.query && (
+          {featured && !narrowsArchive && (
             <section aria-label="Editor's pick" className="relative">
               <div className="relative overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
                 <div className="pointer-events-none absolute inset-0 bg-grid-lines opacity-60 [mask-image:linear-gradient(to_right,black,transparent_72%)]" />
@@ -510,7 +510,7 @@ export const BentoGrid: React.FC = () => {
           )}
 
           {/* Trending */}
-          {trendingList.length > 0 && !filters.query && (
+          {trendingList.length > 0 && !narrowsArchive && (
             <section aria-label="Trending">
               <SectionHead
                 index={lastRead ? '02' : '01'}
@@ -581,7 +581,9 @@ export const BentoGrid: React.FC = () => {
             className="space-y-4"
           >
             <SectionHead
-              index={lastRead ? '03' : '02'}
+              index={
+                narrowsArchive ? (lastRead ? '02' : '01') : lastRead ? '03' : '02'
+              }
               title="The archive"
               note={
                 filterSummary
