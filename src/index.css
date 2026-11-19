@@ -580,6 +580,102 @@
   }
 }
 
+/* ==========================================================================
+   KUROSCROLL 2026 — CYBER-ALCHEMICAL MOTION TOKENS & SPATIAL VFX
+   ========================================================================== */
+
+/* 1. Dynamic Ambient Radial Pointer Glow */
+.alchemical-glow-bg {
+  background-image: radial-gradient(
+    700px circle at var(--pointer-x, 50%) var(--pointer-y, 30%),
+    rgba(201, 164, 92, 0.045),
+    transparent 80%
+  );
+  transition: background-position 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 2. Hardware-Accelerated 3D Spatial Card Elevation */
+.card-spatial {
+  transform: perspective(1000px) translateZ(0);
+  transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.26s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-spatial:hover {
+    transform: perspective(1000px) translateY(-5px) scale(1.012) translateZ(10px);
+    box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.85),
+                0 0 20px -4px rgba(201, 164, 92, 0.22);
+  }
+}
+
+.card-spatial:active {
+  transform: perspective(1000px) translateY(-1px) scale(0.985);
+  transition-duration: 0.1s;
+}
+
+/* 3. Gold Gleam Edge Highlight */
+.gold-edge-gleam {
+  position: relative;
+  overflow: hidden;
+}
+
+.gold-edge-gleam::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(201, 164, 92, 0.18),
+    transparent
+  );
+  transform: skewX(-20deg);
+  pointer-events: none;
+  transition: none;
+}
+
+.gold-edge-gleam:hover::after {
+  left: 200%;
+  transition: left 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 4. Tactile Button Tap Shockwave */
+.btn-shockwave:active {
+  transform: scale(0.97);
+  box-shadow: 0 0 0 3px rgba(201, 164, 92, 0.3);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+/* 5. Alchemical Unfolding Keyframes */
+@keyframes alchemicalPulse {
+  0% { transform: scale(0.94); opacity: 0; filter: blur(6px); }
+  50% { transform: scale(1.02); opacity: 1; filter: blur(0px); }
+  100% { transform: scale(1); opacity: 1; filter: blur(0px); }
+}
+
+@keyframes goldFoilSweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.alchemical-enter {
+  animation: alchemicalPulse 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.gold-foil-text {
+  background: linear-gradient(90deg, #F0E9DC 0%, #C9A45C 50%, #F0E9DC 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: goldFoilSweep 4s linear infinite;
+}
+
 /* Respect user motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -589,7 +685,13 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  .marquee-track {
-    animation: none;
+  .marquee-track,
+  .gold-foil-text,
+  .alchemical-enter {
+    animation: none !important;
+  }
+  .card-spatial:hover {
+    transform: none !important;
   }
 }
+

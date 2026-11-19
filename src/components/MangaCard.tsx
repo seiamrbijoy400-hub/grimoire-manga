@@ -5,7 +5,7 @@ import { useStore } from '../store/useStore.ts';
 import { getProxyImageUrl } from '../services/api.ts';
 import { filterSafeTags } from '../lib/contentSafety.ts';
 import { FALLBACK_COVER } from '../lib/placeholder.ts';
-
+import { ambienceSynthesizer } from '../services/audioAmbience.ts';
 
 interface MangaCardProps {
   manga: MangaItem;
@@ -30,7 +30,10 @@ export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
   const origin = originCode(manga.type, manga.country);
   const imgSrc = imageError ? FALLBACK_COVER : getProxyImageUrl(manga.cover);
   const genre = filterSafeTags(manga.tags)[0];
-  const open = () => openManga(manga.id, manga.title, manga.cover);
+  const open = () => {
+    ambienceSynthesizer.playHapticClick();
+    openManga(manga.id, manga.title, manga.cover);
+  };
 
   return (
     <article className="group relative flex flex-col">
@@ -39,7 +42,7 @@ export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
           type="button"
           onClick={open}
           aria-label={`Open ${manga.title}`}
-          className="relative block aspect-[2/3] w-full overflow-hidden rounded-md border border-ink-700 bg-ink-900 text-left transition-all duration-300 group-hover:-translate-y-1 group-hover:border-paper/35 group-hover:shadow-[0_14px_0_-8px_rgba(244,239,228,0.12)]"
+          className="card-spatial gold-edge-gleam relative block aspect-[2/3] w-full overflow-hidden rounded-md border border-ink-700 bg-ink-900 text-left transition-all duration-300 group-hover:border-paper/35"
         >
           {!imageLoaded && !imageError && (
             <div className="absolute inset-0 shimmer-skeleton" aria-hidden="true" />
@@ -93,11 +96,12 @@ export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank }) => {
         <button
           type="button"
           onClick={() => {
+            ambienceSynthesizer.playBookmarkChime();
             toggleBookmark(manga);
             setStamp(true);
             window.setTimeout(() => setStamp(false), 220);
           }}
-          className={`absolute right-1.5 top-1.5 z-10 flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${stamp ? 'stamp-in' : ''} ${
+          className={`btn-shockwave absolute right-1.5 top-1.5 z-10 flex h-10 w-10 items-center justify-center rounded-md border transition-colors ${stamp ? 'stamp-in' : ''} ${
             bookmarked
               ? 'border-stamp bg-stamp text-ink-950'
               : 'border-transparent bg-ink-950/45 text-paper-dim backdrop-blur-sm hover:border-ink-600 hover:text-paper'

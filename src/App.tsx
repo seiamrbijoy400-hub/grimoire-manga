@@ -150,6 +150,16 @@ const AppContent: React.FC = () => {
     return () => document.documentElement.classList.remove('intro-active');
   }, [showIntro]);
 
+  // Dynamic ambient pointer luminescence tracking (GPU composite variable)
+  useEffect(() => {
+    const onPointer = (e: PointerEvent) => {
+      document.documentElement.style.setProperty('--pointer-x', `${e.clientX}px`);
+      document.documentElement.style.setProperty('--pointer-y', `${e.clientY}px`);
+    };
+    window.addEventListener('pointermove', onPointer, { passive: true });
+    return () => window.removeEventListener('pointermove', onPointer);
+  }, []);
+
   const syncFromPath = useCallback(() => {
     const path = window.location.pathname;
     if (path === '/' || path === '') {
@@ -204,7 +214,7 @@ const AppContent: React.FC = () => {
     );
   } else {
     content = (
-      <div className="relative flex min-h-screen flex-col overflow-x-hidden bg-ink-950 text-paper">
+      <div className="alchemical-glow-bg relative flex min-h-screen flex-col overflow-x-hidden bg-ink-950 text-paper">
         <SearchModal />
 
         <a

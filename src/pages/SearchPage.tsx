@@ -26,6 +26,7 @@ import { useStore } from '../store/useStore.ts';
 import { MobileTabBar } from '../components/Navbar.tsx';
 import { fetchAdvancedSearch, getProxyImageUrl } from '../services/api.ts';
 import { MangaItem, FilterState, MangaSource } from '../types.ts';
+import { ambienceSynthesizer } from '../services/audioAmbience.ts';
 import {
   FALLBACK_COVER,
   POPULAR_SEARCHES,
@@ -289,6 +290,7 @@ export const SearchPage: React.FC = () => {
 
   // Commit Search (Enter or suggestion click)
   const commitSearch = (term: string) => {
+    ambienceSynthesizer.playSearchWhoosh();
     const t = term.trim();
     setQuery(t);
     setShowSuggestions(false);
@@ -301,6 +303,7 @@ export const SearchPage: React.FC = () => {
 
   // Handle Genre Chip Click
   const handleGenreChipClick = (genre: string) => {
+    ambienceSynthesizer.playHapticClick();
     const nextGenre = genre === 'All' || genreFilter.toLowerCase() === genre.toLowerCase() ? '' : genre;
     setGenreFilter(nextGenre);
     runSearch(query, 0, nextGenre);
@@ -688,10 +691,13 @@ export const SearchPage: React.FC = () => {
                 {displayedResults.map((item) => (
                   <div
                     key={item.id}
-                    onClick={() => openManga(item.id, item.title, item.cover)}
+                    onClick={() => {
+                      ambienceSynthesizer.playHapticClick();
+                      openManga(item.id, item.title, item.cover);
+                    }}
                     className="group cursor-pointer text-left"
                   >
-                    <div className="relative aspect-[2/3] overflow-hidden rounded-md border border-ink-700 bg-ink-900 transition-all duration-300 group-hover:-translate-y-1 group-hover:border-paper/35">
+                    <div className="card-spatial gold-edge-gleam relative aspect-[2/3] overflow-hidden rounded-md border border-ink-700 bg-ink-900 transition-all duration-300 group-hover:border-paper/35">
                       <img
                         src={getProxyImageUrl(item.cover)}
                         alt={item.title}

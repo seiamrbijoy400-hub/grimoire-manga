@@ -3,6 +3,7 @@ import { Search, Bookmark, Clock, Compass, ChevronLeft } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore.ts';
 import { BrandLogo, WordMark } from './BrandMark.tsx';
+import { ambienceSynthesizer } from '../services/audioAmbience.ts';
 
 const NAV_ITEMS = [
   { id: 'catalog', label: 'Index', icon: Compass },
@@ -19,6 +20,7 @@ export const Navbar: React.FC = () => {
   const onSearch = location.pathname === '/search';
 
   const goHome = (tab: 'catalog' | 'bookmarks' | 'history') => {
+    ambienceSynthesizer.playHapticClick();
     navigate('/');
     setView('home');
     setActiveTab(tab);
@@ -56,8 +58,11 @@ export const Navbar: React.FC = () => {
 
         {/* Search trigger */}
         <button
-          onClick={() => navigate('/search')}
-          className="group hidden h-10 w-full max-w-[360px] items-center justify-between gap-3 rounded-md border border-ink-700 px-3 text-left transition-colors hover:border-ink-600 lg:flex"
+          onClick={() => {
+            ambienceSynthesizer.playHapticClick();
+            navigate('/search');
+          }}
+          className="btn-shockwave group hidden h-10 w-full max-w-[360px] items-center justify-between gap-3 rounded-md border border-ink-700 px-3 text-left transition-colors hover:border-ink-600 lg:flex"
           aria-label="Search the archive"
         >
           <span className="flex items-center gap-2.5 text-[13px] text-paper-dim group-hover:text-paper">
@@ -72,8 +77,11 @@ export const Navbar: React.FC = () => {
         {/* Section links */}
         <nav className="flex items-center gap-1" aria-label="Sections">
           <button
-            onClick={() => navigate('/search')}
-            className="btn-icon hidden sm:flex lg:hidden"
+            onClick={() => {
+              ambienceSynthesizer.playHapticClick();
+              navigate('/search');
+            }}
+            className="btn-shockwave btn-icon hidden sm:flex lg:hidden"
             aria-label="Search"
           >
             <Search className="h-4 w-4" />
