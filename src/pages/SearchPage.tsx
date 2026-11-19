@@ -109,6 +109,7 @@ export const SearchPage: React.FC = () => {
   const { openManga, setSearchOpen, setView } = useStore();
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef  = useRef<HTMLDivElement>(null);
+  const observerTarget = useRef<HTMLDivElement>(null);
   const reqIdRef = useRef(0);
 
   // ── URL-driven Query ────────────────────────────────────────────────────────
@@ -250,8 +251,8 @@ export const SearchPage: React.FC = () => {
           });
         }
 
-        setHasMore(items.length >= PAGE_SIZE);
-        setOffset(currentOffset);
+        setHasMore(items.length >= 10);
+        setOffset(currentOffset + items.length);
         setCommitted(term.trim());
       } catch (e: unknown) {
         if (myReq !== reqIdRef.current) return;
@@ -283,10 +284,28 @@ export const SearchPage: React.FC = () => {
   }, [query]);
 
   // Load More Pagination
-  const loadMore = () => {
-    if (loadingMore || !hasMore) return;
-    runSearch(committed, offset + PAGE_SIZE);
-  };
+  const loadMore = useCallback(() => {
+    if (loadingMore || !hasMore || loading) return;
+    runSearch(committed, offset);
+  }, [committed, offset, loadingMore, hasMore, loading, runSearch]);
+
+  // Infinite Scroll Observer for SearchPage
+  useEffect(() => {
+    const target = observerTarget.current;
+    if (!target) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          loadMore();
+        }
+      },
+      { rootMargin: '400px' }
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [loadMore, hasMore, loading, loadingMore]);
 
   // Commit Search (Enter or suggestion click)
   const commitSearch = (term: string) => {
@@ -728,6 +747,9 @@ export const SearchPage: React.FC = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Automatic Infinite Scroll Sentinel */}
+              <div ref={observerTarget} className="h-8 w-full" />
 
               {hasMore && (
                 <div className="mb-6 mt-10 flex justify-center">

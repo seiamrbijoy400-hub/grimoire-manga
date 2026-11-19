@@ -137,8 +137,8 @@ export const BentoGrid: React.FC = () => {
       setError(null);
       const data = await fetchAdvancedSearch(filters, 0);
       setItems(data);
-      setHasMore(data.length >= 32);
-      setOffset(0);
+      setHasMore(data.length >= 10);
+      setOffset(data.length);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load the archive.');
       setItems([]);
@@ -161,7 +161,7 @@ export const BentoGrid: React.FC = () => {
 
     loadingMoreRef.current = true;
     setLoadingMore(true);
-    const nextOffset = offset + 32;
+    const nextOffset = offset;
 
     try {
       const nextBatch = await fetchAdvancedSearch(filters, nextOffset);
@@ -174,8 +174,8 @@ export const BentoGrid: React.FC = () => {
           const uniqueNew = nextBatch.filter((m) => !existingIds.has(m.id));
           return [...prev, ...uniqueNew];
         });
-        setOffset(nextOffset);
-        setHasMore(nextBatch.length >= 32);
+        setOffset((prev) => prev + nextBatch.length);
+        setHasMore(nextBatch.length >= 10);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load more titles.');
@@ -665,7 +665,7 @@ export const BentoGrid: React.FC = () => {
 
             {items.length > 0 && (
               <div className="space-y-4 pt-4 text-center">
-                <div ref={observerTarget} className="h-4" />
+                <div ref={observerTarget} className="h-8 w-full" />
                 {loadingMore ? (
                   <div className="flex items-center justify-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-paper-dim">
                     <Loader2 className="h-4 w-4 animate-spin text-stamp" />
