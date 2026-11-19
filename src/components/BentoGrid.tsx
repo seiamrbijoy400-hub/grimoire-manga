@@ -487,11 +487,16 @@ export const BentoGrid: React.FC = () => {
 
             {/* Controls */}
             <div className="flex flex-col gap-3">
-              <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
+              <div
+                className="grid grid-cols-5 gap-1 rounded-md border border-ink-700 bg-ink-900 p-1"
+                role="group"
+                aria-label="Format"
+              >
                 <button
                   onClick={() => setFilters({ ...filters, selectedType: null })}
-                  className="chip"
-                  data-active={filters.selectedType === null}
+                  className={`flex min-h-[44px] items-center justify-center rounded-sm px-1 text-center font-mono text-[9px] uppercase tracking-[0.08em] transition-colors sm:text-[10px] ${
+                    filters.selectedType === null ? 'bg-paper font-semibold text-ink-950' : 'text-paper-dim hover:text-paper'
+                  }`}
                 >
                   All
                 </button>
@@ -504,8 +509,9 @@ export const BentoGrid: React.FC = () => {
                         selectedType: filters.selectedType === t.id ? null : t.id,
                       })
                     }
-                    className="chip"
-                    data-active={filters.selectedType === t.id}
+                    className={`flex min-h-[44px] items-center justify-center rounded-sm px-1 text-center font-mono text-[9px] uppercase tracking-[0.08em] transition-colors sm:text-[10px] ${
+                      filters.selectedType === t.id ? 'bg-paper font-semibold text-ink-950' : 'text-paper-dim hover:text-paper'
+                    }`}
                   >
                     {t.label}
                   </button>

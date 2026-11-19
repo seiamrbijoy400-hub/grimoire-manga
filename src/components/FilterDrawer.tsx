@@ -23,13 +23,20 @@ import { lockBodyScroll } from '../lib/ui.ts';
 
 /** Adult genres never reach the UI (policy mirrored on the server). */
 export const ALL_TAGS = [
-  "Action", "Adventure", "Comedy", "Doujinshi", "Drama",
+  "Action", "Adventure", "Comedy", "Drama",
   "Fantasy", "Gender Bender", "Harem", "Historical", "Horror",
   "Isekai", "Josei", "Martial Arts", "Mecha",
   "Mystery", "Psychological", "Romance", "School Life", "Sci-fi",
   "Seinen", "Shoujo", "Shounen", "Slice of Life", "Sports",
   "Supernatural", "Tragedy", "Yaoi", "Yuri"
 ].filter((tag) => !isAdultTag(tag));
+
+export const GENRE_GROUPS: { title: string; tags: string[] }[] = [
+  { title: 'Action & adventure', tags: ['Action', 'Adventure', 'Martial Arts', 'Sports', 'Historical'] },
+  { title: 'Story & mood', tags: ['Drama', 'Mystery', 'Thriller', 'Tragedy', 'Psychological', 'Horror', 'Supernatural'] },
+  { title: 'Life & world', tags: ['Slice of Life', 'School Life', 'Isekai', 'Mecha', 'Sci-fi', 'Fantasy'] },
+  { title: 'Romance & people', tags: ['Romance', 'Harem', 'Gender Bender', 'Yaoi', 'Yuri', 'Josei', 'Shoujo', 'Shounen', 'Seinen'] },
+];
 
 export const TYPE_OPTIONS: TypeOption[] = [
   { id: 'Manga', label: 'Manga', desc: 'Japanese' },
@@ -76,6 +83,30 @@ export const SORT_OPTIONS = [
   { id: 'Recently Added', label: 'Recently added' },
 ];
 
+const GenreTile: React.FC<{
+  tag: string;
+  included: boolean;
+  excluded: boolean;
+  onClick: () => void;
+}> = ({ tag, included, excluded, onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    aria-pressed={included || excluded}
+    className={`flex min-h-[44px] items-center justify-between gap-2 rounded-md border px-3 text-left font-mono text-[11px] transition-all duration-150 active:scale-[0.98] ${
+      included
+        ? 'border-paper bg-paper font-semibold text-ink-950'
+        : excluded
+          ? 'border-stamp/70 bg-stamp/10 text-stamp'
+          : 'border-ink-700 text-paper-dim hover:border-ink-600 hover:text-paper'
+    }`}
+  >
+    <span className="truncate">{tag}</span>
+    {included && <Check className="h-3.5 w-3.5 shrink-0" />}
+    {excluded && <Ban className="h-3.5 w-3.5 shrink-0" />}
+  </button>
+);
+
 export const FilterDrawer: React.FC<FilterDrawerProps> = ({
   isOpen,
   onClose,
@@ -85,6 +116,7 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
   totalResultsCount
 }) => {
   const [tagSearch, setTagSearch] = useState('');
+  const [tagMode, setTagMode] = useState<'include' | 'exclude'>('include');
 
   useEffect(() => {
     if (!isOpen) return;
@@ -101,26 +133,26 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
 
   if (!isOpen) return null;
 
-  // Toggle tag: Neutral -> Included (green) -> Excluded (red) -> Neutral
-  const cycleTagState = (tag: string) => {
+  // Tap = apply the current mode (include or exclude); tap again to remove.
+  const toggleTag = (tag: string) => {
     const isIncluded = filters.includedTags.includes(tag);
     const isExcluded = filters.excludedTags.includes(tag);
 
-    if (!isIncluded && !isExcluded) {
+    if (tagMode === 'include') {
       onChange({
         ...filters,
-        includedTags: [...filters.includedTags, tag]
-      });
-    } else if (isIncluded) {
-      onChange({
-        ...filters,
-        includedTags: filters.includedTags.filter(t => t !== tag),
-        excludedTags: [...filters.excludedTags, tag]
+        includedTags: isIncluded
+          ? filters.includedTags.filter(t => t !== tag)
+          : [...filters.includedTags, tag],
+        excludedTags: filters.excludedTags.filter(t => t !== tag),
       });
     } else {
       onChange({
         ...filters,
-        excludedTags: filters.excludedTags.filter(t => t !== tag)
+        excludedTags: isExcluded
+          ? filters.excludedTags.filter(t => t !== tag)
+          : [...filters.excludedTags, tag],
+        includedTags: filters.includedTags.filter(t => t !== tag),
       });
     }
   };
@@ -137,7 +169,7 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
     filters.excludedTags.length;
 
   const choice = (active: boolean) =>
-    `h-9 rounded-md border px-2 font-mono text-[10px] uppercase tracking-[0.08em] transition-colors ${
+    `flex min-h-[44px] items-center justify-center rounded-md border px-2 text-center font-mono text-[10px] uppercase tracking-[0.08em] transition-colors ${
       active
         ? 'border-paper bg-paper font-semibold text-ink-950'
         : 'border-ink-700 text-paper-dim hover:border-ink-600 hover:text-paper'
@@ -147,7 +179,7 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
     <div className="fixed inset-0 z-[70] flex justify-end overflow-hidden bg-ink-950/80 backdrop-blur-sm animate-fade-in">
       <div className="absolute inset-0" onClick={onClose} />
 
-      <div className="relative z-10 flex h-full w-full max-w-md flex-col overflow-hidden border-l border-ink-700 bg-ink-950 shadow-2xl">
+      <div className="sheet-in relative z-10 flex h-full w-full max-w-md flex-col overflow-hidden border-l border-ink-700 bg-ink-950 shadow-2xl">
         {/* Head */}
         <div className="flex items-start justify-between gap-3 border-b border-ink-700 px-5 py-4">
           <div>
@@ -321,57 +353,89 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
             </div>
           </section>
 
-          {/* Tags */}
-          <section className="space-y-2">
-            <div className="flex items-end justify-between">
+          {/* Genres */}
+          <section className="space-y-3">
+            <div className="flex items-end justify-between gap-3">
               <div>
                 <label className="eyebrow block">Genres & themes</label>
                 <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.1em] text-paper-dim/80">
-                  Once to include · twice to exclude
+                  Tap a tile to {tagMode === 'include' ? 'include it' : 'exclude it'}
                 </p>
               </div>
-              {(filters.includedTags.length > 0 || filters.excludedTags.length > 0) && (
+              <div className="flex shrink-0 rounded-md border border-ink-700 p-0.5">
                 <button
-                  onClick={() => onChange({ ...filters, includedTags: [], excludedTags: [] })}
-                  className="font-mono text-[9px] uppercase tracking-[0.12em] text-stamp underline underline-offset-4"
+                  type="button"
+                  onClick={() => setTagMode('include')}
+                  className={`rounded-sm px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] transition-colors ${
+                    tagMode === 'include' ? 'bg-paper text-ink-950' : 'text-paper-dim hover:text-paper'
+                  }`}
                 >
-                  Clear tags
+                  Include
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={() => setTagMode('exclude')}
+                  className={`rounded-sm px-2 py-1 font-mono text-[9px] uppercase tracking-[0.1em] transition-colors ${
+                    tagMode === 'exclude' ? 'bg-stamp text-ink-950' : 'text-paper-dim hover:text-paper'
+                  }`}
+                >
+                  Exclude
+                </button>
+              </div>
             </div>
 
             <input
               type="text"
               value={tagSearch}
               onChange={(e) => setTagSearch(e.target.value)}
-              placeholder="Filter genres"
-              aria-label="Filter genres"
-              className="h-9 w-full rounded-md border border-ink-700 bg-transparent px-2.5 text-[12px] text-paper placeholder:text-paper-dim/60 focus:border-paper-dim focus:outline-none"
+              placeholder="Search genres"
+              aria-label="Search genres"
+              className="h-11 w-full rounded-md border border-ink-700 bg-ink-900 px-3 text-[16px] sm:text-[13px] text-paper placeholder:text-paper-dim/60 focus:border-paper-dim focus:outline-none"
             />
 
-            <div className="flex max-h-56 flex-wrap gap-1.5 overflow-y-auto pr-1">
-              {filteredTags.map((tag) => {
-                const isIncluded = filters.includedTags.includes(tag);
-                const isExcluded = filters.excludedTags.includes(tag);
-                return (
-                  <button
+            {tagSearch ? (
+              <div className="grid grid-cols-2 gap-1.5">
+                {filteredTags.map((tag) => (
+                  <GenreTile
                     key={tag}
-                    onClick={() => cycleTagState(tag)}
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 font-mono text-[10px] tracking-[0.04em] transition-colors ${
-                      isIncluded
-                        ? 'border-paper bg-paper font-semibold text-ink-950'
-                        : isExcluded
-                          ? 'border-stamp/70 bg-stamp/10 text-stamp'
-                          : 'border-ink-700 text-paper-dim hover:border-ink-600 hover:text-paper'
-                    }`}
-                  >
-                    {isIncluded && <Check className="h-3 w-3" />}
-                    {isExcluded && <Ban className="h-3 w-3" />}
-                    {tag}
-                  </button>
-                );
-              })}
-            </div>
+                    tag={tag}
+                    included={filters.includedTags.includes(tag)}
+                    excluded={filters.excludedTags.includes(tag)}
+                    onClick={() => toggleTag(tag)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {GENRE_GROUPS.map((group) => (
+                  <div key={group.title}>
+                    <p className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-paper-dim/70">
+                      {group.title}
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {group.tags.map((tag) => (
+                        <GenreTile
+                          key={tag}
+                          tag={tag}
+                          included={filters.includedTags.includes(tag)}
+                          excluded={filters.excludedTags.includes(tag)}
+                          onClick={() => toggleTag(tag)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(filters.includedTags.length > 0 || filters.excludedTags.length > 0) && (
+              <button
+                onClick={() => onChange({ ...filters, includedTags: [], excludedTags: [] })}
+                className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-stamp underline underline-offset-4"
+              >
+                Clear tags
+              </button>
+            )}
           </section>
         </div>
 
