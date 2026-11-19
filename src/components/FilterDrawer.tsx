@@ -120,6 +120,8 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
+    setTagSearch('');
+    setTagMode('include');
     const cleanup = lockBodyScroll(true);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();

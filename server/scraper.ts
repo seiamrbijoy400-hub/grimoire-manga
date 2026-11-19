@@ -191,8 +191,15 @@ export async function searchMangaAdvanced(filter: AdvancedSearchFilter): Promise
 
   const safeResults = filterSafe(results);
 
-  // Fallback to quick search if advanced search returned 0 items and query exists and no complex filters
-  if (safeResults.length === 0 && filter.query?.trim() && !filter.offset && (!filter.types || filter.types.length === 0)) {
+  // Fallback to quick search only when no narrowing filter is active —
+  // otherwise it would silently return unfiltered results for a genre search.
+  const hasNarrowingFilter =
+    (filter.types && filter.types.length > 0) ||
+    (filter.status && filter.status.length > 0) ||
+    (filter.includedTags && filter.includedTags.length > 0) ||
+    (filter.excludedTags && filter.excludedTags.length > 0);
+
+  if (safeResults.length === 0 && filter.query?.trim() && !filter.offset && !hasNarrowingFilter) {
     return await quickSearch(filter.query);
   }
 

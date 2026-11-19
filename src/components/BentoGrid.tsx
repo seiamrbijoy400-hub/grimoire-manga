@@ -482,7 +482,11 @@ export const BentoGrid: React.FC = () => {
             <SectionHead
               index={lastRead ? '03' : '02'}
               title="The archive"
-              note={`${items.length} titles loaded`}
+              note={
+                filters.includedTags.length > 0
+                  ? `${items.length} titles · ${filters.includedTags.join(', ')}`
+                  : `${items.length} titles loaded`
+              }
             />
 
             {/* Controls */}
