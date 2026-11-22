@@ -162,9 +162,7 @@ const AppContent: React.FC = () => {
 
   const syncFromPath = useCallback(() => {
     const path = window.location.pathname;
-    if (path === '/' || path === '') {
-      setView('home');
-    } else if (path.startsWith('/manga/')) {
+    if (path.startsWith('/manga/')) {
       const id = decodeURIComponent(path.split('/')[2] || '');
       if (id) openManga(id);
     } else if (path.startsWith('/read/')) {
@@ -172,6 +170,9 @@ const AppContent: React.FC = () => {
       const mangaId = decodeURIComponent(parts[2] || '');
       const chapterId = decodeURIComponent(parts[3] || '');
       if (mangaId && chapterId) openChapter(mangaId, chapterId, 'Chapter');
+    } else {
+      // Home, /search, or any other view
+      setView('home');
     }
   }, [setView, openManga, openChapter]);
 

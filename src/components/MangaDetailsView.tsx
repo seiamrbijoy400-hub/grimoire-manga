@@ -10,14 +10,18 @@ import {
   Share2,
   Check,
   Globe,
-  ArrowRight
-} from 'lucide-react';;
+  ArrowRight,
+  Home,
+  Sparkles
+} from 'lucide-react';
 import { useStore } from '../store/useStore.ts';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { fetchMangaDetails, fetchChapterList, getProxyImageUrl } from '../services/api.ts';
+import { fetchMangaDetails, fetchChapterList, fetchAdvancedSearch, getProxyImageUrl } from '../services/api.ts';
 import { BrandLoader } from './BrandLoader.tsx';
+import { MangaCard } from './MangaCard.tsx';
+import { MobileTabBar } from './Navbar.tsx';
 import { filterSafeTags } from '../lib/contentSafety.ts';
-import { MangaDetails, ChapterItem, BookmarkCategory } from '../types.ts';
+import { MangaDetails, ChapterItem, BookmarkCategory, MangaItem } from '../types.ts';
 import { FALLBACK_COVER } from '../lib/placeholder.ts';
 
 const CHUNK_SIZE = 50;
@@ -86,10 +90,13 @@ export const MangaDetailsView: React.FC = () => {
   const [selectedChunk, setSelectedChunk] = useState<number>(0); // 0 = first chunk, -1 = all
   const [shelfDropdownOpen, setShelfDropdownOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [suggestions, setSuggestions] = useState<MangaItem[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   useEffect(() => {
     if (!activeMangaId) return;
     document.title = 'KURSO SCROLL — Loading…';
+    window.scrollTo({ top: 0, behavior: 'instant' });
 
     async function load() {
       setLoading(true);
@@ -107,6 +114,66 @@ export const MangaDetailsView: React.FC = () => {
     }
     load();
   }, [activeMangaId, setActiveMangaMeta]);
+
+  // Fetch similar / same-type manga recommendations
+  useEffect(() => {
+    if (!details?.id) return;
+    let active = true;
+
+    async function loadSuggestions() {
+      setLoadingSuggestions(true);
+      try {
+        const safeTags = filterSafeTags(details?.tags || []);
+        const primaryTag = safeTags[0];
+        const mangaType = details?.type || 'Manga';
+
+        let list: MangaItem[] = [];
+
+        // 1. Try querying primary genre tag + format for high relevance
+        if (primaryTag) {
+          try {
+            list = await fetchAdvancedSearch({
+              includedTags: [primaryTag],
+              selectedType: mangaType,
+              sort: 'Popularity',
+            }, 0);
+          } catch {}
+        }
+
+        // 2. If results are few (< 6), enrich with top titles of the same format
+        if (list.length < 6) {
+          try {
+            const fallback = await fetchAdvancedSearch({
+              selectedType: mangaType,
+              sort: 'Popularity',
+            }, 0);
+            const existing = new Set(list.map((m) => m.id));
+            fallback.forEach((item) => {
+              if (!existing.has(item.id)) {
+                list.push(item);
+                existing.add(item.id);
+              }
+            });
+          } catch {}
+        }
+
+        // 3. Exclude the current manga itself
+        const filtered = list.filter((m) => m.id !== details?.id);
+        if (active) {
+          setSuggestions(filtered.slice(0, 12));
+        }
+      } catch (e) {
+        console.error('Error fetching suggestions:', e);
+      } finally {
+        if (active) setLoadingSuggestions(false);
+      }
+    }
+
+    loadSuggestions();
+    return () => {
+      active = false;
+    };
+  }, [details?.id, details?.type, details?.tags]);
 
   if (!activeMangaId) return null;
 
@@ -182,6 +249,19 @@ export const MangaDetailsView: React.FC = () => {
     setSelectedChunk(0);
   }, [selectedLanguage, chapterFilter, sortDescending]);
 
+  const handleBack = () => {
+    const previousFrom = (location.state as any)?.from;
+    if (previousFrom && previousFrom !== location.pathname) {
+      setView('home');
+      navigate(previousFrom);
+    } else if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      setView('home');
+      navigate('/');
+    }
+  };
+
   const handleCopyLink = () => {
     if (navigator.clipboard) {
       const url = `${window.location.origin}/manga/${encodeURIComponent(activeMangaId || '')}`;
@@ -196,13 +276,27 @@ export const MangaDetailsView: React.FC = () => {
       {/* Sticky bar */}
       <div className="sticky top-0 z-30 border-b border-ink-700 bg-ink-950/95 backdrop-blur-md safe-top">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
-          <button
-            onClick={() => { setView('home'); navigate((location.state as any)?.from || '/'); }}
-            className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-paper-dim transition-colors hover:text-paper"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Index
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-1.5 rounded-md border border-ink-700 bg-ink-900/90 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-paper shadow-sm transition-all hover:border-paper hover:bg-ink-800 active:scale-95"
+              aria-label="Go back to previous page"
+            >
+              <ChevronLeft className="h-4 w-4 text-stamp" />
+              <span>Back</span>
+            </button>
+            <button
+              onClick={() => {
+                setView('home');
+                navigate('/');
+              }}
+              className="btn-icon !h-8 !w-8"
+              title="Return to Catalog Index"
+              aria-label="Home"
+            >
+              <Home className="h-3.5 w-3.5 text-paper-dim hover:text-paper" />
+            </button>
+          </div>
 
           {details && (
             <div className="flex min-w-0 items-center gap-3">
@@ -580,15 +674,63 @@ export const MangaDetailsView: React.FC = () => {
               })}
             </div>
           </section>
+
+          {/* ======================================================== */}
+          {/* 02. SAME-TYPE MANGA SUGGESTIONS / RECOMMENDATIONS        */}
+          {/* ======================================================== */}
+          <section className="space-y-6 pt-6" aria-label="Similar Titles">
+            <div className="flex items-center justify-between border-b border-ink-700 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-stamp">02</span>
+                <h2 className="font-display text-lg font-semibold text-paper">More Like This</h2>
+                {details.type && (
+                  <span className="tnum font-mono text-[10px] uppercase tracking-[0.12em] text-paper-dim">
+                    {details.type} {filterSafeTags(details.tags || [])[0] ? `· ${filterSafeTags(details.tags || [])[0]}` : ''}
+                  </span>
+                )}
+              </div>
+              <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-paper-dim/70">
+                Similar Recommendations
+              </span>
+            </div>
+
+            {loadingSuggestions ? (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex flex-col gap-2.5">
+                    <div className="shimmer-skeleton aspect-[2/3] w-full rounded-md border border-ink-700" />
+                    <div className="shimmer-skeleton h-3.5 w-3/4 rounded-sm" />
+                    <div className="shimmer-skeleton h-2.5 w-1/2 rounded-sm" />
+                  </div>
+                ))}
+              </div>
+            ) : suggestions.length > 0 ? (
+              <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+                {suggestions.map((manga) => (
+                  <MangaCard
+                    key={manga.id}
+                    manga={manga}
+                    accentTag={filterSafeTags(details.tags || [])[0]}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="py-6 text-center font-mono text-[11px] uppercase tracking-[0.12em] text-paper-dim">
+                No related titles found for this category.
+              </p>
+            )}
+          </section>
         </div>
       ) : (
         <div className="mx-auto max-w-sm space-y-4 px-4 py-20 text-center">
           <p className="text-[13px] text-paper-dim">This series could not be loaded.</p>
-          <button onClick={() => { setView('home'); navigate((location.state as any)?.from || '/'); }} className="btn btn-ghost">
-            Back to the index
+          <button onClick={handleBack} className="btn btn-ghost">
+            ← Back
           </button>
         </div>
       )}
+
+      <MobileTabBar />
     </div>
   );
 };
