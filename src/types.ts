@@ -1,4 +1,4 @@
-export type MangaSource = 'all' | 'weebcentral' | 'mangadex';
+export type MangaSource = 'all' | 'weebcentral' | 'mangadex' | 'mangapill' | 'comick' | 'mangaread';
 
 export interface MangaItem {
   id: string;
@@ -10,7 +10,7 @@ export interface MangaItem {
   status?: string;
   type?: string;
   tags?: string[];
-  source?: 'weebcentral' | 'mangadex';
+  source?: 'weebcentral' | 'mangadex' | 'mangapill' | 'comick' | 'mangaread';
   country?: string; // JP, KR, CN, US
 }
 

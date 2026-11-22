@@ -150,7 +150,7 @@ export const BentoGrid: React.FC = () => {
       const data = await fetchAdvancedSearch(filters, 0);
       if (generation !== queryGenerationRef.current) return;
       setItems(data);
-      setHasMore(data.length >= 10);
+      setHasMore(data.length > 0);
       setOffset(data.length);
     } catch (err) {
       if (generation !== queryGenerationRef.current) return;
@@ -197,7 +197,7 @@ export const BentoGrid: React.FC = () => {
           return [...prev, ...uniqueNew];
         });
         setOffset((prev) => prev + nextBatch.length);
-        setHasMore(nextBatch.length >= 10);
+        setHasMore(nextBatch.length > 0);
       }
     } catch (err) {
       if (generation !== queryGenerationRef.current) return;
@@ -218,7 +218,7 @@ export const BentoGrid: React.FC = () => {
           loadMore();
         }
       },
-      { rootMargin: '400px' },
+      { rootMargin: '800px' },
     );
 
     observer.observe(target);
@@ -232,10 +232,16 @@ export const BentoGrid: React.FC = () => {
   }, [note]);
 
   useEffect(() => {
-    const handleScroll = () => setShowBackToTop(window.scrollY > 400);
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+      if (!hasMore || loadingMoreRef.current || loadingInitial || activeTab !== 'catalog') return;
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 800) {
+        loadMore();
+      }
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [loadMore, hasMore, loadingInitial, activeTab]);
 
   const historyList = useMemo(
     () => Object.values(history).sort((a, b) => b.updatedAt - a.updatedAt),
@@ -803,11 +809,6 @@ export const BentoGrid: React.FC = () => {
                     />
                   ))}
                 </div>
-                {!narrowsArchive && items.length > 0 && items.length <= 5 && (
-                  <p className="text-center font-mono text-[10px] uppercase tracking-[0.16em] text-paper-dim/70">
-                    End of the index · {items.length} titles
-                  </p>
-                )}
               </>
             )}
 

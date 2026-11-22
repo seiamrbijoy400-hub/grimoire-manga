@@ -81,7 +81,20 @@ export const MangaCard: React.FC<MangaCardProps> = ({ manga, rank, accentTag }) 
 
           {/* Footer marks */}
           <span className="pointer-events-none absolute inset-x-2 bottom-2 z-10 flex items-center justify-between">
-            <span className="tag !bg-ink-950/80">{origin.code}</span>
+            <span className="flex items-center gap-1">
+              <span className="tag !bg-ink-950/80">{origin.code}</span>
+              {manga.id.startsWith('mp:') ? (
+                <span className="tag !bg-emerald-950/90 text-emerald-300 border border-emerald-800/40">Pill</span>
+              ) : manga.id.startsWith('ck:') ? (
+                <span className="tag !bg-indigo-950/90 text-indigo-300 border border-indigo-800/40">ComicK</span>
+              ) : manga.id.startsWith('mr:') ? (
+                <span className="tag !bg-amber-950/90 text-amber-300 border border-amber-800/40">Read</span>
+              ) : manga.id.startsWith('md:') ? (
+                <span className="tag !bg-orange-950/90 text-orange-300 border border-orange-800/40">Dex</span>
+              ) : (
+                <span className="tag !bg-sky-950/90 text-sky-300 border border-sky-800/40">Weeb</span>
+              )}
+            </span>
             {manga.status && (
               <span className="tag !bg-ink-950/80">
                 <span

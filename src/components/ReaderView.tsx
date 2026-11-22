@@ -200,6 +200,15 @@ export const ReaderView: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const isMangaDex = activeChapterId?.startsWith('md:') || activeMangaId?.startsWith('md:');
+  const sourceLabel = activeChapterId?.startsWith('md:')
+    ? 'MangaDex Vault'
+    : activeChapterId?.startsWith('mp:')
+    ? 'MangaPill Stream'
+    : activeChapterId?.startsWith('ck:')
+    ? 'ComicK Webtoons'
+    : activeChapterId?.startsWith('mr:')
+    ? 'MangaRead Vault'
+    : 'Kurso Stream';
 
   // Fullscreen state listener
   useEffect(() => {
@@ -1073,7 +1082,7 @@ export const ReaderView: React.FC = () => {
               <BrandLoader
                 size="lg"
                 label="Deciphering panels"
-                sublabel={isMangaDex ? 'MangaDex Safe Network active' : 'Kurso Scroll engine active'}
+                sublabel={`${sourceLabel} active`}
               />
             </div>
           </div>

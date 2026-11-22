@@ -171,15 +171,6 @@ export const SearchPage: React.FC = () => {
       const activeSort   = overrideSort !== undefined ? overrideSort : sortKey;
       const activeSource = overrideSource !== undefined ? overrideSource : sourceFilter;
 
-      // Allow searching if there is a term OR an active filter
-      if (!term.trim() && !activeGenre && !activeType && !activeStatus) {
-        setResults([]);
-        setOffset(0);
-        setHasMore(false);
-        setError(null);
-        return;
-      }
-
       if (currentOffset === 0) {
         setLoading(true);
         setError(null);
@@ -229,7 +220,7 @@ export const SearchPage: React.FC = () => {
           });
         }
 
-        setHasMore(items.length >= 10);
+        setHasMore(items.length > 0);
         setOffset(currentOffset + items.length);
         setCommitted(term.trim());
       } catch (e: unknown) {
@@ -246,18 +237,8 @@ export const SearchPage: React.FC = () => {
     [genreFilter, typeFilter, statusFilter, sortKey, sourceFilter]
   );
 
-  // Debounced auto-search for query AND filters. Depending on `query` alone
-  // let a pending keystroke debounce overwrite a genre selection.
+  // Debounced auto-search for query AND filters.
   useEffect(() => {
-    if (!query.trim() && !genreFilter && !typeFilter && !statusFilter) {
-      setResults([]);
-      setOffset(0);
-      setHasMore(false);
-      setError(null);
-      return;
-    }
-    // Stop infinite scroll from appending a page of the previous filter while
-    // the new one is still debouncing.
     setHasMore(false);
     const id = setTimeout(() => {
       runSearch(query, 0);
@@ -282,11 +263,31 @@ export const SearchPage: React.FC = () => {
           loadMore();
         }
       },
-      { rootMargin: '400px' }
+      { rootMargin: '600px' }
     );
 
     observer.observe(target);
     return () => observer.disconnect();
+  }, [loadMore, hasMore, loading, loadingMore]);
+
+  // Secondary scroll listener for touch devices & scroll container
+  useEffect(() => {
+    const el = listRef.current;
+    const handleScroll = () => {
+      if (!hasMore || loading || loadingMore) return;
+      if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 700) {
+        loadMore();
+      } else if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 700) {
+        loadMore();
+      }
+    };
+
+    if (el) el.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      if (el) el.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, [loadMore, hasMore, loading, loadingMore]);
 
   // Commit Search (Enter or suggestion click)
@@ -337,7 +338,13 @@ export const SearchPage: React.FC = () => {
           ? true
           : sourceFilter === 'mangadex'
           ? item.id.startsWith('md:')
-          : !item.id.startsWith('md:');
+          : sourceFilter === 'mangapill'
+          ? item.id.startsWith('mp:')
+          : sourceFilter === 'comick'
+          ? item.id.startsWith('ck:')
+          : sourceFilter === 'mangaread'
+          ? item.id.startsWith('mr:')
+          : (!item.id.includes(':'));
       return typeMatch && statusMatch && genreMatch && sourceMatch;
     });
 
@@ -472,9 +479,12 @@ export const SearchPage: React.FC = () => {
                     }}
                     className="h-9 w-full appearance-none rounded-md border border-ink-700 bg-ink-950 pl-2.5 pr-7 text-[11px] text-paper focus:border-paper-dim focus:outline-none"
                   >
-                    <option value="all">All sources</option>
+                    <option value="all">All sources (5 Engines)</option>
                     <option value="weebcentral">WeebCentral</option>
                     <option value="mangadex">MangaDex (safe)</option>
+                    <option value="mangapill">MangaPill</option>
+                    <option value="comick">ComicK Webtoons</option>
+                    <option value="mangaread">MangaRead Vault</option>
                   </select>
                   <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-paper-dim" />
                 </div>
@@ -676,7 +686,17 @@ export const SearchPage: React.FC = () => {
                   {committed && ` · “${committed}”`}
                 </p>
                 <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-paper-dim/70">
-                  Weeb + Dex
+                  {sourceFilter === 'all'
+                    ? 'Unified 5 Engines'
+                    : sourceFilter === 'mangapill'
+                    ? 'MangaPill Global'
+                    : sourceFilter === 'comick'
+                    ? 'ComicK Webtoons'
+                    : sourceFilter === 'mangaread'
+                    ? 'MangaRead Vault'
+                    : sourceFilter === 'mangadex'
+                    ? 'MangaDex Safe'
+                    : 'WeebCentral'}
                 </span>
               </div>
 
@@ -702,9 +722,15 @@ export const SearchPage: React.FC = () => {
                         loading="lazy"
                         decoding="async"
                       />
-                      {item.id.startsWith('md:') && (
+                      {item.id.startsWith('md:') ? (
                         <span className="tag absolute left-1.5 top-1.5 !bg-ink-950/85">Dex</span>
-                      )}
+                      ) : item.id.startsWith('mp:') ? (
+                        <span className="tag absolute left-1.5 top-1.5 !bg-emerald-950/85 text-emerald-400 border border-emerald-800/40">Pill</span>
+                      ) : item.id.startsWith('ck:') ? (
+                        <span className="tag absolute left-1.5 top-1.5 !bg-amber-950/85 text-amber-400 border border-amber-800/40">ComicK</span>
+                      ) : item.id.startsWith('mr:') ? (
+                        <span className="tag absolute left-1.5 top-1.5 !bg-purple-950/85 text-purple-400 border border-purple-800/40">Read</span>
+                      ) : null}
                     </div>
 
                     <h3 className="mt-2 line-clamp-2 font-display text-[12.5px] font-semibold leading-snug text-paper transition-colors group-hover:text-stamp">

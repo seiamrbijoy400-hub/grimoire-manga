@@ -219,18 +219,27 @@ export const FilterDrawer: React.FC<FilterDrawerProps> = ({
             <div className="flex items-center justify-between">
               <label className="eyebrow">Source</label>
               <span className="font-mono text-[9px] uppercase tracking-[0.12em] text-paper-dim">
-                {filters.selectedSource === 'all' ? 'Both' : filters.selectedSource}
+                {filters.selectedSource === 'all' ? 'All (5 Sources)' : filters.selectedSource}
               </span>
             </div>
             <div className="grid grid-cols-3 gap-1.5">
               <button onClick={() => onChange({ ...filters, selectedSource: 'all' })} className={choice(filters.selectedSource === 'all')}>
-                Both
+                All
               </button>
               <button onClick={() => onChange({ ...filters, selectedSource: 'weebcentral' })} className={choice(filters.selectedSource === 'weebcentral')}>
                 Weeb
               </button>
               <button onClick={() => onChange({ ...filters, selectedSource: 'mangadex' })} className={choice(filters.selectedSource === 'mangadex')}>
                 Dex
+              </button>
+              <button onClick={() => onChange({ ...filters, selectedSource: 'mangapill' })} className={choice(filters.selectedSource === 'mangapill')}>
+                Pill
+              </button>
+              <button onClick={() => onChange({ ...filters, selectedSource: 'comick' })} className={choice(filters.selectedSource === 'comick')}>
+                ComicK
+              </button>
+              <button onClick={() => onChange({ ...filters, selectedSource: 'mangaread' })} className={choice(filters.selectedSource === 'mangaread')}>
+                Read
               </button>
             </div>
           </section>
